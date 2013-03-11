@@ -2,7 +2,7 @@ import os
 import luigi
 import time
 import shutil
-from pm.luigi.job import JobTask, DefaultShellJobRunner
+from ratatosk.job import JobTask, DefaultShellJobRunner
 from cement.utils import shell
 
 class CutadaptJobRunner(DefaultShellJobRunner):
@@ -12,7 +12,7 @@ class InputFastqFile(JobTask):
     _config_section = "cutadapt"
     _config_subsection = "input_fastq_file"
     fastq = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="pm.luigi.external.FastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.external.FastqFile")
     
     def requires(self):
         cls = self.set_parent_task()
@@ -28,7 +28,7 @@ class CutadaptJobTask(JobTask):
     options = luigi.Parameter(default=None)
     fastq = luigi.Parameter(default=None)
     cutadapt = luigi.Parameter(default="cutadapt")
-    parent_task = luigi.Parameter(default="pm.luigi.cutadapt.InputFastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.cutadapt.InputFastqFile")
     # Use Illumina TruSeq adapter sequences as default
     threeprime = luigi.Parameter(default="AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC")
     fiveprime = luigi.Parameter(default="AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC")

@@ -1,9 +1,9 @@
 import os
 import luigi
 import logging
-import pm.luigi.external
-import pm.luigi.bwa
-from pm.luigi.job import JobTask, DefaultShellJobRunner
+import ratatosk.external
+import ratatosk.bwa
+from ratatosk.job import JobTask, DefaultShellJobRunner
 
 logger = logging.getLogger('luigi-interface')
 
@@ -15,7 +15,7 @@ class InputSamFile(JobTask):
     _config_section = "samtools"
     _config_subsection = "input_sam_file"
     sam = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="pm.luigi.external.SamFile")
+    parent_task = luigi.Parameter(default="ratatosk.external.SamFile")
 
     def requires(self):
         cls = self.set_parent_task()
@@ -28,7 +28,7 @@ class InputBamFile(JobTask):
     _config_section = "samtools"
     _config_subsection = "input_bam_file"
     bam = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="pm.luigi.external.BamFile")
+    parent_task = luigi.Parameter(default="ratatosk.external.BamFile")
 
     def requires(self):
         cls = self.set_parent_task()
@@ -42,7 +42,7 @@ class SamtoolsJobTask(JobTask):
     sam = luigi.Parameter(default=None)
     bam = luigi.Parameter(default=None)
     samtools = luigi.Parameter(default="samtools")
-    parent_task = luigi.Parameter(default="pm.luigi.samtools.InputSamFile")
+    parent_task = luigi.Parameter(default="ratatosk.samtools.InputSamFile")
 
     #    def __init__(self, *args, **kwargs):
     #         super(SamtoolsJobTask, self).__init__(*args, **kwargs)
@@ -71,7 +71,7 @@ class SamtoolsJobTask(JobTask):
 class SamToBam(SamtoolsJobTask):
     _config_subsection = "samtobam"
     options = luigi.Parameter(default="-bSh")
-    parent_task = luigi.Parameter(default="pm.luigi.samtools.InputSamFile")
+    parent_task = luigi.Parameter(default="ratatosk.samtools.InputSamFile")
     sam = luigi.Parameter(default=None)
 
     def main(self):
@@ -93,7 +93,7 @@ class SortBam(SamtoolsJobTask):
     _config_subsection = "sortbam"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="pm.luigi.samtools.SamToBam")
+    parent_task = luigi.Parameter(default="ratatosk.samtools.SamToBam")
 
     def requires(self):
         cls = self.set_parent_task()
@@ -116,7 +116,7 @@ class IndexBam(SamtoolsJobTask):
     _config_subsection = "indexbam"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="pm.luigi.samtools.InputBamFile")
+    parent_task = luigi.Parameter(default="ratatosk.samtools.InputBamFile")
 
     def requires(self):
         cls = self.set_parent_task()
@@ -132,7 +132,7 @@ class IndexBam(SamtoolsJobTask):
         return [self.bam, self.output()]
 
 # "Connection" tasks
-import pm.luigi.bwa as bwa
+import ratatosk.bwa as bwa
 class SampeToSamtools(SamToBam):
     def requires(self):
         return bwa.BwaSampe(sai1=os.path.join(self.sam.replace(".sam", bwa.BwaSampe().read1_suffix + ".sai")),

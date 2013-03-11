@@ -9,7 +9,7 @@ import luigi
 from itertools import izip
 from luigi.task import flatten
 from cement.utils import shell
-from pm.luigi import interface
+from ratatosk import interface
 
 # Use luigi-interface for now
 logger = logging.getLogger('luigi-interface')

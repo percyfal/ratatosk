@@ -2,7 +2,7 @@ import os
 import luigi
 import time
 import shutil
-from pm.luigi.job import JobTask, DefaultShellJobRunner
+from ratatosk.job import JobTask, DefaultShellJobRunner
 from cement.utils import shell
 
 class BwaJobRunner(DefaultShellJobRunner):
@@ -12,7 +12,7 @@ class InputFastqFile(JobTask):
     _config_section = "bwa"
     _config_subsection = "input_fastq_file"
     fastq = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="pm.luigi.external.FastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.external.FastqFile")
     
     def requires(self):
         cls = self.set_parent_task()
@@ -41,7 +41,7 @@ class BwaAln(BwaJobTask):
     _config_subsection = "aln"
     fastq = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="pm.luigi.bwa.InputFastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.bwa.InputFastqFile")
     can_multi_thread = True
 
     def main(self):

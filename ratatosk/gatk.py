@@ -1,8 +1,8 @@
 import os
 import luigi
 import logging
-import pm.luigi.external
-from pm.luigi.job import JobTask, DefaultShellJobRunner
+import ratatosk.external
+from ratatosk.job import JobTask, DefaultShellJobRunner
 from cement.utils import shell
 
 logger = logging.getLogger('luigi-interface')
@@ -49,7 +49,7 @@ class InputBamFile(JobTask):
     _config_section = "gatk"
     _config_subsection = "input_bam_file"
     bam = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="pm.luigi.external.BamFile")
+    parent_task = luigi.Parameter(default="ratatosk.external.BamFile")
     def requires(self):
         cls = self.set_parent_task()
         return cls(bam=self.bam)
@@ -61,7 +61,7 @@ class GATKJobTask(JobTask):
     gatk = luigi.Parameter(default=GATK_JAR)
     bam = luigi.Parameter(default=None)
     java_options = luigi.Parameter(default="-Xmx2g")
-    parent_task = luigi.Parameter(default="pm.luigi.gatk.InputBamFile")
+    parent_task = luigi.Parameter(default="ratatosk.gatk.InputBamFile")
     ref = luigi.Parameter(default=None)
     # Additional commonly used options
     target_region = luigi.Parameter(default=None)
@@ -80,7 +80,7 @@ class GATKJobTask(JobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        return [cls(bam=self.bam), pm.luigi.samtools.IndexBam(bam=self.bam)]
+        return [cls(bam=self.bam), ratatosk.samtools.IndexBam(bam=self.bam)]
 
 class RealignmentTargetCreator(GATKJobTask):
     _config_subsection = "RealignerTargetCreator"
@@ -108,7 +108,7 @@ class IndelRealigner(GATKJobTask):
     _config_subsection = "IndelRealigner"
     bam = luigi.Parameter(default=None)
     known = luigi.Parameter(default=[], is_list=True)
-    parent_task = "pm.luigi.gatk.InputBamFile"
+    parent_task = "ratatosk.gatk.InputBamFile"
 
     def main(self):
         return "IndelRealigner"

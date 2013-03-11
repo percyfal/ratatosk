@@ -5,13 +5,13 @@ import unittest
 import luigi
 import time
 import logging
-import pm.luigi.bwa as BWA
-import pm.luigi.samtools as SAM
-import pm.luigi.fastq as FASTQ
-import pm.luigi.picard as PICARD
-import pm.luigi.gatk as GATK
-import pm.luigi.cutadapt as CUTADAPT
-import pm.luigi.external
+import ratatosk.bwa as BWA
+import ratatosk.samtools as SAM
+import ratatosk.fastq as FASTQ
+import ratatosk.picard as PICARD
+import ratatosk.gatk as GATK
+import ratatosk.cutadapt as CUTADAPT
+import ratatosk.external
 # Check for ngstestdata
 ngsloadmsg = "No ngstestdata module; skipping test. Do a 'git clone https://github.com/percyfal/ngs.test.data' followed by 'python setup.py install'"
 has_ngstestdata = False

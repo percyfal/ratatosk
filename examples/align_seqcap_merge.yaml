@@ -1,29 +1,29 @@
 # Note: currently you need to set the reference path manually. Look
 # for folder data/genomes in your ngstestdata installation location
 bwa:
-  bwaref: ../../../../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
+  bwaref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
 
 gatk:
   unifiedgenotyper:
-    ref: ../../../../ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
+    ref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
 
 picard:
   # input_bam_file "pipes" input from other modules
   input_bam_file:
-    parent_task: pm.luigi.samtools.SamToBam
+    parent_task: ratatosk.samtools.SamToBam
   hs_metrics:
-    parent_task: pm.luigi.picard.MergeSamFiles
-    targets: ../../../tests/luigi/targets.interval_list
-    baits: ../../../tests/luigi/targets.interval_list
+    parent_task: ratatosk.picard.MergeSamFiles
+    targets: ../tests/targets.interval_list
+    baits: ../tests/targets.interval_list
   duplication_metrics:
-    parent_task: pm.luigi.picard.MergeSamFiles
+    parent_task: ratatosk.picard.MergeSamFiles
   alignment_metrics:
-    parent_task: pm.luigi.picard.MergeSamFiles
+    parent_task: ratatosk.picard.MergeSamFiles
   insert_metrics:
-    parent_task: pm.luigi.picard.MergeSamFiles
+    parent_task: ratatosk.picard.MergeSamFiles
   merge_sam_files:
-    parent_task: pm.luigi.picard.SortSam
+    parent_task: ratatosk.picard.SortSam
 
 samtools:
   samtobam:
-    parent_task: pm.luigi.samtools.SampeToSamtools
+    parent_task: ratatosk.samtools.SampeToSamtools

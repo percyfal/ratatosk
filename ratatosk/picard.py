@@ -3,8 +3,8 @@ import luigi
 import logging
 import time
 import glob
-import pm.luigi.external
-from pm.luigi.job import JobTask, DefaultShellJobRunner
+import ratatosk.external
+from ratatosk.job import JobTask, DefaultShellJobRunner
 from cement.utils import shell
 
 JAVA="java"
@@ -46,7 +46,7 @@ class InputBamFile(JobTask):
     _config_section = "picard"
     _config_subsection = "input_bam_file"
     bam = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="pm.luigi.external.BamFile")
+    parent_task = luigi.Parameter(default="ratatosk.external.BamFile")
     def requires(self):
         cls = self.set_parent_task()
         return cls(bam=self.bam)
@@ -59,7 +59,7 @@ class PicardJobTask(JobTask):
     _config_section = "picard"
     java_options = "-Xmx2g"
     label = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="pm.luigi.picard.InputBamFile")
+    parent_task = luigi.Parameter(default="ratatosk.picard.InputBamFile")
 
     def jar(self):
         """Path to the jar for this Picard job"""

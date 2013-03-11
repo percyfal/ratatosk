@@ -1,8 +1,8 @@
 import os
 import luigi
 import logging
-import pm.luigi.external
-from pm.luigi.job import JobTask, DefaultShellJobRunner
+import ratatosk.external
+from ratatosk.job import JobTask, DefaultShellJobRunner
 
 class VcfJobRunner(DefaultShellJobRunner):
     pass

@@ -2,9 +2,9 @@ import luigi
 import os
 import sys
 import glob
-from pm.luigi.job import JobTask
-from pm.luigi.picard import MergeSamFiles, PicardMetrics
-from pm.luigi.fastq import FastqFileLink
+from ratatosk.job import JobTask
+from ratatosk.picard import MergeSamFiles, PicardMetrics
+from ratatosk.fastq import FastqFileLink
 
 class AlignSeqcap(JobTask):
     # Need to map sample to some tuple-like structure: {sample => {desired_output, bamfiles_to_merge}}

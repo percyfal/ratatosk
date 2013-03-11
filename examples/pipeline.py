@@ -1,9 +1,9 @@
 import luigi
 import os
 import glob
-from pm.luigi.job import JobTask
-from pm.luigi.picard import PicardMetrics, SortSam
-from pm.luigi.fastq import FastqFileLink
+from ratatosk.job import JobTask
+from ratatosk.picard import PicardMetrics, SortSam
+from ratatosk.fastq import FastqFileLink
 
 class AlignSeqcap(luigi.WrapperTask):
     sample = luigi.Parameter(default=[], is_list=True)

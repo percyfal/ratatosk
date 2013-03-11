@@ -1,8 +1,8 @@
-## pm.luigi ##
+## ratatosk ##
 
-The `pm.luigi` module is a library of
-[luigi](https://github.com/spotify/luigi) tasks, currently focused on,
-but not limited to, common bioinformatical tasks.
+`ratatosk` is a library of [luigi](https://github.com/spotify/luigi)
+tasks, currently focused on, but not limited to, common
+bioinformatical tasks.
 
 ## Installing  ##
 
@@ -17,16 +17,10 @@ to create a virtual environment.
 
 ### Installation ###
 
-Currently, `pm.luigi` resides in the `pm` package, even though this is
-likely to change in the near future. Furthermore, the luigi code is
-part of a feature branch,
-[luigi-tasks](https://github.com/percyfal/pm/tree/feature/luigi-tasks).
-Therefore, after installation you need to check out this branch. To
-install the development version of `pm` and try out `pm.luigi`, do
+To install the development version of `ratatosk`, do
 	
-	git clone https://github.com/percyfal/pm
+	git clone https://github.com/percyfal/ratatosk
 	git fetch origin
-	git checkout feature/luigi-tasks
 	python setup.py develop
 
 ### Dependencies ###
@@ -57,7 +51,7 @@ Note that you **must** use *setup.py develop*.
 
 ## Running the tests  ##
 
-Cd to the luigi test directory (`pm/tests/luigi/`) and run
+Cd to the luigi test directory (`tests`) and run
 
 	nosetests -v -s test_wrapper.py
 	
@@ -84,7 +78,7 @@ sample, project).
 
 In order to view tasks, run
 
-	pm/bin/luigid &
+	bin/ratatoskd &
 	
 in the background, set the PYTHONPATH to the current directory and run
 the tests:
@@ -94,21 +88,21 @@ the tests:
 ## Examples in tests ##
 
 These examples are currently based on the tests in
-[pm.tests.luigi.test_wrapper](https://github.com/percyfal/pm/blob/feature/luigi-tasks/tests/luigi/test_wrapper.py).
+[ratatosk.tests.test_wrapper](https://github.com/percyfal/ratatosk/blob/master/test/test_wrapper.py).
 
 ### Creating file links ###
 
 The task
-[pm.luigi.fastq.FastqFileLink](https://github.com/percyfal/pm/blob/feature/luigi-tasks/pm/luigi/fastq.py#L5)
+[ratatosk.fastq.FastqFileLink](https://github.com/percyfal/ratatosk/blob/master/ratatosk/fastq.py)
 creates a link from source to a target. The source in this case
 depends on an *external* task
-([pm.luigi.external.FastqFile](https://github.com/percyfal/pm/blob/feature/luigi-tasks/pm/luigi/external.py#L24)),
+([ratatosk.external.FastqFile](https://github.com/percyfal/ratatosk/blob/master/ratatosk/external.py)
 meaning this file was created by some outside process (e.g. sequencing
 machine).
 
 	nosetests -v -s test_wrapper.py:TestLuigiWrappers.test_fastqln
 
-![FastqLn](https://raw.github.com/percyfal/pm/feature/luigi-tasks/pm/luigi/doc/test_fastqln.png)
+![FastqLn](https://raw.github.com/percyfal/ratatosk/master/doc/test_fastqln.png)
 	       
 	
 ### Alignment with bwa sampe ###
@@ -118,12 +112,12 @@ external task.
 
 	nosetests -v -s test_wrapper.py:TestLuigiWrappers.test_bwasampe
 
-![BwaSampe](https://raw.github.com/percyfal/pm/feature/luigi-tasks/pm/luigi/doc/test_bwasampe.png)
+![BwaSampe](https://raw.github.com/percyfal/ratatosk/master/doc/test_bwasampe.png)
 	
 ### Wrapping up metrics tasks ###
 
 The class
-[pm.luigi.picard.PicardMetrics](https://github.com/percyfal/pm/blob/feature/luigi-tasks/pm/luigi/picard.py#L145)
+[ratatosk.picard.PicardMetrics](https://github.com/percyfal/ratatosk/blob/master/ratatosk/picard.py)
 subclasses
 [luigi.WrapperTask](https://github.com/spotify/luigi/blob/master/luigi/task.py#L294)
 that can be used to require that several tasks have completed. Here
@@ -131,7 +125,7 @@ I've used it to group picard metrics tasks:
 
 	nosetests -v -s test_wrapper.py:TestLuigiWrappers.test_picard_metrics
 
-![PicardMetrics](https://raw.github.com/percyfal/pm/feature/luigi-tasks/pm/luigi/doc/test_picard_metrics.png)
+![PicardMetrics](https://raw.github.com/percyfal/ratatosk/master/doc/test_picard_metrics.png)
 
 This example utilizes a configuration file that links tasks together.
 More about that in the next example.
@@ -139,7 +133,7 @@ More about that in the next example.
 ### Working with parent tasks and configuration files ###
 
 All tasks have a default requirement, which I call `parent_task`. In
-the current implementation, all tasks subclass `pm.luigi.job.JobTask`,
+the current implementation, all tasks subclass `ratatosk.job.JobTask`,
 which provides a `parent_task` class variable. This variable can be
 changed, either at the command line (option `--parent-task`) or in a
 configuration file. The `parent_task` variable is a string
@@ -150,32 +144,32 @@ python code of choice. In addition to the `parent_task` variable,
 config file, which should be in yaml format (see
 [google app](https://developers.google.com/appengine/docs/python/config/appconfig)
 for nicely structured config files). By default, all `metrics`
-functions have as parent class `pm.luigi.picard.InputBamFile`. This
+functions have as parent class `ratatosk.picard.InputBamFile`. This
 can easily be modified in the config file to:
 
 	picard:
 	  # input_bam_file "pipes" input from other modules
 	  input_bam_file:
-	    parent_task: pm.luigi.samtools.SamToBam
+	    parent_task: ratatosk.samtools.SamToBam
       hs_metrics:
-        parent_task: pm.luigi.picard.SortSam
+        parent_task: ratatosk.picard.SortSam
         targets: targets.interval_list
         baits: targets.interval_list
       duplication_metrics:
-        parent_task: pm.luigi.picard.SortSam
+        parent_task: ratatosk.picard.SortSam
       alignment_metrics:
-        parent_task: pm.luigi.picard.SortSam
+        parent_task: ratatosk.picard.SortSam
       insert_metrics:
-        parent_task: pm.luigi.picard.SortSam
+        parent_task: ratatosk.picard.SortSam
   
     samtools:
       samtobam:
-        parent_task: tests.luigi.test_wrapper.SampeToSamtools
+        parent_task: tests.test_wrapper.SampeToSamtools
 
 Note also that `input_bam_file` has been changed to depend on
-`pm.luigi.samtools.SamToBam` (default value is
-`pm.luigi.external.BamFile`). In addition, the parent task to
-`pm.luigi.samtools.SamToBam` has been changed to
+`ratatosk.samtools.SamToBam` (default value is
+`ratatosk.external.BamFile`). In addition, the parent task to
+`ratatosk.samtools.SamToBam` has been changed to
 `tests.luigi.test_wrapper.SampeToSamtools`, a class defined in the
 test as
 
@@ -191,7 +185,7 @@ connecting tasks' as these.
 ## Example scripts  ##
 
 There are also a couple of example scripts in
-[pm.luigi.examples](https://github.com/percyfal/pm/tree/feature/luigi-tasks/pm/luigi/examples).
+[ratatosk.examples](https://github.com/percyfal/ratatosk/tree/master/examples)
 The following examples show how to modify behaviour with configuration
 files and custom classes. Note that currently you'll need to modify
 the reference paths in the config files manually to point to the
@@ -210,21 +204,21 @@ The basic configuration setting is
     picard:
       # input_bam_file "pipes" input from other modules
       input_bam_file:
-        parent_task: pm.luigi.samtools.SamToBam
+        parent_task: ratatosk.samtools.SamToBam
       hs_metrics:
-        parent_task: pm.luigi.picard.SortSam
-        targets: ../../../tests/luigi/targets.interval_list
-        baits: ../../../tests/luigi/targets.interval_list
+        parent_task: ratatosk.picard.SortSam
+        targets: ../../../tests/targets.interval_list
+        baits: ../../../tests/targets.interval_list
       duplication_metrics:
-        parent_task: pm.luigi.picard.SortSam
+        parent_task: ratatosk.picard.SortSam
       alignment_metrics:
-        parent_task: pm.luigi.picard.SortSam
+        parent_task: ratatosk.picard.SortSam
       insert_metrics:
-        parent_task: pm.luigi.picard.SortSam
+        parent_task: ratatosk.picard.SortSam
     
     samtools:
       samtobam:
-        parent_task: pm.luigi.samtools.SampeToSamtools
+        parent_task: ratatosk.samtools.SampeToSamtools
 
 
 ### Basic align seqcap pipeline ###
@@ -235,7 +229,7 @@ In examples directory, running
 	
 will execute a basic analysis pipeline:
 
-![AlignSeqcap](https://raw.github.com/percyfal/pm/feature/luigi-tasks/pm/luigi/doc/example_align_seqcap.png)
+![AlignSeqcap](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap.png)
 
 ### Adding adapter trimming  ###
 
@@ -243,7 +237,7 @@ Changing the following configuration section (see `align_adapter_trim_seqcap.yam
 
 	bwa:
 	  aln:
-        parent_task: pm.luigi.cutadapt.CutadaptJobTask
+        parent_task: ratatosk.cutadapt.CutadaptJobTask
 
 and running 
 
@@ -254,7 +248,7 @@ runs the same pipeline as before, but on adapter-trimmed data.
 ### Merging samples over several runs ###
 
 Sample *P001_101_index3* has data from two separate runs that should
-be merged. The class `pm.luigi.picard.MergeSamFiles` merges sample_run
+be merged. The class `ratatosk.picard.MergeSamFiles` merges sample_run
 files and places the result in the sample directory. The
 implementation currently depends on the directory structure
 'sample/fc1', sample/fc2' etc.
@@ -263,7 +257,7 @@ implementation currently depends on the directory structure
 
 results in 
 
-![AlignSeqcapMerge](https://raw.github.com/percyfal/pm/feature/luigi-tasks/pm/luigi/doc/example_align_seqcap_merge.png)
+![AlignSeqcapMerge](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap_merge.png)
 
 See `align_seqcap_merge.yaml` for relevant changes. Note that in this
 implementation the merged files end up directly in the sample
@@ -281,17 +275,15 @@ added the following class:
 	class HsMetricsNonDup(HsMetrics):
 		"""Run on non-deduplicated data"""
 		_config_subsection = "hs_metrics_non_dup"
-		parent_task = luigi.Parameter(default="pm.luigi.picard.DuplicationMetrics")
+		parent_task = luigi.Parameter(default="ratatosk.picard.DuplicationMetrics")
 
 The `picard` configuration section in the configuration file
 `align_seqcap_custom.yaml` now has a new subsection:
 
 	hs_metrics_non_dup:
 		parent_task:
-		# FIXME: inheritance!
-		# Unfortunately need to set this again
-		targets: ../../../tests/luigi/targets.interval_list
-		baits: ../../../tests/luigi/targets.interval_list
+		targets: ../../../tests/targets.interval_list
+		baits: ../../../tests/targets.interval_list
 
 Running 
 
@@ -299,7 +291,7 @@ Running
 	
 will add hybrid selection calculation on non-deduplicated bam file for sample *P001_102_index6*:
 
-![CustomDedup](https://raw.github.com/percyfal/pm/feature/luigi-tasks/pm/luigi/doc/example_align_seqcap_custom_dup.png)
+![CustomDedup](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap_custom_dup.png)
 
 ## Implementation ##
 
@@ -308,7 +300,7 @@ expect many changes in near future.
 
 ### Basic job task ###
 
-`pm.luigi.job` defines, among other things, a *default shell job
+`ratatosk.job` defines, among other things, a *default shell job
 runner*, which is a wrapper for running tasks in shell, and a *base
 job task* that subclasses `luigi.Task`. The base job task implements a
 couple of functions that are essential for general behaviour:
@@ -333,23 +325,23 @@ couple of functions that are essential for general behaviour:
 
 ### Program modules ###
 
-`pm.luigi` submodules are named after the application/program to be
-run (e.g. `pm.luigi.bwa` for `bwa`). For consistency, the modules
+`ratatosk` submodules are named after the application/program to be
+run (e.g. `ratatosk.bwa` for `bwa`). For consistency, the modules
 shoud contain
 
 1. a **job runner** that subclasses
-   `pm.luigi.job.DefaultShellJobRunner`. The runner specifies how the
+   `ratatosk.job.DefaultShellJobRunner`. The runner specifies how the
    program is run
    
-2. **input** file task(s) that subclass `pm.luigi.job.JobTask` and
-   that depend on external tasks in `pm.luigi.external`. The idea is
+2. **input** file task(s) that subclass `ratatosk.job.JobTask` and
+   that depend on external tasks in `ratatosk.external`. The idea is
    that all acceptable file formats be defined as external inputs, and
    that parent tasks therefore must use one/any of these inputs
    
-3. a **main job task** that subclasses `pm.luigi.job.JobTask` and has
+3. a **main job task** that subclasses `ratatosk.job.JobTask` and has
    as default parent task one of the inputs (previous point). The
    `_config_section` should be set to the module name (e.g. `bwa` for
-   `pm.luigi.bwa`). It should also return the *job runner* defined in 1.
+   `ratatosk.bwa`). It should also return the *job runner* defined in 1.
    
 4. **tasks** that subclass the *main job task*. The
    `_config_subsection` should represent the task name in some way
@@ -374,7 +366,7 @@ environment.
 * Command-line options should override settings in config file - not
   sure if that currently is the case
 
-* UPSTREAM? in `pm.luigi.job.DefaultShellJobRunner._fix_paths`,
+* UPSTREAM? in `ratatosk.job.DefaultShellJobRunner._fix_paths`,
   `a.move(b)` doesn't work (I modelled this after
   [luigi hadoop_jar](https://github.com/spotify/luigi/blob/master/luigi/hadoop_jar.py#L63))
 
@@ -385,7 +377,7 @@ environment.
 * The previous issue is related to the wish for a dry run: basically
   want to generate a picture of the workflow
   
-* Add pm.luigi.pipelines in which pipeline wrappers are put. In the
+* Add ratatosk.pipelines in which pipeline wrappers are put. In the
   main script then import different pre-defined pipelines so one could
   change them via the command line following luigi rules
   
@@ -409,9 +401,8 @@ environment.
 * Instead of `bwaref` etc for setting alignment references, utilise
   cloudbiolinux/tool-data
 
-* Make `pm.luigi` a separate module, independent of `pm`? If so, there
-  are two dependencies that should removed and implemented in the
-  separate module:
+* There still are two lingering dependencies from `pm` that should
+  removed and implemented in the separate module:
   
   - YAML configuration parser (currently in
 	[pm.ext.ext_yamlconfigparser.py](https://github.com/percyfal/pm/blob/feature/luigi-tasks/pm/ext/ext_yamlconfigparser.py))
@@ -420,7 +411,7 @@ environment.
      from the cement package
 
 * DONE? Fix path handling so relative paths can be used (see e.g. run method in
-  [fastq](https://github.com/percyfal/pm/blob/feature/luigi-tasks/pm/luigi/fastq.py))
+  [fastq](https://github.com/percyfal/ratatosk/blob/master/ratatosk/fastq.py))
   
 * Implement class validation of `parent_task`. Currently, any code can
   be used, but it would be nice if the class be validated against the
