@@ -12,6 +12,11 @@ import ratatosk.picard as PICARD
 import ratatosk.gatk as GATK
 import ratatosk.cutadapt as CUTADAPT
 import ratatosk.external
+
+# FIXME: Want to get rid of these in the application
+gatk_msg = "No GATK_HOME variable set; export and set it to GATK root directory"
+picard_msg = "No PICARD_HOME variable set; export and set it to PICARD root directory"
+
 # Check for ngstestdata
 ngsloadmsg = "No ngstestdata module; skipping test. Do a 'git clone https://github.com/percyfal/ngs.test.data' followed by 'python setup.py install'"
 has_ngstestdata = False
@@ -21,6 +26,10 @@ try:
 except:
     pass
 
+# Currently need to check for GATK_HOME and PICARD_HOME
+has_gatk = os.getenv("GATK_HOME") is not None
+has_picard = os.getenv("PICARD_HOME") is not None
+
 logger = logging.getLogger('luigi-interface')
 
 bwa = "bwa"
@@ -29,8 +38,8 @@ samtools = "samtools"
 if has_ngstestdata:
     bwaref = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "bwa", "chr11.fa"))
     bwaseqref = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "seq", "chr11.fa"))
-    indir = os.path.relpath(os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX"))
-    projectdir = os.path.relpath(os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01"))
+    indir = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX"))
+    projectdir = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "projects", "J.Doe_00_01"))
     sample = "P001_101_index3_TGACCA_L001"
     fastq1 = os.path.join(indir, sample + "_R1_001.fastq.gz")
     fastq2 = os.path.join(indir, sample + "_R2_001.fastq.gz")
@@ -54,12 +63,14 @@ def _luigi_args(args):
     return args
 
 def _make_file_links():
-    if not os.path.exists(os.path.basename(fastq1)):
-        os.symlink(fastq1, os.path.basename(fastq1))
-    if not os.path.exists(os.path.basename(fastq2)):
-        os.symlink(fastq2, os.path.basename(fastq2))
+    if not os.path.lexists(os.path.join(os.curdir, os.path.basename(fastq1))):
+        os.symlink(fastq1, os.path.join(os.curdir, os.path.basename(fastq1)))
+    if not os.path.lexists(os.path.join(os.curdir, os.path.basename(fastq2))):
+        os.symlink(fastq2, os.path.join(os.curdir, os.path.basename(fastq2)))
     
 @unittest.skipIf(not has_ngstestdata, ngsloadmsg)
+@unittest.skipIf(not has_gatk, gatk_msg)
+@unittest.skipIf(not has_picard, picard_msg)
 class TestLuigiWrappers(unittest.TestCase):
     # @classmethod
     # def tearDownClass(cls):
@@ -77,7 +88,6 @@ class TestLuigiWrappers(unittest.TestCase):
         luigi.run(_luigi_args(['--fastq', fastq1, '--config-file', localconf]), main_task_cls=FASTQ.FastqFileLink)
 
     def test_bwaaln(self):
-        _make_file_links()
         luigi.run(_luigi_args(['--fastq', fastq1, '--config-file', localconf]), main_task_cls=BWA.BwaAln)
         luigi.run(_luigi_args(['--fastq', fastq2, '--config-file', localconf]), main_task_cls=BWA.BwaAln)
 
@@ -91,24 +101,31 @@ class TestLuigiWrappers(unittest.TestCase):
     # BWA.BwaSampe has been run. See below for putting different
     # modules together.
     def test_sortbam(self):
+        _make_file_links()
         luigi.run(_luigi_args(['--bam', bam, '--config-file', localconf]), main_task_cls=SAM.SortBam)
 
     def test_picard_sortbam(self):
+        _make_file_links()
         luigi.run(_luigi_args(['--bam', bam, '--config-file', localconf]), main_task_cls=PICARD.SortSam)
 
     def test_picard_alignmentmetrics(self):
+        _make_file_links()
         luigi.run(_luigi_args(['--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref), '--config-file', localconf]), main_task_cls=PICARD.AlignmentMetrics)
 
     def test_picard_insertmetrics(self):
+        _make_file_links()
         luigi.run(_luigi_args(['--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref), '--config-file', localconf]), main_task_cls=PICARD.InsertMetrics)
 
     def test_picard_dupmetrics(self):
+        _make_file_links()
         luigi.run(_luigi_args(['--bam', sortbam, '--config-file', localconf]), main_task_cls=PICARD.DuplicationMetrics)
 
     def test_picard_hsmetrics(self):
+        _make_file_links()
         luigi.run(_luigi_args(['--bam', sortbam, '--config-file', localconf]), main_task_cls=PICARD.HsMetrics)
 
     def test_gatk_ug(self):
+        _make_file_links()
         luigi.run(_luigi_args(['--bam', sortbam, '--config-file', localconf]), main_task_cls=GATK.UnifiedGenotyper)
 
     def test_picard_metrics(self):
@@ -120,6 +137,8 @@ class TestLuigiWrappers(unittest.TestCase):
         luigi.run(_luigi_args(['--fastq', os.path.basename(fastq1), '--config-file', localconf]), main_task_cls=CUTADAPT.CutadaptJobTask)
 
 @unittest.skipIf(not has_ngstestdata, ngsloadmsg)        
+@unittest.skipIf(not has_gatk, gatk_msg)
+@unittest.skipIf(not has_picard, picard_msg)
 class TestLuigiParallel(unittest.TestCase):
     def test_bwa_samples(self):
         pass
@@ -172,12 +191,14 @@ class SampeToSamtools(SAM.SamToBam):
                             sai2=os.path.join(self.sam.replace(".sam", BWA.BwaSampe().read2_suffix + ".sai")))
 
 @unittest.skipIf(not has_ngstestdata, ngsloadmsg)
+@unittest.skipIf(not has_gatk, gatk_msg)
+@unittest.skipIf(not has_picard, picard_msg)
 class TestLuigiPipelines(unittest.TestCase):
     def test_sampe_to_samtools(self):
         luigi.run(_luigi_args(['--sam', sam, '--config-file', localconf]), main_task_cls=SampeToSamtools)
 
     def test_sampe_to_samtools_sort(self):
-        luigi.run(_luigi_args(['--bam', bam, '--indir', indir, '--config-file', localconf]), main_task_cls=SAM.SortBam)
+        luigi.run(_luigi_args(['--bam', bam, '--config-file', localconf]), main_task_cls=SAM.SortBam)
 
     def test_sampe_to_picard_sort(self):
-        luigi.run(_luigi_args(['--bam', bam, '--indir', indir, '--config-file', localconf]), main_task_cls=PICARD.SortSam)
+        luigi.run(_luigi_args(['--bam', bam, '--config-file', localconf]), main_task_cls=PICARD.SortSam)
