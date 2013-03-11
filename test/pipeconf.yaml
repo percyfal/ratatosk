@@ -1,0 +1,34 @@
+# section parameter values either affect the exe application or
+# correspond to global application parameters
+bwa:
+  bwaref: ../../../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
+  input_fastq_file:
+    parent_task: pm.luigi.fastq.FastqFileLink
+
+fastq:
+  link:
+    indir: ../../../ngs_test_data/data/projects/J.Doe_00_01/P001_101_index3/121015_BB002BBBXX
+
+gatk:
+  unifiedgenotyper:
+    ref: ../data/genomes/Hsapiens/hg19/seq/chr11.fa
+
+picard:
+  # input_bam_file "pipes" input from other modules
+  input_bam_file:
+    parent_task: pm.luigi.samtools.SamToBam
+  hs_metrics:
+    parent_task: pm.luigi.picard.SortSam
+    targets: targets.interval_list
+    baits: targets.interval_list
+  duplication_metrics:
+    parent_task: pm.luigi.picard.SortSam
+  alignment_metrics:
+    parent_task: pm.luigi.picard.SortSam
+  insert_metrics:
+    parent_task: pm.luigi.picard.SortSam
+
+
+samtools:
+  samtobam:
+    parent_task: tests.luigi.test_wrapper.SampeToSamtools
