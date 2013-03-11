@@ -69,7 +69,7 @@ class SamtoolsJobTask(JobTask):
             return cls(sam=self.sam)
 
 class SamToBam(SamtoolsJobTask):
-    _config_subsection = "samtobam"
+    _config_subsection = "SamToBam"
     options = luigi.Parameter(default="-bSh")
     parent_task = luigi.Parameter(default="ratatosk.samtools.InputSamFile")
     sam = luigi.Parameter(default=None)

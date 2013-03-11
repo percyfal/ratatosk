@@ -80,7 +80,7 @@ class DefaultShellJobRunner(JobRunner):
             raise Exception("Job '{}' failed: \n{}".format(' '.join(arglist), " ".join([stderr])))
                 
 class BaseJobTask(luigi.Task):
-    config_file = luigi.Parameter(is_global=True, default=os.path.join(os.getenv("HOME"), ".pm2", "jobconfig.yaml"))
+    config_file = luigi.Parameter(is_global=True, default=os.path.join(os.getenv("HOME"), ".ratatosk/ratatosk.yaml"))
     options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default=None)
     num_threads = luigi.Parameter(default=1)

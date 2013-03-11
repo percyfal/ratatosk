@@ -93,8 +93,7 @@ class YAMLParserConfigHandler(config.CementConfigHandler):
             self.read(file_path)
             return True
         else:
-            LOG.debug("config file '%s' does not exist, skipping..." % \
-                      file_path)
+            logger.debug("config file '{}' does not exist, skipping...".format(file_path))
             return False
      
     def keys(self, section, subsection=None):

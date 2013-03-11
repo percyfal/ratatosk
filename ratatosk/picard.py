@@ -78,7 +78,7 @@ class PicardJobTask(JobTask):
         return cls(bam=self.bam)
 
 class SortSam(PicardJobTask):
-    _config_subsection = "sortsam"
+    _config_subsection = "SortSam"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default="SO=coordinate MAX_RECORDS_IN_RAM=750000")
     label = luigi.Parameter(default=".sort")
@@ -94,7 +94,7 @@ class SortSam(PicardJobTask):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()]
 
 class MergeSamFiles(PicardJobTask):
-    _config_subsection = "merge_sam_files"
+    _config_subsection = "MergeSamFiles"
     # bam is the target, i.e. is *one* file
     bam = luigi.Parameter(default=None)
     sample = luigi.Parameter(default=None)
@@ -125,7 +125,7 @@ class MergeSamFiles(PicardJobTask):
         return bam_list
     
 class AlignmentMetrics(PicardJobTask):
-    _config_subsection = "alignment_metrics"
+    _config_subsection = "AlignmentMetrics"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
     
@@ -137,7 +137,7 @@ class AlignmentMetrics(PicardJobTask):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()]
 
 class InsertMetrics(PicardJobTask):
-    _config_subsection = "insert_metrics"
+    _config_subsection = "InsertMetrics"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
     
@@ -150,7 +150,7 @@ class InsertMetrics(PicardJobTask):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()[0], "HISTOGRAM_FILE=", self.output()[1]]
 
 class DuplicationMetrics(PicardJobTask):
-    _config_subsection = "duplication_metrics"
+    _config_subsection = "DuplicationMetrics"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
 
@@ -166,7 +166,7 @@ class DuplicationMetrics(PicardJobTask):
         return ["INPUT=", self.input(), "OUTPUT=", self.output(), "METRICS_FILE=", self.output().fn.replace(".bam", ".dup_metrics")]
 
 class HsMetrics(PicardJobTask):
-    _config_subsection = "hs_metrics"
+    _config_subsection = "HsMetrics"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
     baits = luigi.Parameter(default=None)

@@ -127,6 +127,7 @@ class IndelRealigner(GATKJobTask):
     _config_subsection = "IndelRealigner"
     bam = luigi.Parameter(default=None)
     known = luigi.Parameter(default=[], is_list=True)
+    label = luigi.Parameter(default=".realign")
     parent_task = luigi.Parameter(default="ratatosk.gatk.InputBamFile")
 
     def main(self):
@@ -134,11 +135,11 @@ class IndelRealigner(GATKJobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        return {'input_bam' : cls(bam=self.bam), 
-                'intervals' : RealignmentTargetCreator(bam=self.bam)}
+        return {'input_bam' : cls(bam=self.bam.replace(self.label, "")), 
+                'intervals' : RealignmentTargetCreator(bam=self.bam.replace(self.label, ""))}
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input()['input_bam'].fn).replace(".bam", ".realign.bam"))
+        return luigi.LocalTarget(os.path.abspath(self.input()['input_bam'].fn).replace(".bam", "{}.bam".format(self.label)))
 
     def opts(self):
         retval = self.options if self.options else ""
@@ -152,7 +153,7 @@ class IndelRealigner(GATKJobTask):
         return ["-I", self.input()['input_bam'], "-o", self.output(), "--targetIntervals", self.input()['intervals']]
 
 class BaseRecalibrator(GATKJobTask):
-    _config_subsection = "baserecalibrator"
+    _config_subsection = "BaseRecalibrator"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
     knownSites = luigi.Parameter(default=[])
@@ -178,7 +179,7 @@ class BaseRecalibrator(GATKJobTask):
         return [cls(bam=self.bam), ratatosk.samtools.IndexBam(bam=self.bam)]
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".recal_data.grp"))
+        return luigi.LocalTarget(os.path.abspath(self.input()[0].fn).replace(".bam", ".recal_data.grp"))
     
     def args(self):
         return ["-I", self.input()[0], "-o", self.output()]
@@ -302,7 +303,7 @@ class VariantEval(GATKJobTask):
 
         
 class UnifiedGenotyper(GATKJobTask):
-    _config_subsection = "unifiedgenotyper"
+    _config_subsection = "UnifiedGenotyper"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default="-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH")
 
