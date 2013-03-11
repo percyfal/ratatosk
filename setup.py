@@ -28,6 +28,7 @@ setup(name = "ratatosk",
         "drmaa >= 0.5",
         "mock",
         "luigi",
+        "cement",
         "nose"
         ],
       test_suite = 'nose.collector',
