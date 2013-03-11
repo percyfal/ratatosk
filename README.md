@@ -195,11 +195,11 @@ one of which (P001_101) has data from two flowcell runs.
 The basic configuration setting is 
 
     bwa:
-      bwaref: ../../../../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
+      bwaref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
     
     gatk:
       unifiedgenotyper:
-        ref: ../../../../ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
+        ref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
     
     picard:
       # input_bam_file "pipes" input from other modules
@@ -207,8 +207,8 @@ The basic configuration setting is
         parent_task: ratatosk.samtools.SamToBam
       hs_metrics:
         parent_task: ratatosk.picard.SortSam
-        targets: ../../../tests/targets.interval_list
-        baits: ../../../tests/targets.interval_list
+        targets: ../test/targets.interval_list
+        baits: ../test/targets.interval_list
       duplication_metrics:
         parent_task: ratatosk.picard.SortSam
       alignment_metrics:
@@ -282,8 +282,8 @@ The `picard` configuration section in the configuration file
 
 	hs_metrics_non_dup:
 		parent_task:
-		targets: ../../../tests/targets.interval_list
-		baits: ../../../tests/targets.interval_list
+		targets: ../test/targets.interval_list
+		baits: ../test/targets.interval_list
 
 Running 
 
