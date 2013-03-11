@@ -1,8 +1,8 @@
 import logging
-from pm.ext import ext_yamlconfigparser
+import ratatosk.yamlconfigparser as yamlconfigparser
 
 def setup_interface_logging():
-    # From luigi.interface - setup pm-specific logging interface?
+    # From luigi.interface - setup ratatosk-specific logging interface?
     # use a variable in the function object to determine if it has run before
     if getattr(setup_interface_logging, "has_run", False):
         return
@@ -20,11 +20,11 @@ def setup_interface_logging():
     setup_interface_logging.has_run = True
 
 def setup_config_handler():
-    return ext_yamlconfigparser.YAMLParserConfigHandler
+    return yamlconfigparser.YAMLParserConfigHandler
 
 def get_config(config_file=None):
     """Copied from luigi.interface. This part needs rethinking. In
     particular, rewrite ConfigParser to subclass RawConfigParser?"""
-    config_parser = ext_yamlconfigparser.YAMLParserConfigHandler()
+    config_parser = yamlconfigparser.YAMLParserConfigHandler()
     config_parser.parse_file(config_file)
     return config_parser

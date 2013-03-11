@@ -401,11 +401,13 @@ environment.
 * Instead of `bwaref` etc for setting alignment references, utilise
   cloudbiolinux/tool-data
 
-* There still are two lingering dependencies from `pm` that should
-  removed and implemented in the separate module:
+* Modules `server.py`, the subdirectory `static`, and the daemon are
+  more or less copies from `luigi`.
+
+* There is still a dependency on `cement` that should be removed:
   
   - YAML configuration parser (currently in
-	[pm.ext.ext_yamlconfigparser.py](https://github.com/percyfal/pm/blob/feature/luigi-tasks/pm/ext/ext_yamlconfigparser.py))
+	[ratatosk.yamlconfigparser.py](https://github.com/percyfal/ratatosk/blob/master/ratatosk/yamlconfigparser.py)
   - shell commands are wrapped with
 	[shell.exec_cmd](https://github.com/cement/cement/blob/master/cement/utils/shell.py#L8)
      from the cement package
