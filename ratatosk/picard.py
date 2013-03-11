@@ -7,6 +7,7 @@ import ratatosk.external
 from ratatosk.job import JobTask, DefaultShellJobRunner
 from cement.utils import shell
 
+# TODO: make these configurable 
 JAVA="java"
 JAVA_OPTS="-Xmx2g"
 PICARD_HOME=os.getenv("PICARD_HOME")
@@ -14,9 +15,7 @@ PICARD_HOME=os.getenv("PICARD_HOME")
 logger = logging.getLogger('luigi-interface')
 
 class PicardJobRunner(DefaultShellJobRunner):
-    # TODO: make this configurable 
     path = PICARD_HOME
-
     def run_job(self, job):
         if not job.jar() or not os.path.exists(os.path.join(self.path,job.jar())):
             logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),

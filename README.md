@@ -20,7 +20,6 @@ to create a virtual environment.
 To install the development version of `ratatosk`, do
 	
 	git clone https://github.com/percyfal/ratatosk
-	git fetch origin
 	python setup.py develop
 
 ### Dependencies ###
@@ -41,6 +40,9 @@ The tests depend on the following software to run:
    variable `PICARD_HOME` to point to your installation path
 5. [cutadapt](http://code.google.com/p/cutadapt/) - install with `pip
    install cutadapt`
+6. [fastqc](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+
+
 
 You also need to install the test data set:
 
@@ -363,6 +365,8 @@ that level as lists/dicts/variables.
 NB: many of the issues/ideas are relevant only to our compute
 environment.
 
+* Tests are not real unittests since they depend on oneanother
+
 * Command-line options should override settings in config file - not
   sure if that currently is the case
 
@@ -380,7 +384,10 @@ environment.
 * Add ratatosk.pipelines in which pipeline wrappers are put. In the
   main script then import different pre-defined pipelines so one could
   change them via the command line following luigi rules
-  
+
+* Check for program versions and command inconsistencies: for
+  instance, BaseRecalibrator was introduced in GATK 2.0
+
 * Pickling states doesn't currently seem to work?
 
 * File suffixes and string substitutions in file names are hard-coded.

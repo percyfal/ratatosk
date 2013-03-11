@@ -65,7 +65,6 @@ class DefaultShellJobRunner(JobRunner):
         
         arglist += job_args
         cmd = ' '.join(arglist)
-
         logger.info(cmd)
         (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)
         if returncode == 0:
@@ -229,7 +228,6 @@ class BaseJobTask(luigi.Task):
                             task.split(".")[-1]))
 
         for o_mod, o_cls in opt_mod:
-            print o_mod, o_cls
             try:
                 mod = __import__(o_mod, fromlist=[o_cls])
                 cls = getattr(mod, o_cls)

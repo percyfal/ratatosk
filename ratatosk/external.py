@@ -26,3 +26,9 @@ class FastqFile(luigi.ExternalTask):
 
     def output(self):
         return luigi.LocalTarget(os.path.abspath(self.fastq))
+
+class VcfFile(luigi.ExternalTask):
+    vcf = luigi.Parameter(default=None)
+
+    def output(self):
+        return luigi.LocalTarget(os.path.abspath(self.vcf))

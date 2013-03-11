@@ -11,6 +11,7 @@ import ratatosk.fastq as FASTQ
 import ratatosk.picard as PICARD
 import ratatosk.gatk as GATK
 import ratatosk.cutadapt as CUTADAPT
+import ratatosk.fastqc as FASTQC
 import ratatosk.external
 
 # FIXME: Want to get rid of these in the application
@@ -50,6 +51,11 @@ if has_ngstestdata:
     sam = os.path.join(sample + ".sam")
     bam = os.path.join(sample + ".bam")
     sortbam = os.path.join(sample + ".sort.bam")
+    realignbam = os.path.join(sample + ".sort.realign.bam")
+    recalbam = os.path.join(sample + ".sort.realign.recal.bam")
+    clipbam = os.path.join(sample + ".sort.realign.recal.clip.bam")
+    clipvcf = os.path.join(sample + ".sort.realign.recal.clip.vcf")
+    filteredvcf = os.path.join(sample + ".sort.realign.recal.clip.filtered.vcf")
 
 localconf = "pipeconf.yaml"
 local_scheduler = '--local-scheduler'
@@ -135,6 +141,38 @@ class TestLuigiWrappers(unittest.TestCase):
     def test_cutadapt(self):
         _make_file_links()
         luigi.run(_luigi_args(['--fastq', os.path.basename(fastq1), '--config-file', localconf]), main_task_cls=CUTADAPT.CutadaptJobTask)
+        
+    def test_fastqc(self):
+        _make_file_links()
+        luigi.run(_luigi_args(['--seqfile', os.path.basename(fastq1), '--config-file', localconf]), main_task_cls=FASTQC.FastQCJobTask)
+
+    # Depends on previous tasks (sortbam) - bam must be present
+    def test_realignment_target_creator(self):
+        luigi.run(_luigi_args(['--bam', os.path.basename(sortbam), '--config-file', localconf]), main_task_cls=GATK.RealignmentTargetCreator)
+
+    def test_indel_realigner(self):
+        luigi.run(_luigi_args(['--bam', os.path.basename(sortbam), '--config-file', localconf]), main_task_cls=GATK.IndelRealigner)
+
+    def test_base_recalibrator(self):
+        luigi.run(_luigi_args(['--bam', os.path.basename(realignbam), '--config-file', localconf]), main_task_cls=GATK.BaseRecalibrator)
+
+    def test_print_reads(self):
+        luigi.run(_luigi_args(['--bam', os.path.basename(realignbam), '--config-file', localconf]), main_task_cls=GATK.PrintReads)
+
+    def test_clip_reads(self):
+        luigi.run(_luigi_args(['--bam', os.path.basename(recalbam), '--config-file', localconf]), main_task_cls=GATK.ClipReads)
+
+    # TODO: Test vcf outputs
+    def test_unified_genotyper(self):
+        luigi.run(_luigi_args(['--bam', os.path.basename(clipbam), '--config-file', localconf]), main_task_cls=GATK.UnifiedGenotyper)
+
+    def test_variant_filtration(self):
+        luigi.run(_luigi_args(['--vcf', os.path.basename(clipvcf), '--config-file', localconf]), main_task_cls=GATK.VariantFiltration)
+
+    def test_variant_evaluation(self):
+        luigi.run(_luigi_args(['--vcf', os.path.basename(filteredvcf), '--config-file', localconf]), main_task_cls=GATK.VariantEval)
+
+
 
 @unittest.skipIf(not has_ngstestdata, ngsloadmsg)        
 @unittest.skipIf(not has_gatk, gatk_msg)

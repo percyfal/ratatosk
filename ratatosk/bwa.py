@@ -94,7 +94,8 @@ class BwaSampe(BwaJobTask):
         fastq2 = luigi.LocalTarget(sai2.fn.replace(".sai", ".fastq.gz"))
         if not self.read_group:
             foo = sai1.fn.replace(".sai", "")
-            self.read_group = "-r \"{}\"".format("\t".join(["@RG", "ID:{}".format(foo), "SM:{}".format(foo)]))
+            # The platform should be configured elsewhere
+            self.read_group = "-r \"{}\"".format("\t".join(["@RG", "ID:{}".format(foo), "SM:{}".format(foo), "PL:Illumina"]))
         return [self.read_group, self.bwaref, sai1, sai2, fastq1, fastq2, ">", self.output()]
 
     
