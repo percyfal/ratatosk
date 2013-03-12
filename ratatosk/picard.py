@@ -57,20 +57,19 @@ class PicardJobRunner(DefaultShellJobRunner):
 class InputBamFile(JobTask):
     _config_section = "picard"
     _config_subsection = "InputBamFile"
-    bam = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.external.BamFile")
     def requires(self):
         cls = self.set_parent_task()
-        return cls(bam=self.bam)
+        return cls(target=self.target)
     def output(self):
-        return luigi.LocalTarget(os.path.relpath(self.input().fn))
+        return luigi.LocalTarget(self.target)
     def run(self):
         pass
 
 class PicardJobTask(JobTask):
     _config_section = "picard"
     java_options = "-Xmx2g"
-    label = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.picard.InputBamFile")
 
     def jar(self):
@@ -95,14 +94,17 @@ class SortSam(PicardJobTask):
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default="SO=coordinate MAX_RECORDS_IN_RAM=750000")
     label = luigi.Parameter(default=".sort")
+    target_suffix = luigi.Parameter(default=".bam")
+    source_suffix = luigi.Parameter(default=".bam")
 
     def jar(self):
         return "SortSam.jar"
     def requires(self):
         cls = self.set_parent_task()
-        return cls(bam=self.bam.replace("{}.bam".format(self.label), ".bam"))
+        source = self._make_source_file_name()
+        return cls(target=source)
     def output(self):
-        return luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", "{}.bam".format(self.label)))
+        return luigi.LocalTarget(self.target)
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()]
 

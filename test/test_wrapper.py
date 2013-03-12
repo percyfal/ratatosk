@@ -65,28 +65,28 @@ class TestLuigiWrappers(unittest.TestCase):
             pass
 
     def test_fastqln(self):
-        luigi.run(_luigi_args(['--fastq', fastq1, '--config-file', localconf]), main_task_cls=FASTQ.FastqFileLink)
+        luigi.run(_luigi_args(['--target', fastq1, '--config-file', localconf]), main_task_cls=FASTQ.FastqFileLink)
 
     def test_bwaaln(self):
-        luigi.run(_luigi_args(['--fastq', fastq1, '--config-file', localconf]), main_task_cls=BWA.BwaAln)
-        luigi.run(_luigi_args(['--fastq', fastq2, '--config-file', localconf]), main_task_cls=BWA.BwaAln)
+        luigi.run(_luigi_args(['--target', sai1, '--config-file', localconf]), main_task_cls=BWA.BwaAln)
+        luigi.run(_luigi_args(['--target', sai2, '--config-file', localconf]), main_task_cls=BWA.BwaAln)
 
     # Will currently fail if links aren't present since it doesn't
     # know where the links come from (hence _make_file_links function)
     def test_bwasampe(self):
         _make_file_links()
-        luigi.run(_luigi_args(['--sai1', sai1, '--sai2', sai2, '--config-file', localconf]), main_task_cls=BWA.BwaSampe)
+        luigi.run(_luigi_args(['--target', sam, '--config-file', localconf]), main_task_cls=BWA.BwaSampe)
 
     # Also fails; depends on InputSamFile, which only exists if
     # BWA.BwaSampe has been run. See below for putting different
     # modules together.
     def test_sortbam(self):
         _make_file_links()
-        luigi.run(_luigi_args(['--bam', bam, '--config-file', localconf]), main_task_cls=SAM.SortBam)
+        luigi.run(_luigi_args(['--target', sortbam, '--config-file', localconf]), main_task_cls=SAM.SortBam)
 
     def test_picard_sortbam(self):
         _make_file_links()
-        luigi.run(_luigi_args(['--bam', bam, '--config-file', localconf]), main_task_cls=PICARD.SortSam)
+        luigi.run(_luigi_args(['--target', sortbam, '--config-file', localconf]), main_task_cls=PICARD.SortSam)
 
     def test_picard_alignmentmetrics(self):
         _make_file_links()
