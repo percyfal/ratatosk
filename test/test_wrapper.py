@@ -5,6 +5,7 @@ import unittest
 import luigi
 import time
 import logging
+from ratatosk.job import JobTask
 import ratatosk.bwa as BWA
 import ratatosk.samtools as SAM
 import ratatosk.fastq as FASTQ
@@ -164,3 +165,17 @@ class TestLuigiPipelines(unittest.TestCase):
 
     def test_sampe_to_picard_sort(self):
         luigi.run(_luigi_args(['--bam', bam, '--config-file', localconf]), main_task_cls=PICARD.SortSam)
+
+
+# Small test of workflow
+class Task1(JobTask):
+    parent_task = luigi.Parameter("ratatosk.external.Fastqfile")
+    def requires(self):
+        return ratatosk.external.Fastqfile()
+
+class TestLuigiInputOutput(unittest.TestCase):
+    def test_luigi_input_output(self):
+        #luigi.run(_luigi_args([]), main_task_cls=Task2)
+        pass
+
+    

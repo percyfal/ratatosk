@@ -27,35 +27,37 @@ class InputSamFile(JobTask):
     """Wrapper task that serves as entry point for samtools tasks that take sam file as input"""
     _config_section = "samtools"
     _config_subsection = "InputSamFile"
-    sam = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.external.SamFile")
 
     def requires(self):
         cls = self.set_parent_task()
-        return cls(sam=self.sam)
+        return cls(target=self.target)
     def output(self):
-        return luigi.LocalTarget(self.sam)
+        return luigi.LocalTarget(self.target)
 
 class InputBamFile(JobTask):
     """Wrapper task that serves as entry point for samtools tasks that take bam file as input"""
     _config_section = "samtools"
     _config_subsection = "InputBamFile"
-    bam = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.external.BamFile")
 
     def requires(self):
         cls = self.set_parent_task()
-        return cls(bam=self.bam)
+        return cls(target=self.target)
     def output(self):
-        return luigi.LocalTarget(self.bam)
+        return luigi.LocalTarget(self.target)
     
 class SamtoolsJobTask(JobTask):
     """Main samtools job task"""
     _config_section = "samtools"
-    sam = luigi.Parameter(default=None)
-    bam = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
+    #bam = luigi.Parameter(default=None)
     samtools = luigi.Parameter(default="samtools")
     parent_task = luigi.Parameter(default="ratatosk.samtools.InputSamFile")
+    target_suffix = luigi.Parameter(default=".bam")
+    source_suffix = luigi.Parameter(default=".bam")
 
     #    def __init__(self, *args, **kwargs):
     #         super(SamtoolsJobTask, self).__init__(*args, **kwargs)
@@ -73,47 +75,54 @@ class SamtoolsJobTask(JobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        if self.sam and not self.bam:
-            return cls(sam=self.sam)
-        elif self.bam and not self.sam:
-            return cls(bam=self.bam)
-        else:
-            logger.warn("Both sam file ('{0}') and bam file ('{1}') options set: using sam file argument".format(self.sam, self.bam))
-            return cls(sam=self.sam)
+        source = self._make_source_file_name()
+        return cls(target=source)
+        # if self.sam and not self.bam:
+        #     return cls(sam=self.sam)
+        # elif self.bam and not self.sam:
+        #     return cls(bam=self.bam)
+        # else:
+        #     logger.warn("Both sam file ('{0}') and bam file ('{1}') options set: using sam file argument".format(self.sam, self.bam))
+        #     return cls(sam=self.sam)
 
 class SamToBam(SamtoolsJobTask):
     _config_subsection = "SamToBam"
     options = luigi.Parameter(default="-bSh")
     parent_task = luigi.Parameter(default="ratatosk.samtools.InputSamFile")
-    sam = luigi.Parameter(default=None)
+    target_suffix = luigi.Parameter(default=".bam")
+    source_suffix = luigi.Parameter(default=".sam")
 
     def main(self):
         return "view"
 
     def requires(self):
         cls = self.set_parent_task()
-        return cls(sam=self.sam)
+        source = self._make_source_file_name()
+        return cls(target=source)
 
     def output(self):
-        if self.bam:
-            self.sam = self.bam.replace(".bam", ".sam")
-        return luigi.LocalTarget(os.path.abspath(self.sam).replace(".sam", ".bam"))
+        return luigi.LocalTarget(self.target)
 
     def args(self):
-        return [self.sam, ">", self.output()]
+        return [self.input().fn, ">", self.output()]
 
 class SortBam(SamtoolsJobTask):
     _config_subsection = "sortbam"
-    bam = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
+    target_suffix = luigi.Parameter(default=".bam")
+    source_suffix = luigi.Parameter(default=".bam")
+    label = luigi.Parameter(default=".sort")
     options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.samtools.SamToBam")
+    source = None
 
     def requires(self):
         cls = self.set_parent_task()
-        return SamToBam(sam=os.path.abspath(self.bam).replace(".bam", ".sam"))
+        self.source = self._make_source_file_name()
+        return SamToBam(target=self.source)
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.bam).replace(".bam", ".sort.bam"))
+        return luigi.LocalTarget(self.target)
 
     def main(self):
         return "sort"
@@ -123,30 +132,34 @@ class SortBam(SamtoolsJobTask):
 
     def args(self):
         output_prefix = luigi.LocalTarget(self.output().fn.replace(".bam", ""))
-        return [self.bam, output_prefix]
+        return [self.source, output_prefix]
 
 class IndexBam(SamtoolsJobTask):
     _config_subsection = "indexbam"
-    bam = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
+    target_suffix = luigi.Parameter(default=".bai")
+    source_suffix = luigi.Parameter(default=".bam")
     options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.samtools.InputBamFile")
-
+    source = None
     def requires(self):
         cls = self.set_parent_task()
-        return cls(bam=self.bam)
+        self.source = self._make_source_file_name()
+        print self.source
+        return cls(target=self.source)
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.bam).replace(".bam", ".bam.bai"))
+        return luigi.LocalTarget(self.target)
 
     def main(self):
         return "index"
 
     def args(self):
-        return [self.bam, self.output()]
+        return [self.source, self.output()]
 
 # "Connection" tasks
 import ratatosk.bwa as bwa
 class SampeToSamtools(SamToBam):
     def requires(self):
-        return bwa.BwaSampe(sai1=os.path.join(self.sam.replace(".sam", bwa.BwaSampe().read1_suffix + ".sai")),
-                            sai2=os.path.join(self.sam.replace(".sam", bwa.BwaSampe().read2_suffix + ".sai")))
+        source = self._make_source_file_name()
+        return bwa.BwaSampe(target=source)

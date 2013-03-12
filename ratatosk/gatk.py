@@ -116,7 +116,8 @@ class RealignmentTargetCreator(GATKJobTask):
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
     known = luigi.Parameter(default=[], is_list=True)
-    
+    suffix = luigi.Parameter(default=".intervals")
+
     def opts(self):
         retval = self.options if self.options else ""
         if not self.ref:
@@ -148,11 +149,10 @@ class IndelRealigner(GATKJobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        return {'input_bam' : cls(bam=self.bam.replace(self.label, "")), 
-                'intervals' : RealignmentTargetCreator(bam=self.bam.replace(self.label, ""))}
+        return (cls(bam=self.bam.replace("{}.bam".format(self.label), ".bam")), RealignmentTargetCreator(bam=self.bam.replace("{}.bam".format(self.label), ".bam")))
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input()['input_bam'].fn).replace(".bam", "{}.bam".format(self.label)))
+        return luigi.LocalTarget(self.input()[0].fn.replace(".bam", "{}.bam".format(self.label)))
 
     def opts(self):
         retval = self.options if self.options else ""
@@ -171,6 +171,7 @@ class BaseRecalibrator(GATKJobTask):
     options = luigi.Parameter(default=None)
     knownSites = luigi.Parameter(default=[])
     parent_task = luigi.Parameter(default="ratatosk.gatk.InputBamFile")
+    suffix = luigi.Parameter(default=".recal_data.grp")
 
     def main(self):
         return "BaseRecalibrator"
@@ -192,7 +193,7 @@ class BaseRecalibrator(GATKJobTask):
         return [cls(bam=self.bam), ratatosk.samtools.IndexBam(bam=self.bam)]
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input()[0].fn).replace(".bam", ".recal_data.grp"))
+        return luigi.LocalTarget(os.path.abspath(self.input()[0].fn).replace(".bam", self.suffix))
     
     def args(self):
         return ["-I", self.input()[0], "-o", self.output()]

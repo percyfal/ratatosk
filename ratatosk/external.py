@@ -23,33 +23,38 @@ import luigi
 import logging
 
 class BamFile(luigi.ExternalTask):
-    bam = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
+    label = luigi.Parameter(default=None)
 
     def output(self):
-        if not self.bam:
+        if not self.target:
             return None
-        return luigi.LocalTarget(os.path.abspath(self.bam))
+        return luigi.LocalTarget(os.path.abspath(self.target))
 
 class SamFile(luigi.ExternalTask):
-    sam = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
+    label = luigi.Parameter(default="")
+    use_label = False
 
     def output(self):
-        if not self.sam:
+        if not self.target:
             return None
-        return luigi.LocalTarget(os.path.abspath(self.sam))
+        return luigi.LocalTarget(os.path.abspath(self.target))
     
 class FastqFile(luigi.ExternalTask):
-    fastq = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
+    label = luigi.Parameter(default=None)
 
     def output(self):
-        if not self.fastq:
+        if not self.target:
             return None
-        return luigi.LocalTarget(os.path.abspath(self.fastq))
+        return luigi.LocalTarget(os.path.abspath(self.target))
 
 class VcfFile(luigi.ExternalTask):
-    vcf = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
+    label = luigi.Parameter(default=None)
 
     def output(self):
-        if not self.vcf:
+        if not self.target:
             return None
-        return luigi.LocalTarget(os.path.abspath(self.vcf))
+        return luigi.LocalTarget(os.path.abspath(self.target))

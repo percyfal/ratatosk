@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 import collections
+import luigi
 from cement.core import config
 
 # http://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
@@ -53,3 +54,35 @@ def config_to_dict(d):
             u[k] = v
     return u
         
+# Make a general utility function
+def replace_suffix(luigi_param, new_suffix=None):
+    """Replace suffix of input with new suffix. Old suffix is
+    calculated by os.path.splitext, so here we depend on file.txt
+    type file names.
+
+    :param luigi_param: luigi.Parameter object
+    """
+    if not new_suffix:
+        return luigi.LocalTarget(self.input().fn)
+    else:
+        return luigi.LocalTarget(os.path.splitext(x.fn) + new_suffix)
+
+# def add_label_to_input():
+#     """Add label to input which has been generated from the
+#     requires function. 
+#     """
+#     if isinstance(linput, list):
+#         if not .label:
+#             return [luigi.LocalTarget(x.fn) for x in self.input()]
+#         else:
+#             return [luigi.LocalTarget(os.path.splitext(x.fn)[0] + self.label + os.path.splitext(x.fn)[1]) for x in self.input()]
+#     else:
+#         if not self.label:
+#             return luigi.LocalTarget(self.input().fn)
+#         else:
+#             return luigi.LocalTarget(os.path.splitext(self.input().fn)[0] + self.label + os.path.splitext(self.input().fn))[1]
+# http://stackoverflow.com/questions/2556108/how-to-replace-the-last-occurence-of-an-expression-in-a-string
+
+def rreplace(s, old, new, occurrence):
+    li = s.rsplit(old, occurrence)
+    return new.join(li)
