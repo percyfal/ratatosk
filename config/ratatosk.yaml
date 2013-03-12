@@ -1,7 +1,7 @@
 # Main configuration file
 bwa:
-  # bwaref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
-  bwaref: ../../../genomes/Hsapiens/hg19/bwa/chr11.fa
+  bwaref: ../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
+  #bwaref: ../../../genomes/Hsapiens/hg19/bwa/chr11.fa
 
 samtools:
   SamToBam:

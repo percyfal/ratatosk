@@ -5,6 +5,7 @@ import unittest
 import luigi
 import time
 import logging
+from utils import has_ngstestdata, has_environment_variables
 import ratatosk.bwa as BWA
 import ratatosk.samtools as SAM
 import ratatosk.fastq as FASTQ
@@ -14,29 +15,17 @@ import ratatosk.cutadapt as CUTADAPT
 import ratatosk.fastqc as FASTQC
 import ratatosk.external
 
-# FIXME: Want to get rid of these in the application
-gatk_msg = "No GATK_HOME variable set; export and set it to GATK root directory"
-picard_msg = "No PICARD_HOME variable set; export and set it to PICARD root directory"
-
-# Check for ngstestdata
-ngsloadmsg = "No ngstestdata module; skipping test. Do a 'git clone https://github.com/percyfal/ngs.test.data' followed by 'python setup.py install'"
-has_ngstestdata = False
-try:
+has_ngsdata = has_ngstestdata()
+if has_ngsdata:
     import ngstestdata as ntd
-    has_ngstestdata = True
-except:
-    pass
 
-# Currently need to check for GATK_HOME and PICARD_HOME
-has_gatk = os.getenv("GATK_HOME") is not None
-has_picard = os.getenv("PICARD_HOME") is not None
+has_envvars = has_environment_variables()
 
 logger = logging.getLogger('luigi-interface')
 
 bwa = "bwa"
 samtools = "samtools"
-
-if has_ngstestdata:
+if has_ngsdata:
     bwaref = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "bwa", "chr11.fa"))
     bwaseqref = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "seq", "chr11.fa"))
     indir = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX"))
@@ -59,7 +48,7 @@ if has_ngstestdata:
 
 localconf = "pipeconf.yaml"
 local_scheduler = '--local-scheduler'
-process = os.popen("ps x -o pid,args | grep luigid | grep -v grep").read() #sometimes have to use grep -v grep
+process = os.popen("ps x -o pid,args | grep ratatoskd | grep -v grep").read() #sometimes have to use grep -v grep
 if process:
    local_scheduler = None
 

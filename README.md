@@ -295,6 +295,40 @@ will add hybrid selection calculation on non-deduplicated bam file for sample *P
 
 ![CustomDedup](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap_custom_dup.png)
 
+## Examples with *run_ratatosk.py* ##
+
+The installation procuder will install an executable script,
+`run_ratatosk.py`, in your search path. The script collects all tasks
+currently available in the ratatosk modules:
+
+    run_ratatosk.py  -h 
+    usage: run_ratatosk.py [-h] [--config-file CONFIG_FILE] [--lock]
+                           [--workers WORKERS] [--lock-pid-dir LOCK_PID_DIR]
+                           [--scheduler-host SCHEDULER_HOST] [--short-task-names]
+                           [--local-scheduler]
+                           
+                           {SortBam,IndexBam,BwaAlnWrapperTask,VariantEval,SamtoolsJobTask,PrintReads,ClipReads,DuplicationMetrics,RealignmentTargetCreator,BaseRecalibrator,InputSamFile,WrapperTask,PicardJobTask,InputVcfFile,GATKJobTask,InsertMetrics,PicardMetrics,InputFastqFile,EnvironmentParamsContainer,SortSam,AlignmentMetrics,Task,UnifiedGenotyper,BwaJobTask,VariantFiltration,BwaAln,HsMetrics,SamToBam,JobTask,BwaSampe,MergeSamFiles,InputBamFile,BaseJobTask,IndelRealigner,SampeToSamtools}
+                           ...
+
+
+To run a specific task, you use one of the positional arguments. In
+this way, it works much like a Makefile. There is one slight
+difference though. A make command resolves dependencies based on the
+desired *target* file name, so you would do `make target` to generate
+`target`. The tasks in ratatosk need input file names to generate
+requirements, so for instance to run BwaSampe, you would do:
+
+	run_ratatosk.py BwaSampe \
+	  --sai1 /path/to/ngs_test_data/data/projects/J.Doe_00_01/P001_101_index3/121015_BB002BBBXX/P001_101_index3_TGACCA_L001_R1_001.sai
+      --sai2 /path/to/ngs_test_data/data/projects/J.Doe_00_01/P001_101_index3/121015_BB002BBBXX/P001_101_index3_TGACCA_L001_R2_001.sai
+	  --config-file config/ratatosk.yaml
+	  
+There is (hopefully) an easy fix to this: add an option `--target` to
+`JobTask` (see issues).
+
+Here I've used a 'global' config file
+[ratatosk.yaml](https://github.com/percyfal/ratatosk/blob/master/config/ratatosk.yaml).
+
 ## Implementation ##
 
 The implementation is still under heavy development and testing so
@@ -376,7 +410,12 @@ environment.
 
 * Try: modify __repr__(Task) for better visualization in graphs, via a
   command line option. Currently the graphs include all options,
-  making it difficult to read
+  making it difficult to read. UPDATE: breaking the representation of
+  Task (equivalent to Task.task_id) breaks the dependency resolution.
+  This needs a fix in the code that generates the graphs.
+  
+* Add general task config option `--target` to mimic Make behaviour
+  more closely
   
 * The previous issue is related to the wish for a dry run: basically
   want to generate a picture of the workflow
