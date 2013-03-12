@@ -132,7 +132,9 @@ class RealignmentTargetCreator(GATKJobTask):
         return "RealignerTargetCreator"
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input()[0].fn).replace(".bam", ".intervals"))
+        #return luigi.LocalTarget(os.path.abspath(self.input()[0].fn).replace(".bam", ".intervals"))
+        return self.replace_suffix(".intervals")
+
 
     def args(self):
         return ["-I", self.input()[0], "-o", self.output()]
