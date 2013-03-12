@@ -329,6 +329,15 @@ There is (hopefully) an easy fix to this: add an option `--target` to
 Here I've used a 'global' config file
 [ratatosk.yaml](https://github.com/percyfal/ratatosk/blob/master/config/ratatosk.yaml).
 
+Incidentally, by supplying a 'dummy file', one can do a poor man's dry
+run, which will generate a graph over the dependencies:
+
+	run_ratatosk.py UnifiedGenotyper --bam dummy.bam --config config/ratatosk.yaml
+	
+will show the config as specified in the config file:
+
+![PoorMansDry](https://raw.github.com/percyfal/ratatosk/master/doc/ratatosk_poor_mans_dry.png)
+
 ## Implementation ##
 
 The implementation is still under heavy development and testing so

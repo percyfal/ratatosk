@@ -97,8 +97,6 @@ class BaseJobTask(luigi.Task):
     options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default=None)
     num_threads = luigi.Parameter(default=1)
-    # For grahps
-    short_task_names = luigi.Parameter(default=False, is_boolean=True, is_global=True)
     # Needed for merging samples; list of tuples (sample, sample_run)
     # sample_runs = luigi.Parameter(default=[], is_global=True)
     sample_runs = []
@@ -119,9 +117,6 @@ class BaseJobTask(luigi.Task):
         super(BaseJobTask, self).__init__(*args, **kwargs)
 
     def __repr__(self):
-        # if self.short_task_names:
-        #     return str(self.__class__)
-        # else:
         return self.task_id
 
     def _update_config(self, config_file, **kwargs):

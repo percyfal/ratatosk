@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import pm.luigi.server
+import ratatosk.server
 import luigi.process
 import optparse
 
@@ -11,6 +11,6 @@ parser.add_option('--pidfile', help='Write pidfile')
 opts, args = parser.parse_args()
 
 if opts.background:
-    luigi.process.daemonize(pm.luigi.server.run, pidfile=opts.pidfile)
+    luigi.process.daemonize(ratatosk.server.run, pidfile=opts.pidfile)
 else:
-    pm.luigi.server.run()
+    ratatosk.server.run()
