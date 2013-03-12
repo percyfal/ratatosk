@@ -104,7 +104,7 @@ class SamToBam(SamtoolsJobTask):
         return luigi.LocalTarget(self.target)
 
     def args(self):
-        return [self.input().fn, ">", self.output()]
+        return [self.input(), ">", self.output()]
 
 class SortBam(SamtoolsJobTask):
     _config_subsection = "sortbam"

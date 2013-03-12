@@ -8,7 +8,7 @@ from ratatosk.fastq import FastqFileLink
 class AlignSeqcap(luigi.WrapperTask):
     sample = luigi.Parameter(default=[], is_list=True)
     flowcell = luigi.Parameter(default=[], is_list=True)
-    label = luigi.Parameter(default=".sort.bam", description="label used for final output")
+    label = luigi.Parameter(default=".trimmed.sort.bam", description="label used for final output")
     project = luigi.Parameter()
     indir = luigi.Parameter()
 
@@ -28,7 +28,7 @@ class AlignSeqcap(luigi.WrapperTask):
                 if not os.path.exists(x[1]):
                     os.makedirs(x[1])
                 os.symlink(os.path.relpath(x[0], os.path.dirname(y)), y)
-        return [PicardMetrics(bam=y) for y in bam_list]
+        return [PicardMetrics(target=y.replace(".bam", "")) for y in bam_list]
 
     def run(self):
         print "Analysing files {}".format(self.input())
@@ -53,6 +53,7 @@ class AlignSeqcap(luigi.WrapperTask):
         bam_list = []
         for i in range(0, len(fastq_list), 2):
             bam_list.append(os.path.join(fastq_list[i][1], os.path.basename(fastq_list[i][0]).replace(".fastq.gz", self.label).replace("_R1_001", "")))
+        print bam_list
         return fastq_list, bam_list
 
 if __name__ == "__main__":

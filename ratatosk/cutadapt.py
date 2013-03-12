@@ -24,14 +24,14 @@ class CutadaptJobRunner(DefaultShellJobRunner):
 class InputFastqFile(JobTask):
     _config_section = "cutadapt"
     _config_subsection = "input_fastq_file"
-    fastq = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.external.FastqFile")
     
     def requires(self):
         cls = self.set_parent_task()
-        return cls(fastq=self.fastq)
+        return cls(target=self.target)
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input().fn))
+        return luigi.LocalTarget(self.target)
     def run(self):
         pass
 
@@ -39,7 +39,7 @@ class InputFastqFile(JobTask):
 class CutadaptJobTask(JobTask):
     _config_section = "cutadapt"
     options = luigi.Parameter(default=None)
-    fastq = luigi.Parameter(default=None)
+    label = luigi.Parameter(default=".trimmed")
     cutadapt = luigi.Parameter(default="cutadapt")
     parent_task = luigi.Parameter(default="ratatosk.cutadapt.InputFastqFile")
     # Use Illumina TruSeq adapter sequences as default
@@ -60,10 +60,11 @@ class CutadaptJobTask(JobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        return cls(fastq=self.fastq)
+        source = self._make_source_file_name()
+        return cls(target=source)
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".fastq.gz", ".trimmed.fastq.gz"))
+        return luigi.LocalTarget(self.target)
 
     def args(self):
         seq = self.threeprime if self.read1() else self.fiveprime

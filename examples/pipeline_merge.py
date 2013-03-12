@@ -22,7 +22,7 @@ class AlignSeqcap(JobTask):
                 if not os.path.exists(x[1]):
                     os.makedirs(x[1])
                 os.symlink(os.path.relpath(x[0], os.path.dirname(y)), y)
-        return [PicardMetrics(bam=b) for b in bam_list]
+        return [PicardMetrics(target=b.replace(".bam", "")) for b in bam_list]
 
     def run(self):
         print "Analysing files {}".format(self.input())
@@ -51,4 +51,4 @@ class AlignSeqcap(JobTask):
         return fastq_list, bam_list
 
 if __name__ == "__main__":
-    luigi.run(main_task_cls=AlignSeqcap)
+    luigi.run(['--target', './P001_101_index3.sort.merge.bam', '--config-file', '../config/ratatosk.yaml'], main_task_cls=MergeSamFiles)

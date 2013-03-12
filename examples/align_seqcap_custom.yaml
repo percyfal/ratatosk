@@ -31,4 +31,4 @@ picard:
 
 samtools:
   SamToBam:
-    parent_task: ratatosk.samtools.SampeToSamtools
+    parent_task: ratatosk.bwa.BwaSampe

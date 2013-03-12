@@ -57,6 +57,11 @@ def _make_file_links():
     if not os.path.lexists(os.path.join(os.curdir, os.path.basename(fastq2))):
         os.symlink(fastq2, os.path.join(os.curdir, os.path.basename(fastq2)))
     
+class TestSamtoolsWrappers(unittest.TestCase):
+   def test_samtools_view(self):
+      luigi.run(_luigi_args(['--target', bam, '--config-file', localconf, '--parent-task', 'ratatosk.bwa.BwaSampe']), main_task_cls=SAM.SamToBam)
+
+
 class TestMiscWrappers(unittest.TestCase):
     def test_luigihelp(self):
         try:
@@ -69,7 +74,7 @@ class TestMiscWrappers(unittest.TestCase):
 
     def test_cutadapt(self):
         _make_file_links()
-        luigi.run(_luigi_args(['--target', os.path.basename(fastq1), '--config-file', localconf]), main_task_cls=CUTADAPT.CutadaptJobTask)
+        luigi.run(_luigi_args(['--target', os.path.basename(fastq1.replace(".fastq.gz", ".trimmed.fastq.gz")), '--config-file', localconf]), main_task_cls=CUTADAPT.CutadaptJobTask)
         
     def test_fastqc(self):
         _make_file_links()
@@ -116,8 +121,12 @@ class TestPicardWrappers(unittest.TestCase):
         luigi.run(_luigi_args(['--target', sortbam.replace(".bam", ".hs_metrics"), '--config-file', localconf]), main_task_cls=PICARD.HsMetrics)
 
     def test_picard_metrics(self):
-        _make_file_links()
-        luigi.run(_luigi_args(['--target', sortbam.replace(".bam", ""), '--config-file', localconf]), main_task_cls=PICARD.PicardMetrics)
+       _make_file_links()
+       luigi.run(_luigi_args(['--target', sortbam.replace(".bam", ""), '--config-file', localconf]), main_task_cls=PICARD.PicardMetrics)
+
+    def test_picard_merge(self):
+       pass
+ 
 
 class TestGATKWrappers(unittest.TestCase):
     # Depends on previous tasks (sortbam) - bam must be present

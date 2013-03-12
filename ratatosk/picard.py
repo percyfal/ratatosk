@@ -117,26 +117,35 @@ class MergeSamFiles(PicardJobTask):
     read1_suffix = luigi.Parameter(default="_R1_001")
     # FIXME: TMP_DIR should not be hard-coded
     options = luigi.Parameter(default="SO=coordinate TMP_DIR=./tmp")
+
     def jar(self):
         return "MergeSamFiles.jar"
     def requires(self):
         cls = self.set_parent_task()
-        bam_list = self.organize_sample_runs(cls)
-        return [cls(bam=x.replace("{}.bam".format(self.label), ".bam")) for x in bam_list]
+        sources = self.organize_sample_runs(cls)
+        return [cls(target=src) for src in sources]
+
     def output(self):
-        fn = self.input()[0].fn
-        return luigi.LocalTarget(os.path.join(os.path.dirname(os.path.relpath(fn)), os.pardir, os.path.basename(fn)).replace(".bam", "{}.bam".format(self.label)))
+        return luigi.LocalTarget(self.target)
+
     def args(self):
         return ["OUTPUT=", self.output()] + [item for sublist in [["INPUT=", x] for x in self.input()] for item in sublist]
+
     def organize_sample_runs(self, cls):
         # This currently relies on the folder structure sample/fc1,
         # sample/fc2 etc... This should possibly also be a
         # configurable function?
-        flowcells = os.listdir(os.path.dirname(self.bam))
+        flowcells = os.listdir(os.path.dirname(self.target))
         bam_list = []
         for fc in flowcells:
-            sample_runs = list(set([x.replace(".fastq.gz", "").replace(self.read1_suffix, "") for x in sorted(glob.glob(os.path.join(os.path.dirname(self.bam), fc, "*{}.fastq.gz".format(self.read1_suffix))))]))
-            bam_list.extend(["{}{}.bam".format(x, cls().label) for x in sample_runs])
+            if not os.path.isdir(fc):
+                continue
+            bam_glob = os.path.join(os.path.dirname(self.target), fc, "*{}{}".format(cls.label, self.source_suffix))
+            bam_list = sorted(glob.glob(bam_glob))
+
+            #sample_runs = list(set([x.replace(".fastq.gz", "").replace(self.read1_suffix, "") for x in sorted(glob.glob(os.path.join(os.path.dirname(self.target), fc, "*{}.fastq.gz".format(self.read1_suffix))))]))
+            print bam_list
+            #bam_list.extend([rreplace(x, self.target_suffix"{}{}.bam".format(x, cls().label) for x in sample_runs])
         return bam_list
     
 class AlignmentMetrics(PicardJobTask):
