@@ -57,7 +57,7 @@ def _make_file_links():
     if not os.path.lexists(os.path.join(os.curdir, os.path.basename(fastq2))):
         os.symlink(fastq2, os.path.join(os.curdir, os.path.basename(fastq2)))
     
-class TestLuigiWrappers(unittest.TestCase):
+class TestMiscWrappers(unittest.TestCase):
     def test_luigihelp(self):
         try:
             luigi.run(['-h'], main_task_cls=FASTQ.FastqFileLink)
@@ -67,6 +67,15 @@ class TestLuigiWrappers(unittest.TestCase):
     def test_fastqln(self):
         luigi.run(_luigi_args(['--target', fastq1, '--config-file', localconf]), main_task_cls=FASTQ.FastqFileLink)
 
+    def test_cutadapt(self):
+        _make_file_links()
+        luigi.run(_luigi_args(['--target', os.path.basename(fastq1), '--config-file', localconf]), main_task_cls=CUTADAPT.CutadaptJobTask)
+        
+    def test_fastqc(self):
+        _make_file_links()
+        luigi.run(_luigi_args(['--target', os.path.basename(fastq1), '--config-file', localconf]), main_task_cls=FASTQC.FastQCJobTask)
+
+class TestBwaWrappers(unittest.TestCase):
     def test_bwaaln(self):
         luigi.run(_luigi_args(['--target', sai1, '--config-file', localconf]), main_task_cls=BWA.BwaAln)
         luigi.run(_luigi_args(['--target', sai2, '--config-file', localconf]), main_task_cls=BWA.BwaAln)
@@ -84,77 +93,67 @@ class TestLuigiWrappers(unittest.TestCase):
         _make_file_links()
         luigi.run(_luigi_args(['--target', sortbam, '--config-file', localconf]), main_task_cls=SAM.SortBam)
 
+
+class TestPicardWrappers(unittest.TestCase):
     def test_picard_sortbam(self):
         _make_file_links()
         luigi.run(_luigi_args(['--target', sortbam, '--config-file', localconf]), main_task_cls=PICARD.SortSam)
 
     def test_picard_alignmentmetrics(self):
         _make_file_links()
-        luigi.run(_luigi_args(['--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref), '--config-file', localconf]), main_task_cls=PICARD.AlignmentMetrics)
+        luigi.run(_luigi_args(['--target', sortbam.replace(".bam", ".align_metrics"),'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref), '--config-file', localconf]), main_task_cls=PICARD.AlignmentMetrics)
 
     def test_picard_insertmetrics(self):
         _make_file_links()
-        luigi.run(_luigi_args(['--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref), '--config-file', localconf]), main_task_cls=PICARD.InsertMetrics)
+        luigi.run(_luigi_args(['--target', sortbam.replace(".bam", ".insert_metrics"), '--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref), '--config-file', localconf]), main_task_cls=PICARD.InsertMetrics)
 
     def test_picard_dupmetrics(self):
         _make_file_links()
-        luigi.run(_luigi_args(['--bam', sortbam, '--config-file', localconf]), main_task_cls=PICARD.DuplicationMetrics)
+        luigi.run(_luigi_args(['--target', sortbam.replace(".bam", ".dup.bam"), '--config-file', localconf]), main_task_cls=PICARD.DuplicationMetrics)
 
     def test_picard_hsmetrics(self):
         _make_file_links()
-        luigi.run(_luigi_args(['--bam', sortbam, '--config-file', localconf]), main_task_cls=PICARD.HsMetrics)
-
-    def test_gatk_ug(self):
-        _make_file_links()
-        luigi.run(_luigi_args(['--bam', sortbam, '--config-file', localconf]), main_task_cls=GATK.UnifiedGenotyper)
+        luigi.run(_luigi_args(['--target', sortbam.replace(".bam", ".hs_metrics"), '--config-file', localconf]), main_task_cls=PICARD.HsMetrics)
 
     def test_picard_metrics(self):
         _make_file_links()
-        luigi.run(_luigi_args(['--bam', sortbam, '--config-file', localconf]), main_task_cls=PICARD.PicardMetrics)
+        luigi.run(_luigi_args(['--target', sortbam.replace(".bam", ""), '--config-file', localconf]), main_task_cls=PICARD.PicardMetrics)
 
-    def test_cutadapt(self):
-        _make_file_links()
-        luigi.run(_luigi_args(['--fastq', os.path.basename(fastq1), '--config-file', localconf]), main_task_cls=CUTADAPT.CutadaptJobTask)
-        
-    def test_fastqc(self):
-        _make_file_links()
-        luigi.run(_luigi_args(['--seqfile', os.path.basename(fastq1), '--config-file', localconf]), main_task_cls=FASTQC.FastQCJobTask)
-
+class TestGATKWrappers(unittest.TestCase):
     # Depends on previous tasks (sortbam) - bam must be present
-    def test_realignment_target_creator(self):
-        luigi.run(_luigi_args(['--bam', os.path.basename(sortbam), '--config-file', localconf]), main_task_cls=GATK.RealignmentTargetCreator)
-
+    def test_realigner_target_creator(self):
+        luigi.run(_luigi_args(['--target', sortbam.replace(".bam", ".intervals"), '--config-file', localconf]), main_task_cls=GATK.RealignerTargetCreator)
+        
     def test_indel_realigner(self):
-        luigi.run(_luigi_args(['--bam', os.path.basename(sortbam), '--config-file', localconf]), main_task_cls=GATK.IndelRealigner)
+        luigi.run(_luigi_args(['--target', realignbam, '--config-file', localconf]), main_task_cls=GATK.IndelRealigner)
 
     def test_base_recalibrator(self):
-        luigi.run(_luigi_args(['--bam', os.path.basename(realignbam), '--config-file', localconf]), main_task_cls=GATK.BaseRecalibrator)
+        luigi.run(_luigi_args(['--target', realignbam.replace(".bam", ".recal_data.grp"), '--config-file', localconf]), main_task_cls=GATK.BaseRecalibrator)
 
     def test_print_reads(self):
-        luigi.run(_luigi_args(['--bam', os.path.basename(realignbam), '--config-file', localconf]), main_task_cls=GATK.PrintReads)
+        luigi.run(_luigi_args(['--target', recalbam, '--config-file', localconf]), main_task_cls=GATK.PrintReads)
 
     def test_clip_reads(self):
-        luigi.run(_luigi_args(['--bam', os.path.basename(recalbam), '--config-file', localconf]), main_task_cls=GATK.ClipReads)
+        luigi.run(_luigi_args(['--target', clipbam, '--config-file', localconf]), main_task_cls=GATK.ClipReads)
 
     # TODO: Test vcf outputs
     def test_unified_genotyper(self):
-        luigi.run(_luigi_args(['--bam', os.path.basename(clipbam), '--config-file', localconf]), main_task_cls=GATK.UnifiedGenotyper)
+        luigi.run(_luigi_args(['--target', clipvcf, '--config-file', localconf]), main_task_cls=GATK.UnifiedGenotyper)
 
     def test_variant_filtration(self):
-        luigi.run(_luigi_args(['--vcf', os.path.basename(clipvcf), '--config-file', localconf]), main_task_cls=GATK.VariantFiltration)
+        luigi.run(_luigi_args(['--target', filteredvcf, '--config-file', localconf]), main_task_cls=GATK.VariantFiltration)
 
     def test_variant_evaluation(self):
-        luigi.run(_luigi_args(['--vcf', os.path.basename(filteredvcf), '--config-file', localconf]), main_task_cls=GATK.VariantEval)
+        luigi.run(_luigi_args(['--target', filteredvcf.replace(".vcf", ".eval_metrics"), '--config-file', localconf]), main_task_cls=GATK.VariantEval)
 
 class TestLuigiParallel(unittest.TestCase):
     def test_bwa_samples(self):
         pass
 
-
 class SampeToSamtools(SAM.SamToBam):
     def requires(self):
-        return BWA.BwaSampe(sai1=os.path.join(self.sam.replace(".sam", BWA.BwaSampe().read1_suffix + ".sai")),
-                            sai2=os.path.join(self.sam.replace(".sam", BWA.BwaSampe().read2_suffix + ".sai")))
+        source = self._make_source_file_name()
+        return BWA.BwaSampe(target=source)
 
 class TestLuigiPipelines(unittest.TestCase):
     def test_sampe_to_samtools(self):

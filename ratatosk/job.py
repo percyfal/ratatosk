@@ -126,15 +126,10 @@ class BaseJobTask(luigi.Task):
                 config_file = value
                 kwargs = self._update_config(config_file, *args, **kwargs)
         super(BaseJobTask, self).__init__(*args, **kwargs)
-        print "Source " + str(self.source)
-
-        print "Source " + str(self.source)
-        print "Requirementes " + str(self.requires())
         for r in flatten(self.requires()):
-            print r.label
+            print r
         if self.dry_run:
-            pass
-            #print "DRY RUN: " + str(self)
+            print "DRY RUN: " + str(self)
 
     def __repr__(self):
         return self.task_id
@@ -299,8 +294,12 @@ class BaseJobTask(luigi.Task):
         :return: string
         """
         source = self.target
-        if self.target_suffix and self.source_suffix:
-            source = rreplace(source, self.target_suffix, self.source_suffix, 1)
+        if isinstance(self.target_suffix, tuple):
+            if self.target_suffix[0] and self.source_suffix:
+                source = rreplace(source, self.target_suffix[0], self.source_suffix, 1)
+        else:
+            if self.target_suffix and self.source_suffix:
+                source = rreplace(source, self.target_suffix, self.source_suffix, 1)
         if not self.label:
             return source
         if source.count(self.label) > 1:

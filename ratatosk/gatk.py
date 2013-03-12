@@ -15,6 +15,7 @@ import os
 import luigi
 import logging
 import ratatosk.external
+from ratatosk.utils import rreplace
 from ratatosk.job import JobTask, DefaultShellJobRunner
 from cement.utils import shell
 
@@ -43,10 +44,8 @@ class GATKJobRunner(DefaultShellJobRunner):
             arglist.append(self._get_main(job))
         if job.opts():
             arglist.append(job.opts())
-        print "Job options: " + str(job.opts())
         (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
         arglist += job_args
-        print arglist
         cmd = ' '.join(arglist)        
         logger.info(cmd)
         (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)
@@ -55,7 +54,8 @@ class GATKJobRunner(DefaultShellJobRunner):
             logger.info("Shell job completed")
             for a, b in tmp_files:
                 logger.info("renaming {0} to {1}".format(a.path, b.path))
-                a.move(b.path)
+                # TODO : this should be relpath?
+                a.move(os.path.join(os.curdir, b.path))
                 # Some GATK programs generate bai files on the fly...
                 if os.path.exists(a.path + ".bai"):
                     logger.info("Saw {} file".format(a.path + ".bai"))
@@ -66,29 +66,31 @@ class GATKJobRunner(DefaultShellJobRunner):
 class InputBamFile(JobTask):
     _config_section = "gatk"
     _config_subsection = "InputBamFile"
-    bam = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.external.BamFile")
     def requires(self):
         cls = self.set_parent_task()
-        return cls(bam=self.bam)
+        return cls(target=self.target)
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input().fn))
+        return luigi.LocalTarget(self.target)
 
 class InputVcfFile(JobTask):
     _config_section = "gatk"
     _config_subsection = "input_vcf_file"
-    vcf = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.external.VcfFile")
     def requires(self):
         cls = self.set_parent_task()
-        return cls(vcf=self.vcf)
+        return cls(target=self.target)
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input().fn))
+        return luigi.LocalTarget(self.target)
     
 class GATKJobTask(JobTask):
     _config_section = "gatk"
     gatk = luigi.Parameter(default=GATK_JAR)
-    bam = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
+    source_suffix = luigi.Parameter(default=".bam")
+    target_suffix = luigi.Parameter(default=".bam")
     java_options = luigi.Parameter(default="-Xmx2g")
     parent_task = luigi.Parameter(default="ratatosk.gatk.InputBamFile")
     ref = luigi.Parameter(default=None)
@@ -109,14 +111,15 @@ class GATKJobTask(JobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        return [cls(bam=self.bam), ratatosk.samtools.IndexBam(bam=self.bam)]
+        source = self._make_source_file_name()
+        return [cls(target=source), ratatosk.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1))]
 
-class RealignmentTargetCreator(GATKJobTask):
+class RealignerTargetCreator(GATKJobTask):
     _config_subsection = "RealignerTargetCreator"
-    bam = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
     known = luigi.Parameter(default=[], is_list=True)
-    suffix = luigi.Parameter(default=".intervals")
+    target_suffix = luigi.Parameter(default=".intervals")
 
     def opts(self):
         retval = self.options if self.options else ""
@@ -127,14 +130,12 @@ class RealignmentTargetCreator(GATKJobTask):
             retval += "-L {}".format(self.target_region)
         retval += " ".join(["-known {}".format(x) for x in self.known])
         return retval
-    
+
     def main(self):
         return "RealignerTargetCreator"
 
     def output(self):
-        #return luigi.LocalTarget(os.path.abspath(self.input()[0].fn).replace(".bam", ".intervals"))
-        return self.replace_suffix(".intervals")
-
+        return luigi.LocalTarget(self.target)
 
     def args(self):
         return ["-I", self.input()[0], "-o", self.output()]
@@ -145,16 +146,17 @@ class IndelRealigner(GATKJobTask):
     known = luigi.Parameter(default=[], is_list=True)
     label = luigi.Parameter(default=".realign")
     parent_task = luigi.Parameter(default="ratatosk.gatk.InputBamFile")
-
+    
     def main(self):
         return "IndelRealigner"
 
     def requires(self):
         cls = self.set_parent_task()
-        return (cls(bam=self.bam.replace("{}.bam".format(self.label), ".bam")), RealignmentTargetCreator(bam=self.bam.replace("{}.bam".format(self.label), ".bam")))
+        source = self._make_source_file_name()
+        return [cls(target=source), RealignerTargetCreator(target=rreplace(source, self.target_suffix, RealignerTargetCreator.target_suffix.default, 1))]
 
     def output(self):
-        return luigi.LocalTarget(self.input()[0].fn.replace(".bam", "{}.bam".format(self.label)))
+        return luigi.LocalTarget(self.target)
 
     def opts(self):
         retval = self.options if self.options else ""
@@ -165,15 +167,14 @@ class IndelRealigner(GATKJobTask):
         return retval
 
     def args(self):
-        return ["-I", self.input()['input_bam'], "-o", self.output(), "--targetIntervals", self.input()['intervals']]
+        return ["-I", self.input()[0], "-o", self.output(), "--targetIntervals", self.input()[1]]
 
 class BaseRecalibrator(GATKJobTask):
     _config_subsection = "BaseRecalibrator"
-    bam = luigi.Parameter(default=None)
-    options = luigi.Parameter(default=None)
-    knownSites = luigi.Parameter(default=[])
+    # Setting default=[] doesn't work?!?
+    knownSites = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.gatk.InputBamFile")
-    suffix = luigi.Parameter(default=".recal_data.grp")
+    target_suffix = luigi.Parameter(default=".recal_data.grp")
 
     def main(self):
         return "BaseRecalibrator"
@@ -192,10 +193,11 @@ class BaseRecalibrator(GATKJobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        return [cls(bam=self.bam), ratatosk.samtools.IndexBam(bam=self.bam)]
+        source = self._make_source_file_name()
+        return [cls(target=source), ratatosk.samtools.IndexBam(target=source)]
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input()[0].fn).replace(".bam", self.suffix))
+        return luigi.LocalTarget(self.target)
     
     def args(self):
         return ["-I", self.input()[0], "-o", self.output()]
@@ -203,9 +205,8 @@ class BaseRecalibrator(GATKJobTask):
 
 class PrintReads(GATKJobTask):
     _config_subsection = "PrintReads"
-    bam = luigi.Parameter(default=None)
-    options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.gatk.InputBamFile")
+    label = luigi.Parameter(default=".recal")
 
     def main(self):
         return "PrintReads"
@@ -219,21 +220,23 @@ class PrintReads(GATKJobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        return cls(bam=self.bam)
+        source = self._make_source_file_name()
+        return cls(target=source)
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".recal.bam"))
+        return luigi.LocalTarget(self.target)
     
     def args(self):
-        return ["-I", self.input(), "-BQSR", self.input().fn.replace(".bam", ".recal_data.grp"), "-o", self.output()]
+        return ["-I", self.input(), "-BQSR", rreplace(self.input().fn, self.target_suffix, BaseRecalibrator.target_suffix.default, 1), "-o", self.output()]
 
 
 class ClipReads(GATKJobTask):
     _config_subsection = "ClipReads"
-    bam = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
     # Tailored for HaloPlex
     options = luigi.Parameter(default="--cyclesToTrim 1-5 --clipRepresentation WRITE_NS")
     parent_task = luigi.Parameter(default="ratatosk.gatk.InputBamFile")
+    label = luigi.Parameter(default=".clip")
 
     def main(self):
         return "ClipReads"
@@ -247,22 +250,25 @@ class ClipReads(GATKJobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        return cls(bam=self.bam)
+        source = self._make_source_file_name()
+        return cls(target=source)
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".clip.bam"))
+        return luigi.LocalTarget(self.target)
     
     def args(self):
         return ["-I", self.input(), "-o", self.output()]
 
-
 class VariantFiltration(GATKJobTask):
     _config_subsection = "VariantFiltration"
-    vcf = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
     # Options from Halo
     options = luigi.Parameter(default='--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL > 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 1.5" --filterName "LowQD"')
     parent_task = luigi.Parameter(default="ratatosk.gatk.InputVcfFile")
-
+    label = luigi.Parameter(default=".filtered")
+    target_suffix = luigi.Parameter(default=".vcf")
+    source_suffix = luigi.Parameter(default=".vcf")
+    
     def main(self):
         return "VariantFiltration"
 
@@ -275,10 +281,11 @@ class VariantFiltration(GATKJobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        return cls(vcf=self.vcf)
+        source = self._make_source_file_name()
+        return cls(target=source)
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".vcf", ".filtered.vcf"))
+        return luigi.LocalTarget(self.target)
     
     def args(self):
         return ["--variant", self.input(), "-o", self.output()]
@@ -286,10 +293,11 @@ class VariantFiltration(GATKJobTask):
 
 class VariantEval(GATKJobTask):
     _config_subsection = "VariantEval"
-    vcf = luigi.Parameter(default=None)
     options = luigi.Parameter(default="-ST Filter -l INFO --doNotUseAllStandardModules --evalModule CompOverlap --evalModule CountVariants --evalModule GenotypeConcordance --evalModule TiTvVariantEvaluator --evalModule ValidationReport --stratificationModule Filter")
     dbsnp = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.gatk.InputVcfFile")
+    source_suffix = luigi.Parameter(default=".vcf")
+    target_suffix = luigi.Parameter(default=".eval_metrics")
 
     def main(self):
         return "VariantEval"
@@ -309,10 +317,11 @@ class VariantEval(GATKJobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        return cls(vcf=self.vcf)
+        source = self._make_source_file_name()
+        return cls(target=source)
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".vcf", ".eval_metrics"))
+        return luigi.LocalTarget(self.target)
     
     def args(self):
         return ["--eval", self.input(), "-o", self.output()]
@@ -320,8 +329,9 @@ class VariantEval(GATKJobTask):
         
 class UnifiedGenotyper(GATKJobTask):
     _config_subsection = "UnifiedGenotyper"
-    bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default="-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH")
+    target_suffix = luigi.Parameter(default=".vcf")
+    #label = luigi.Parameter(default=".RAW")?
 
     def opts(self):
         retval = self.options if self.options else ""
@@ -336,7 +346,7 @@ class UnifiedGenotyper(GATKJobTask):
         return "UnifiedGenotyper"
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input()[0].fn).replace(".bam", ".vcf"))
+        return luigi.LocalTarget(self.target)
 
     def args(self):
         return ["-I", self.input()[0], "-o", self.output()]

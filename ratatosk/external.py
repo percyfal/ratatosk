@@ -22,6 +22,8 @@ import os
 import luigi
 import logging
 
+logger = logging.getLogger('luigi-interface')
+
 class BamFile(luigi.ExternalTask):
     target = luigi.Parameter(default=None)
     label = luigi.Parameter(default=None)
@@ -34,9 +36,9 @@ class BamFile(luigi.ExternalTask):
 class SamFile(luigi.ExternalTask):
     target = luigi.Parameter(default=None)
     label = luigi.Parameter(default="")
-    use_label = False
 
     def output(self):
+        logger.debug("Got target '{}' in {}".format(self.target, self.__class__))
         if not self.target:
             return None
         return luigi.LocalTarget(os.path.abspath(self.target))

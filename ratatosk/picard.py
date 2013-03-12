@@ -17,6 +17,7 @@ import logging
 import time
 import glob
 import ratatosk.external
+from ratatosk.utils import rreplace
 from ratatosk.job import JobTask, DefaultShellJobRunner
 from cement.utils import shell
 
@@ -71,6 +72,8 @@ class PicardJobTask(JobTask):
     _config_section = "picard"
     java_options = "-Xmx2g"
     parent_task = luigi.Parameter(default="ratatosk.picard.InputBamFile")
+    target_suffix = luigi.Parameter(default=".bam")
+    source_suffix = luigi.Parameter(default=".bam")
 
     def jar(self):
         """Path to the jar for this Picard job"""
@@ -87,21 +90,21 @@ class PicardJobTask(JobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        return cls(bam=self.bam)
+        source = self._make_source_file_name()
+        return cls(target=source)
 
 class SortSam(PicardJobTask):
     _config_subsection = "SortSam"
-    bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default="SO=coordinate MAX_RECORDS_IN_RAM=750000")
     label = luigi.Parameter(default=".sort")
-    target_suffix = luigi.Parameter(default=".bam")
-    source_suffix = luigi.Parameter(default=".bam")
 
     def jar(self):
         return "SortSam.jar"
     def requires(self):
+
         cls = self.set_parent_task()
         source = self._make_source_file_name()
+        print "Sort sam target " + str(self.target) + " And sourc " + str(source)
         return cls(target=source)
     def output(self):
         return luigi.LocalTarget(self.target)
@@ -110,9 +113,6 @@ class SortSam(PicardJobTask):
 
 class MergeSamFiles(PicardJobTask):
     _config_subsection = "MergeSamFiles"
-    # bam is the target, i.e. is *one* file
-    bam = luigi.Parameter(default=None)
-    sample = luigi.Parameter(default=None)
     label = luigi.Parameter(default=".merge")
     read1_suffix = luigi.Parameter(default="_R1_001")
     # FIXME: TMP_DIR should not be hard-coded
@@ -141,44 +141,51 @@ class MergeSamFiles(PicardJobTask):
     
 class AlignmentMetrics(PicardJobTask):
     _config_subsection = "AlignmentMetrics"
-    bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
+    target_suffix = luigi.Parameter(default=".align_metrics")
     
     def jar(self):
         return "CollectAlignmentSummaryMetrics.jar"
     def output(self):
-        return luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", ".align_metrics"))
+        return luigi.LocalTarget(self.target)
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()]
 
 class InsertMetrics(PicardJobTask):
     _config_subsection = "InsertMetrics"
-    bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
+    target_suffix = luigi.Parameter(default=[".insert_metrics", ".insert_hist"], is_list=True)
     
     def jar(self):
         return "CollectInsertSizeMetrics.jar"
+    def requires(self):
+        cls = self.set_parent_task()
+        source = self._make_source_file_name()
+        return cls(target=source)
     def output(self):
-        return [luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", ".insert_metrics")), 
-                luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", ".insert_hist"))]
+        return [luigi.LocalTarget(self.target),
+                luigi.LocalTarget(rreplace(self.target, self.target_suffix[0], self.target_suffix[1], 1))]
     def args(self):
+        print self.input()
+        print self.output()
         return ["INPUT=", self.input(), "OUTPUT=", self.output()[0], "HISTOGRAM_FILE=", self.output()[1]]
 
 class DuplicationMetrics(PicardJobTask):
     _config_subsection = "DuplicationMetrics"
-    bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
+    label = luigi.Parameter(default=".dup")
+    target_suffix = luigi.Parameter(default=[".bam", ".dup_metrics"], is_list=True)
 
     def jar(self):
         return "MarkDuplicates.jar"
     def requires(self):
-        # FIXME: the suffix calculations here and in output are wrong
         cls = self.set_parent_task()
-        return cls(bam=self.bam.replace(".dup.bam", ".bam"))
+        source = self._make_source_file_name()
+        return cls(target=source)
     def output(self):
-        return luigi.LocalTarget(os.path.relpath(self.bam).replace(".bam", ".dup.bam"))
+        return luigi.LocalTarget(self.target)
     def args(self):
-        return ["INPUT=", self.input(), "OUTPUT=", self.output(), "METRICS_FILE=", self.output().fn.replace(".bam", ".dup_metrics")]
+        return ["INPUT=", self.input(), "OUTPUT=", self.output(), "METRICS_FILE=", rreplace(self.output().fn, "{}{}".format(self.label, self.target_suffix[0]), self.target_suffix[1], 1)]
 
 class HsMetrics(PicardJobTask):
     _config_subsection = "HsMetrics"
@@ -186,17 +193,19 @@ class HsMetrics(PicardJobTask):
     options = luigi.Parameter(default=None)
     baits = luigi.Parameter(default=None)
     targets = luigi.Parameter(default=None)
+    target_suffix = luigi.Parameter(default=".hs_metrics")
     
     def jar(self):
         return "CalculateHsMetrics.jar"
     def output(self):
-        print "Input to hsmetrics: " + str(self.input().fn)
-        return luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", ".hs_metrics"))
+        return luigi.LocalTarget(self.target)
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output(), "BAIT_INTERVALS=", self.baits, "TARGET_INTERVALS=", self.targets]
 
 class PicardMetrics(luigi.WrapperTask):
-    bam = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None)
     def requires(self):
-        return [DuplicationMetrics(bam=self.bam.replace(".bam", ".dup.bam")), HsMetrics(bam=self.bam),
-                InsertMetrics(bam=self.bam), AlignmentMetrics(bam=self.bam)]
+        return [InsertMetrics(target=self.target + str(InsertMetrics.target_suffix.default[0])),
+                DuplicationMetrics(target= self.target + str(DuplicationMetrics.label.default[0]) + str(DuplicationMetrics.target_suffix.default[0])),
+                HsMetrics(target=self.target + str(HsMetrics.target_suffix.default)),
+                AlignmentMetrics(target=self.target + str(AlignmentMetrics.target_suffix.default))]

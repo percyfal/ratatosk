@@ -21,18 +21,17 @@ picard:
   # InputBamFile "pipes" input from other modules
   InputBamFile:
     parent_task: ratatosk.samtools.SamToBam
-  hs_metrics:
+  HsMetrics:
     parent_task: ratatosk.picard.SortSam
     targets: targets.interval_list
     baits: targets.interval_list
-  duplication_metrics:
+  DuplicationMetrics:
     parent_task: ratatosk.picard.SortSam
-  alignment_metrics:
+  AlignmentMetrics:
     parent_task: ratatosk.picard.SortSam
-  insert_metrics:
+  InsertMetrics:
     parent_task: ratatosk.picard.SortSam
-
 
 samtools:
-  samtobam:
+  SamToBam:
     parent_task: test.test_wrapper.SampeToSamtools
