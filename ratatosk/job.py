@@ -1,3 +1,16 @@
+# Copyright (c) 2013 Per Unneberg
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations under
+# the License.
 import random
 import sys
 import os
@@ -84,6 +97,8 @@ class BaseJobTask(luigi.Task):
     options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default=None)
     num_threads = luigi.Parameter(default=1)
+    # For grahps
+    short_task_names = luigi.Parameter(default=False, is_boolean=True, is_global=True)
     # Needed for merging samples; list of tuples (sample, sample_run)
     # sample_runs = luigi.Parameter(default=[], is_global=True)
     sample_runs = []
@@ -102,6 +117,12 @@ class BaseJobTask(luigi.Task):
                 config_file = value
                 kwargs = self._update_config(config_file, **kwargs)
         super(BaseJobTask, self).__init__(*args, **kwargs)
+
+    def __repr__(self):
+        # if self.short_task_names:
+        #     return str(self.__class__)
+        # else:
+        return self.task_id
 
     def _update_config(self, config_file, **kwargs):
         """Update configuration for this task"""

@@ -4,31 +4,31 @@ bwa:
   bwaref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
 
 gatk:
-  unifiedgenotyper:
+  UnifiedGenotyper:
     ref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
 
 picard:
-  # input_bam_file "pipes" input from other modules
-  input_bam_file:
+  # InputBamFile "pipes" input from other modules
+  InputBamFile:
     parent_task: ratatosk.samtools.SamToBam
-  hs_metrics:
+  HsMetrics:
     parent_task: ratatosk.picard.SortSam
     targets: ../tests/luigi/targets.interval_list
     baits: ../tests/luigi/targets.interval_list
   # Example custom config
-  hs_metrics_non_dup:
+  HsMetricsNonDup:
     parent_task:
     # FIXME: inheritance!
     # Unfortunately need to set this again
     targets: ../tests/luigi/targets.interval_list
     baits: ../tests/luigi/targets.interval_list
-  duplication_metrics:
+  DuplicationMetrics:
     parent_task: ratatosk.picard.SortSam
-  alignment_metrics:
+  AlignmentMetrics:
     parent_task: ratatosk.picard.SortSam
-  insert_metrics:
+  InsertMetrics:
     parent_task: ratatosk.picard.SortSam
 
 samtools:
-  samtobam:
+  SamToBam:
     parent_task: ratatosk.samtools.SampeToSamtools
