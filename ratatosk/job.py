@@ -94,6 +94,7 @@ class DefaultShellJobRunner(JobRunner):
                 
 class BaseJobTask(luigi.Task):
     config_file = luigi.Parameter(is_global=True, default=os.path.join(os.getenv("HOME"), ".ratatosk/ratatosk.yaml"))
+    dry_run = luigi.Parameter(default=False, is_global=True, is_boolean=True)
     options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default=None)
     num_threads = luigi.Parameter(default=1)
@@ -113,27 +114,36 @@ class BaseJobTask(luigi.Task):
         for key, value in param_values:
             if key == "config_file":
                 config_file = value
-                kwargs = self._update_config(config_file, **kwargs)
+                kwargs = self._update_config(config_file, *args, **kwargs)
         super(BaseJobTask, self).__init__(*args, **kwargs)
+        if self.dry_run:
+            print "DRY RUN: " + str(self)
 
     def __repr__(self):
         return self.task_id
 
-    def _update_config(self, config_file, **kwargs):
+    def _update_config(self, config_file, *args, **kwargs):
         """Update configuration for this task"""
         config = interface.get_config(config_file)
         if not config.has_section(self._config_section):
             return kwargs
+        params = self.get_params()
+        param_values = {x[0]:x[1] for x in self.get_param_values(params, args, kwargs)}
         for key, value in self.get_params():
             new_value = None
-            if config.has_key(self._config_section, key):
-                new_value = config.get(self._config_section, key)
-            if config.has_section(self._config_section, self._config_subsection):
-                if config.has_key(self._config_section, key, self._config_subsection):
-                    new_value = config.get(self._config_section, key, self._config_subsection)
+            # Got a command line option => override config file
+            if value.default != param_values.get(key, None):
+                new_value = param_values.get(key, None)
+                logger.debug("option '{0}'; got value '{1}' from command line, overriding configuration file setting for task class '{2}'".format(key, new_value, self.__class__))
+            else:
+                if config.has_key(self._config_section, key):
+                    new_value = config.get(self._config_section, key)
+                if config.has_section(self._config_section, self._config_subsection):
+                    if config.has_key(self._config_section, key, self._config_subsection):
+                        new_value = config.get(self._config_section, key, self._config_subsection)
             if new_value:
                 kwargs[key] = new_value
-                logger.info("Reading config section, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__))
+                logger.debug("Reading config section, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__))
             else:
                 pass
             #logger.debug("Using default value for {0}".format(key))
@@ -176,7 +186,8 @@ class BaseJobTask(luigi.Task):
 
     def run(self):
         self.init_local()
-        self.job_runner().run_job(self)
+        if not self.dry_run:
+            self.job_runner().run_job(self)
 
     def complete(self):
         """
@@ -185,6 +196,8 @@ class BaseJobTask(luigi.Task):
         """
         outputs = flatten(self.output())
         inputs = flatten(self.input())
+        if self.dry_run:
+            return False
         if len(outputs) == 0:
             # TODO: unclear if tasks without outputs should always run or never run
             warnings.warn("Task %r without outputs has no custom complete() method" % self)
@@ -199,7 +212,7 @@ class BaseJobTask(luigi.Task):
             return True
 
     def get_param_default(self, k):
-        """Get the default value for a param"""
+        """Get the default value for a param."""
         params = self.get_params()
         for key, value in params:
             if k == key:

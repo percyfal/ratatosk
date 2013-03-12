@@ -5,7 +5,6 @@ import unittest
 import luigi
 import time
 import logging
-from utils import has_ngstestdata, has_environment_variables
 import ratatosk.bwa as BWA
 import ratatosk.samtools as SAM
 import ratatosk.fastq as FASTQ
@@ -14,37 +13,31 @@ import ratatosk.gatk as GATK
 import ratatosk.cutadapt as CUTADAPT
 import ratatosk.fastqc as FASTQC
 import ratatosk.external
+import ngstestdata as ntd
 
-has_ngsdata = has_ngstestdata()
-if has_ngsdata:
-    import ngstestdata as ntd
-
-has_envvars = has_environment_variables()
-
-logger = logging.getLogger('luigi-interface')
+logging.basicConfig(level=logging.DEBUG)
 
 bwa = "bwa"
 samtools = "samtools"
-if has_ngsdata:
-    bwaref = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "bwa", "chr11.fa"))
-    bwaseqref = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "seq", "chr11.fa"))
-    indir = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX"))
-    projectdir = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "projects", "J.Doe_00_01"))
-    sample = "P001_101_index3_TGACCA_L001"
-    fastq1 = os.path.join(indir, sample + "_R1_001.fastq.gz")
-    fastq2 = os.path.join(indir, sample + "_R2_001.fastq.gz")
+bwaref = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "bwa", "chr11.fa"))
+bwaseqref = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "seq", "chr11.fa"))
+indir = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX"))
+projectdir = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "projects", "J.Doe_00_01"))
+sample = "P001_101_index3_TGACCA_L001"
+fastq1 = os.path.join(indir, sample + "_R1_001.fastq.gz")
+fastq2 = os.path.join(indir, sample + "_R2_001.fastq.gz")
 
-    sai1 = os.path.join(sample + "_R1_001.sai")
-    sai2 = os.path.join(sample + "_R2_001.sai")
+sai1 = os.path.join(sample + "_R1_001.sai")
+sai2 = os.path.join(sample + "_R2_001.sai")
 
-    sam = os.path.join(sample + ".sam")
-    bam = os.path.join(sample + ".bam")
-    sortbam = os.path.join(sample + ".sort.bam")
-    realignbam = os.path.join(sample + ".sort.realign.bam")
-    recalbam = os.path.join(sample + ".sort.realign.recal.bam")
-    clipbam = os.path.join(sample + ".sort.realign.recal.clip.bam")
-    clipvcf = os.path.join(sample + ".sort.realign.recal.clip.vcf")
-    filteredvcf = os.path.join(sample + ".sort.realign.recal.clip.filtered.vcf")
+sam = os.path.join(sample + ".sam")
+bam = os.path.join(sample + ".bam")
+sortbam = os.path.join(sample + ".sort.bam")
+realignbam = os.path.join(sample + ".sort.realign.bam")
+recalbam = os.path.join(sample + ".sort.realign.recal.bam")
+clipbam = os.path.join(sample + ".sort.realign.recal.clip.bam")
+clipvcf = os.path.join(sample + ".sort.realign.recal.clip.vcf")
+filteredvcf = os.path.join(sample + ".sort.realign.recal.clip.filtered.vcf")
 
 localconf = "pipeconf.yaml"
 local_scheduler = '--local-scheduler'
@@ -63,16 +56,7 @@ def _make_file_links():
     if not os.path.lexists(os.path.join(os.curdir, os.path.basename(fastq2))):
         os.symlink(fastq2, os.path.join(os.curdir, os.path.basename(fastq2)))
     
-@unittest.skipIf(not has_ngstestdata, ngsloadmsg)
-@unittest.skipIf(not has_gatk, gatk_msg)
-@unittest.skipIf(not has_picard, picard_msg)
 class TestLuigiWrappers(unittest.TestCase):
-    # @classmethod
-    # def tearDownClass(cls):
-    #     for f in [sai1, sai2, sam, bam, sortbam]:
-    #         if os.path.exists(f):
-    #             os.unlink(f)
-
     def test_luigihelp(self):
         try:
             luigi.run(['-h'], main_task_cls=FASTQ.FastqFileLink)
@@ -161,65 +145,16 @@ class TestLuigiWrappers(unittest.TestCase):
     def test_variant_evaluation(self):
         luigi.run(_luigi_args(['--vcf', os.path.basename(filteredvcf), '--config-file', localconf]), main_task_cls=GATK.VariantEval)
 
-
-
-@unittest.skipIf(not has_ngstestdata, ngsloadmsg)        
-@unittest.skipIf(not has_gatk, gatk_msg)
-@unittest.skipIf(not has_picard, picard_msg)
 class TestLuigiParallel(unittest.TestCase):
     def test_bwa_samples(self):
         pass
 
-    def test_sample_list(self):
-        class BwaAlnSamples(BWA.BwaJobTask):
-            samples = luigi.Parameter(default=[], is_list=True)
-
-            def main(self):
-                return "aln"
-
-            def requires(self):
-                indir = FASTQ.FastqFileLink().indir
-                fastq = []
-                for s in self.samples:
-                    print "setting up requirements for sample {}".format(s)
-                    if not os.path.exists(os.path.join(indir, s)):
-                        print("No such sample {0} found in input directory {1}; skipping".format(s, indir))
-                        continue
-                    for fc in os.listdir(os.path.join(indir, s)):
-                        fcdir = os.path.join(indir, s, fc)
-                        if not os.path.isdir(fcdir):
-                            print("{0} not a directory; skipping".format(fcdir))
-                            continue
-                        glob_str = os.path.join(fcdir, "{}*.fastq.gz".format(s))
-                        print("looking in flowcell directory {} with glob {}".format(fcdir, glob_str))
-                        fastqfiles = glob.glob(glob_str)
-                        logging.info("found fastq files {}".format(fastqfiles))
-                        fastq += fastqfiles
-                print ("Found {} fastq files".format(len(fastq)))
-                #print ("Found {}".format(self.fastq))
-
-                return [FASTQ.FastqFileLink(x) for x in fastq]
-
-            def args(self):
-                return []
-
-            def run(self):
-                print "Found {} fastq files".format(len(self.input()))
-
-                
-            def output(self):
-                return luigi.LocalTarget("tabort.txt")
-        luigi.run(_luigi_args(['--samples', "P001_101_index3", '--config-file', localconf]), main_task_cls=BwaAlnSamples)
-        
 
 class SampeToSamtools(SAM.SamToBam):
     def requires(self):
         return BWA.BwaSampe(sai1=os.path.join(self.sam.replace(".sam", BWA.BwaSampe().read1_suffix + ".sai")),
                             sai2=os.path.join(self.sam.replace(".sam", BWA.BwaSampe().read2_suffix + ".sai")))
 
-@unittest.skipIf(not has_ngstestdata, ngsloadmsg)
-@unittest.skipIf(not has_gatk, gatk_msg)
-@unittest.skipIf(not has_picard, picard_msg)
 class TestLuigiPipelines(unittest.TestCase):
     def test_sampe_to_samtools(self):
         luigi.run(_luigi_args(['--sam', sam, '--config-file', localconf]), main_task_cls=SampeToSamtools)

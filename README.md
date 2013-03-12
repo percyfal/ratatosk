@@ -329,14 +329,18 @@ There is (hopefully) an easy fix to this: add an option `--target` to
 Here I've used a 'global' config file
 [ratatosk.yaml](https://github.com/percyfal/ratatosk/blob/master/config/ratatosk.yaml).
 
-Incidentally, by supplying a 'dummy file', one can do a poor man's dry
-run, which will generate a graph over the dependencies:
 
-	run_ratatosk.py UnifiedGenotyper --bam dummy.bam --config config/ratatosk.yaml
+### Dry run ###
+
+The `--dry-run` option will resolve dependencies but not actually run
+anything. In addition, it will print the tasks that will be called.
+By passing a dummy file 
+
+	run_ratatosk.py UnifiedGenotyper --dry-run --bam dummy.bam --config config/ratatosk.yaml
 	
-will show the config as specified in the config file:
+we get the dependencies as specified in the config file:
 
-![PoorMansDry](https://raw.github.com/percyfal/ratatosk/master/doc/ratatosk_poor_mans_dry.png)
+![DryRun](https://raw.github.com/percyfal/ratatosk/master/doc/ratatosk_dry_run.png)
 
 ## Implementation ##
 
@@ -410,24 +414,15 @@ environment.
 
 * Tests are not real unittests since they depend on oneanother
 
-* Command-line options should override settings in config file - not
-  sure if that currently is the case
-
 * UPSTREAM? in `ratatosk.job.DefaultShellJobRunner._fix_paths`,
   `a.move(b)` doesn't work (I modelled this after
   [luigi hadoop_jar](https://github.com/spotify/luigi/blob/master/luigi/hadoop_jar.py#L63))
 
-* Try: modify __repr__(Task) for better visualization in graphs, via a
-  command line option. Currently the graphs include all options,
-  making it difficult to read. UPDATE: breaking the representation of
-  Task (equivalent to Task.task_id) breaks the dependency resolution.
-  This needs a fix in the code that generates the graphs.
-  
 * Add general task config option `--target` to mimic Make behaviour
-  more closely
+  more closely. In addition, have a fallback `--source` for a task.
+  These options correspond to *file names*
   
-* The previous issue is related to the wish for a dry run: basically
-  want to generate a picture of the workflow
+* Modify graph representation so only task name is shown
   
 * Add ratatosk.pipelines in which pipeline wrappers are put. In the
   main script then import different pre-defined pipelines so one could
@@ -501,3 +496,19 @@ environment.
   and
   [luigi.hadoop_jar](https://github.com/spotify/luigi/blob/master/luigi/hadoop_jar.py).
   Currently using the local scheduler on nodes works well enough
+
+### DONE/CANCELLED tasks and issues ###
+
+TODO: move these to github issue tracker
+
+* Try: modify __repr__(Task) for better visualization in graphs, via a
+  command line option. Currently the graphs include all options,
+  making it difficult to read. UPDATE: breaking the representation of
+  Task (equivalent to Task.task_id) breaks the dependency resolution.
+  This needs a fix in the code that generates the graphs.
+
+* DONE: The previous issue is related to the wish for a dry run: basically
+  want to generate a picture of the workflow
+
+* DONE: Command-line options should override settings in config file - not
+  sure if that currently is the case. EDIT: no, this is a bug

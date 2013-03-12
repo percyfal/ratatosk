@@ -1,19 +1,21 @@
 # section parameter values either affect the exe application or
 # correspond to global application parameters
 bwa:
-  bwaref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
+  bwaref: ${bwaref}
   InputFastqFile:
     parent_task: ratatosk.fastq.FastqFileLink
 
 fastq:
   link:
-    indir: ../../ngs_test_data/data/projects/J.Doe_00_01/P001_101_index3/121015_BB002BBBXX
+    indir: ${fastq}
 
 gatk:
   # NB: I don't know if these even works
-  knownSites: [../../ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf]
-  ref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
-  dbsnp: ../../ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf
+  knownSites: 
+    - ${knownSites1}
+    - ${knownSites2}
+  ref: ${ref}
+  dbsnp: ${dbsnp}
 
 picard:
   # InputBamFile "pipes" input from other modules
