@@ -126,14 +126,17 @@ class BaseJobTask(luigi.Task):
                 config_file = value
                 kwargs = self._update_config(config_file, *args, **kwargs)
         super(BaseJobTask, self).__init__(*args, **kwargs)
-        for r in flatten(self.requires()):
-            print r
         if self.dry_run:
             print "DRY RUN: " + str(self)
 
     def __repr__(self):
         return self.task_id
 
+    def name_prefix(self):
+        """Generate a name prefix based on available labels for this task"""
+        for r in flatten(self.requires()):
+            print r
+        
     def _update_config(self, config_file, *args, **kwargs):
         """Update configuration for this task"""
         config = interface.get_config(config_file)
@@ -159,7 +162,7 @@ class BaseJobTask(luigi.Task):
                 logger.debug("Updating config, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__))
             else:
                 pass
-            #logger.debug("Using default value for {0}".format(key))
+            logger.debug("Using default value for '{0}' for task class '{1}'".format(key, self.__class__))
         return kwargs
 
     def exe(self):
