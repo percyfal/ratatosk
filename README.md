@@ -238,7 +238,7 @@ In examples directory, running
 	
 will execute a basic analysis pipeline:
 
-![AlignSeqcap](https://raw.github.com/percyfal/ratatosk/develop/doc/example_align_seqcap.png)
+![AlignSeqcap](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap.png)
 
 ### Adding adapter trimming  ###
 
@@ -352,7 +352,7 @@ Here's an example of a variant calling pipeline:
 	
 resulting in 
 
-![SeqCap](https://raw.github.com/percyfal/ratatosk/master/doc/ratatosk_pipeline_seqcap.png)
+![SeqCap](https://raw.github.com/percyfal/ratatosk/develop/doc/ratatosk_pipeline_seqcap.png)
 
 Blue boxes mean active processes (the command was run with `--workers
 4`, which uses 4 parallel processes). Note that we need to know what
