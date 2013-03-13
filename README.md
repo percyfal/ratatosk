@@ -89,6 +89,9 @@ the tests:
 	
 ## Examples in tests ##
 
+NOTE: these are still not real unit tests in that they in some cases
+are inter-dependent. See issues.
+
 These examples are currently based on the tests in
 [ratatosk.tests.test_wrapper](https://github.com/percyfal/ratatosk/blob/master/test/test_wrapper.py).
 
@@ -185,6 +188,10 @@ Future implementations should possibly include commong 'module
 connecting tasks' as these.
 	
 ## Example scripts  ##
+
+NOTE: some of these are currently broken due to recent changes in
+parameter naming. The following section using *run_ratatosk.py* should
+work though.
 
 There are also a couple of example scripts in
 [ratatosk.examples](https://github.com/percyfal/ratatosk/tree/master/examples)
