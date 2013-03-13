@@ -86,3 +86,7 @@ def replace_suffix(luigi_param, new_suffix=None):
 def rreplace(s, old, new, occurrence):
     li = s.rsplit(old, occurrence)
     return new.join(li)
+
+# http://stackoverflow.com/questions/2020014/get-fully-qualified-class-name-of-an-object-in-python
+def fullclassname(o):
+    return o.__module__ + "." + o.__name__

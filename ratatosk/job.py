@@ -246,7 +246,8 @@ class BaseJobTask(luigi.Task):
             cls = getattr(mod, opt_cls)
             ret_cls = cls
         except:
-            logger.warn("No class found: using default class {}".format(".".join([default_mod, default_cls])))
+            logger.warn("No class {} found: using default class {}".format(".".join([opt_mod, opt_cls]), 
+                                                                           ".".join([default_mod, default_cls])))
             ret_mod = __import__(default_mod, fromlist=[default_cls])
             ret_cls = getattr(ret_mod, default_cls)
         return ret_cls

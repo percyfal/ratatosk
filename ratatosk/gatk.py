@@ -15,7 +15,7 @@ import os
 import luigi
 import logging
 import ratatosk.external
-from ratatosk.utils import rreplace
+from ratatosk.utils import rreplace, fullclassname
 from ratatosk.job import JobTask, DefaultShellJobRunner
 from cement.utils import shell
 
@@ -68,6 +68,7 @@ class InputBamFile(JobTask):
     _config_subsection = "InputBamFile"
     target = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.external.BamFile")
+    target_suffix = luigi.Parameter(default=".bam")
     def requires(self):
         cls = self.set_parent_task()
         return cls(target=self.target)
@@ -112,7 +113,7 @@ class GATKJobTask(JobTask):
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
-        return [cls(target=source), ratatosk.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1))]
+        return [cls(target=source), ratatosk.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls))]
 
 class RealignerTargetCreator(GATKJobTask):
     _config_subsection = "RealignerTargetCreator"
@@ -131,6 +132,11 @@ class RealignerTargetCreator(GATKJobTask):
         retval += " ".join(["-known {}".format(x) for x in self.known])
         return retval
 
+    def requires(self):
+        cls = self.set_parent_task()
+        source = self._make_source_file_name()
+        return [cls(target=source), ratatosk.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls))]
+    
     def main(self):
         return "RealignerTargetCreator"
 
@@ -145,15 +151,17 @@ class IndelRealigner(GATKJobTask):
     bam = luigi.Parameter(default=None)
     known = luigi.Parameter(default=[], is_list=True)
     label = luigi.Parameter(default=".realign")
-    parent_task = luigi.Parameter(default="ratatosk.gatk.InputBamFile")
+    parent_task = luigi.Parameter(default="ratatosk.gatk.RealignerTargetCreator")
+    source_suffix = luigi.Parameter(default=".intervals")
+    source = None
     
     def main(self):
         return "IndelRealigner"
 
     def requires(self):
         cls = self.set_parent_task()
-        source = self._make_source_file_name()
-        return [cls(target=source), RealignerTargetCreator(target=rreplace(source, self.target_suffix, RealignerTargetCreator.target_suffix.default, 1))]
+        self.source = self._make_source_file_name()
+        return cls(target=self.source)
 
     def output(self):
         return luigi.LocalTarget(self.target)
@@ -167,7 +175,11 @@ class IndelRealigner(GATKJobTask):
         return retval
 
     def args(self):
-        return ["-I", self.input()[0], "-o", self.output(), "--targetIntervals", self.input()[1]]
+        # FIXME: For now, assume that if RealignerTargetCreator is done,
+        # it should have a bam file. Note that using InputBamFile in
+        # requires will not work
+        sourceBam = rreplace(self.source, self.source_suffix, InputBamFile.target_suffix.default, 1)
+        return ["-I", sourceBam, "-o", self.output(), "--targetIntervals", self.input()]
 
 class BaseRecalibrator(GATKJobTask):
     _config_subsection = "BaseRecalibrator"
@@ -194,7 +206,7 @@ class BaseRecalibrator(GATKJobTask):
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
-        return [cls(target=source), ratatosk.samtools.IndexBam(target=source)]
+        return [cls(target=source), ratatosk.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls))]
 
     def output(self):
         return luigi.LocalTarget(self.target)
@@ -204,9 +216,14 @@ class BaseRecalibrator(GATKJobTask):
 
 
 class PrintReads(GATKJobTask):
+    # NB: print reads does *not* require BaseRecalibrator. Still this
+    # is usually the case so supply an option
     _config_subsection = "PrintReads"
-    parent_task = luigi.Parameter(default="ratatosk.gatk.InputBamFile")
+    parent_task = luigi.Parameter(default="ratatosk.gatk.BaseRecalibrator")
     label = luigi.Parameter(default=".recal")
+    recalibrate = luigi.Parameter(default=True, is_boolean=True)
+    source_suffix = luigi.Parameter(default=".recal_data.grp")
+    sourceBSQR = None
 
     def main(self):
         return "PrintReads"
@@ -221,14 +238,28 @@ class PrintReads(GATKJobTask):
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
+        print "PrintReads source name " + source
         return cls(target=source)
 
     def output(self):
         return luigi.LocalTarget(self.target)
     
     def args(self):
-        return ["-I", self.input(), "-BQSR", rreplace(self.input().fn, self.target_suffix, BaseRecalibrator.target_suffix.default, 1), "-o", self.output()]
-
+        # This is plain daft and inconsistent. If we want PrintReads
+        # to run an a bam file for which there is baserecalibrated
+        # output, it does *not* work to set requirements to point both
+        # to IndelRealigner and
+        # BaseReacalibrator(parent_task=IndelRealigner) - the
+        # dependencies break. This fix changes meaning of input option
+        # (-I) depending on whether we do recalibrate or note
+        # Possible FIX: require that print reads always
+        if self.recalibrate:
+            inputfile = rreplace(self.input().fn, self.source_suffix, InputBamFile.target_suffix.default, 1)
+            retval = ["-BQSR", self.input(), "-o", self.output(), "-I", inputfile]
+        else:
+            retval = ["-I", self.input(), "-o", self.output()]
+        print "Arguments to PrintReads" + str(retval)
+        return retval
 
 class ClipReads(GATKJobTask):
     _config_subsection = "ClipReads"

@@ -1,11 +1,11 @@
 # Main configuration file
 bwa:
-  bwaref: ../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
-  #bwaref: ../../../genomes/Hsapiens/hg19/bwa/chr11.fa
+  #bwaref: ../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
+  bwaref: ../../../genomes/Hsapiens/hg19/bwa/chr11.fa
 
 samtools:
   SamToBam:
-    parent_task: ratatosk.samtools.SampeToSamtools
+    parent_task: ratatosk.bwa.BwaSampe
 
 picard:
   DuplicationMetrics:
@@ -27,10 +27,10 @@ gatk:
   knownSites: [../../../genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf]
   dbsnp: ../../../genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf
 
-  RealignmentTargetCreator:
+  RealignerTargetCreator:
     parent_task: ratatosk.picard.MergeSamFiles
   IndelRealigner:
-    parent_task: ratatosk.gatk.RealignmentTargetCreator
+    parent_task: ratatosk.gatk.RealignerTargetCreator
   BaseRecalibrator:
     parent_task: ratatosk.gatk.IndelRealigner
   PrintReads:
@@ -41,3 +41,5 @@ gatk:
     parent_task: ratatosk.gatk.ClipReads
   VariantFiltration:
     parent_task: ratatosk.gatk.UnifiedGenotyper
+  VariantEval:
+    parent_task: ratatosk.gatk.VariantFiltration

@@ -319,16 +319,11 @@ desired *target* file name, so you would do `make target` to generate
 requirements, so for instance to run BwaSampe, you would do:
 
 	run_ratatosk.py BwaSampe \
-	  --sai1 /path/to/ngs_test_data/data/projects/J.Doe_00_01/P001_101_index3/121015_BB002BBBXX/P001_101_index3_TGACCA_L001_R1_001.sai
-      --sai2 /path/to/ngs_test_data/data/projects/J.Doe_00_01/P001_101_index3/121015_BB002BBBXX/P001_101_index3_TGACCA_L001_R2_001.sai
+	  --target target.bam
 	  --config-file config/ratatosk.yaml
 	  
-There is (hopefully) an easy fix to this: add an option `--target` to
-`JobTask` (see issues).
-
 Here I've used a 'global' config file
 [ratatosk.yaml](https://github.com/percyfal/ratatosk/blob/master/config/ratatosk.yaml).
-
 
 ### Dry run ###
 
@@ -341,6 +336,19 @@ By passing a dummy file
 we get the dependencies as specified in the config file:
 
 ![DryRun](https://raw.github.com/percyfal/ratatosk/master/doc/ratatosk_dry_run.png)
+
+### Variant calling pipeline  ###
+
+Here's an example of a variant calling pipeline:
+
+	run_ratatosk.py  VariantEval --target ./P001_101_index3_TGACCA_L001.sort.merge.realign.recal.clip.filtered.eval_metrics --config-file ../../../../../ratatosk/config/ratatosk.yaml
+	
+resulting in 
+
+![VariantPipeline](https://raw.github.com/percyfal/ratatosk/master/doc/ratatosk_variant_eval.png)
+
+Note that we need to know what labels are applied to the file name (see issues).
+
 
 ## Implementation ##
 
@@ -418,12 +426,11 @@ environment.
   `a.move(b)` doesn't work (I modelled this after
   [luigi hadoop_jar](https://github.com/spotify/luigi/blob/master/luigi/hadoop_jar.py#L63))
 
-* Add general task config option `--target` to mimic Make behaviour
-  more closely. In addition, have a fallback `--source` for a task.
-  These options correspond to *file names*
-  
 * Modify graph representation so only task name is shown
-  
+
+* Currently need to know target name. Add function that prints in
+  which order labels are added to facilitate target name construction.
+
 * Add ratatosk.pipelines in which pipeline wrappers are put. In the
   main script then import different pre-defined pipelines so one could
   change them via the command line following luigi rules
@@ -512,3 +519,8 @@ TODO: move these to github issue tracker
 
 * DONE: Command-line options should override settings in config file - not
   sure if that currently is the case. EDIT: no, this is a bug
+
+* DONE: Add general task config option `--target` to mimic Make behaviour
+  more closely. These options correspond to *file names*
+  CANCELLED?: In addition, have a fallback `--source` for a task.
+  

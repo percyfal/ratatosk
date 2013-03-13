@@ -101,10 +101,8 @@ class SortSam(PicardJobTask):
     def jar(self):
         return "SortSam.jar"
     def requires(self):
-
         cls = self.set_parent_task()
         source = self._make_source_file_name()
-        print "Sort sam target " + str(self.target) + " And sourc " + str(source)
         return cls(target=source)
     def output(self):
         return luigi.LocalTarget(self.target)
@@ -130,7 +128,7 @@ class MergeSamFiles(PicardJobTask):
 
     def args(self):
         return ["OUTPUT=", self.output()] + [item for sublist in [["INPUT=", x] for x in self.input()] for item in sublist]
-
+    
     def organize_sample_runs(self, cls):
         # This currently relies on the folder structure sample/fc1,
         # sample/fc2 etc... This should possibly also be a
@@ -140,12 +138,10 @@ class MergeSamFiles(PicardJobTask):
         for fc in flowcells:
             if not os.path.isdir(fc):
                 continue
-            bam_glob = os.path.join(os.path.dirname(self.target), fc, "*{}{}".format(cls.label, self.source_suffix))
-            bam_list = sorted(glob.glob(bam_glob))
-
-            #sample_runs = list(set([x.replace(".fastq.gz", "").replace(self.read1_suffix, "") for x in sorted(glob.glob(os.path.join(os.path.dirname(self.target), fc, "*{}.fastq.gz".format(self.read1_suffix))))]))
-            print bam_list
-            #bam_list.extend([rreplace(x, self.target_suffix"{}{}.bam".format(x, cls().label) for x in sample_runs])
+            if not fc.endswith("XX"):
+                continue
+            # This assumes only one sample run per flowcell
+            bam_list.append(os.path.join(fc, rreplace(self.target, "{}{}".format(self.label, self.target_suffix), self.source_suffix, 1)))
         return bam_list
     
 class AlignmentMetrics(PicardJobTask):
@@ -175,8 +171,6 @@ class InsertMetrics(PicardJobTask):
         return [luigi.LocalTarget(self.target),
                 luigi.LocalTarget(rreplace(self.target, self.target_suffix[0], self.target_suffix[1], 1))]
     def args(self):
-        print self.input()
-        print self.output()
         return ["INPUT=", self.input(), "OUTPUT=", self.output()[0], "HISTOGRAM_FILE=", self.output()[1]]
 
 class DuplicationMetrics(PicardJobTask):
