@@ -238,7 +238,7 @@ In examples directory, running
 	
 will execute a basic analysis pipeline:
 
-![AlignSeqcap](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap.png)
+![AlignSeqcap](https://raw.github.com/percyfal/ratatosk/develop/doc/example_align_seqcap.png)
 
 ### Adding adapter trimming  ###
 
