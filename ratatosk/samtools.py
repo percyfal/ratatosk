@@ -53,18 +53,10 @@ class SamtoolsJobTask(JobTask):
     """Main samtools job task"""
     _config_section = "samtools"
     target = luigi.Parameter(default=None)
-    #bam = luigi.Parameter(default=None)
     samtools = luigi.Parameter(default="samtools")
     parent_task = luigi.Parameter(default="ratatosk.samtools.InputSamFile")
     target_suffix = luigi.Parameter(default=".bam")
     source_suffix = luigi.Parameter(default=".bam")
-
-    #    def __init__(self, *args, **kwargs):
-    #         super(SamtoolsJobTask, self).__init__(*args, **kwargs)
-    # if self.bam and not self.sam:
-    #     self.sam = self.bam.replace(".bam", ".sam")
-    # if self.sam and not self.bam:
-    #     self.bam = self.bam.replace(".sam", ".sam")
 
     def exe(self):
         """Executable"""
@@ -76,14 +68,6 @@ class SamtoolsJobTask(JobTask):
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
-        return cls(target=source)
-        # if self.sam and not self.bam:
-        #     return cls(sam=self.sam)
-        # elif self.bam and not self.sam:
-        #     return cls(bam=self.bam)
-        # else:
-        #     logger.warn("Both sam file ('{0}') and bam file ('{1}') options set: using sam file argument".format(self.sam, self.bam))
-        #     return cls(sam=self.sam)
 
 class SamToBam(SamtoolsJobTask):
     _config_subsection = "SamToBam"

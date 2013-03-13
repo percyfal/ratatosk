@@ -32,12 +32,14 @@ class TestGeneralFunctions(unittest.TestCase):
    def test_prefix_generation(self):
       # See if it is possible from a task to construct a prefix that
       # is unique and resolved for a particular task
-      #luigi.run(_luigi_args(['--target', bam, '--config-file', localconf, '--parent-task', 'ratatosk.bwa.BwaSampe']), main_task_cls=SAM.SamToBam)
-      tmp = SAM.SamToBam()
-      print tmp.parent_task
-      print tmp.config_file
-      tmp.config_file = localconf
-      print tmp.config_file
+      tmp = PICARD.DuplicationMetrics()
       tmp._update_config(localconf)
+      tmp.parent_task = "ratatosk.picard.SortSam"
+      tmp.target = "P001_101_index3_TGACCA_L001.sort.merge.dup_metrics"
+      tmp2 = PICARD.SortSam()
+      tmp2._update_config(localconf)
+      tmp2.parent_task = "ratatosk.picard.DuplicationMetrics"
+      tmp2.target = "P001_101_index3_TGACCA_L001.sort.sort.bam"
       print tmp.name_prefix()
+      print tmp2.name_prefix()
 

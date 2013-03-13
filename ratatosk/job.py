@@ -134,8 +134,10 @@ class BaseJobTask(luigi.Task):
 
     def name_prefix(self):
         """Generate a name prefix based on available labels for this task"""
+        print "in name_prefix"
+        print self.requires()
         for r in flatten(self.requires()):
-            print r
+            print r.label
         
     def _update_config(self, config_file, *args, **kwargs):
         """Update configuration for this task"""
