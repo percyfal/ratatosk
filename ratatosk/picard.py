@@ -44,7 +44,7 @@ class PicardJobRunner(DefaultShellJobRunner):
 
         arglist += job_args
         cmd = ' '.join(arglist)        
-        logger.info(cmd)
+        logger.info(cmd.replace("= ", "="))
         (stdout, stderr, returncode) = shell.exec_cmd(cmd.replace("= ", "="), shell=True)
 
         if returncode == 0:
@@ -133,15 +133,21 @@ class MergeSamFiles(PicardJobTask):
         # This currently relies on the folder structure sample/fc1,
         # sample/fc2 etc... This should possibly also be a
         # configurable function?
-        flowcells = os.listdir(os.path.dirname(self.target))
+        # NB: this is such a pain to get right I'm adding lots of debug right now
+        logger.debug("Organizing samples for {}".format(self.target))
+        targetdir = os.path.dirname(self.target)
+        flowcells = os.listdir(targetdir)
         bam_list = []
         for fc in flowcells:
-            if not os.path.isdir(fc):
+            logger.debug("Looking in directory {}".format(fc))
+            fc_dir = os.path.join(targetdir, fc)
+            if not os.path.isdir(fc_dir):
                 continue
-            if not fc.endswith("XX"):
+            if not fc_dir.endswith("XX"):
                 continue
             # This assumes only one sample run per flowcell
-            bam_list.append(os.path.join(fc, rreplace(self.target, "{}{}".format(self.label, self.target_suffix), self.source_suffix, 1)))
+            bam_list.append(os.path.join(fc_dir, os.path.basename(rreplace(self.target, "{}{}".format(self.label, self.target_suffix), self.source_suffix, 1))))
+        logger.debug("Generated target bamfile list {}".format(bam_list))
         return bam_list
     
 class AlignmentMetrics(PicardJobTask):
