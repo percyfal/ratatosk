@@ -39,7 +39,7 @@ setup(name = "ratatosk",
         'ratatosk':[
             'data/grf/*',
             'data/templates/*',
-            'data/config/*'
+            'config/*'
             ]}
       )
 

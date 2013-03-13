@@ -1,7 +1,7 @@
 # Main configuration file
 bwa:
-  bwaref: ../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
-  #bwaref: ../../../genomes/Hsapiens/hg19/bwa/chr11.fa
+  #bwaref: ../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
+  bwaref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
 
 samtools:
   SamToBam:
@@ -20,14 +20,15 @@ picard:
     parent_task: ratatosk.picard.SortSam
 
 gatk:
-  ref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
-  knownSites: [../../ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf]
-  dbsnp: ../../ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf
+  ref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
+  knownSites: [~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf]
+  dbsnp: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf
   #ref: ../../../genomes/Hsapiens/hg19/seq/chr11.fa
   #knownSites: [../../../genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf]
   #dbsnp: ../../../genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf
 
   RealignerTargetCreator:
+    #parent_task: ratatosk.picard.DuplicationMetrics
     parent_task: ratatosk.picard.MergeSamFiles
   IndelRealigner:
     parent_task: ratatosk.gatk.RealignerTargetCreator

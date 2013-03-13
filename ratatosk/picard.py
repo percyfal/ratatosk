@@ -139,12 +139,12 @@ class MergeSamFiles(PicardJobTask):
         flowcells = os.listdir(targetdir)
         bam_list = []
         for fc in flowcells:
-            logger.debug("Looking in directory {}".format(fc))
             fc_dir = os.path.join(targetdir, fc)
             if not os.path.isdir(fc_dir):
                 continue
             if not fc_dir.endswith("XX"):
                 continue
+            logger.debug("Looking in directory {}".format(fc))
             # This assumes only one sample run per flowcell
             bam_list.append(os.path.join(fc_dir, os.path.basename(rreplace(self.target, "{}{}".format(self.label, self.target_suffix), self.source_suffix, 1))))
         logger.debug("Generated target bamfile list {}".format(bam_list))

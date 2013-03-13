@@ -348,14 +348,16 @@ we get the dependencies as specified in the config file:
 
 Here's an example of a variant calling pipeline:
 
-	run_ratatosk.py  VariantEval --target ./P001_101_index3_TGACCA_L001.sort.merge.realign.recal.clip.filtered.eval_metrics --config-file ../../../../../ratatosk/config/ratatosk.yaml
+	run_ratatosk.py SeqCap --project J.Doe_00_01 --projectdir ~/opt/ngs_test_data/data/projects/ --config-file ~/opt/ratatosk/config/seqcap.yaml --workers 4
 	
 resulting in 
 
-![VariantPipeline](https://raw.github.com/percyfal/ratatosk/master/doc/ratatosk_variant_eval.png)
+![SeqCap](https://raw.github.com/percyfal/ratatosk/master/doc/ratatosk_pipeline_seqcap.png)
 
-Note that we need to know what labels are applied to the file name (see issues).
-
+Blue boxes mean active processes (the command was run with `--workers
+4`, which uses 4 parallel processes). Note that we need to know what
+labels are applied to the file name (see issues). In this iteration,
+for the predefined pipelines the file names have been hardcoded.
 
 ## Implementation ##
 
@@ -447,11 +449,6 @@ environment.
 
 * Pickling states doesn't currently seem to work?
 
-* File suffixes and string substitutions in file names are hard-coded.
-  Turning substitutions into options would maybe solve the issue of
-  input parameter generation for tasks that are run several times on
-  files with different suffixes.
-
 * Speaking of file suffixes, currently assume all fastq files are
   gzipped
 
@@ -531,3 +528,8 @@ TODO: move these to github issue tracker
   more closely. These options correspond to *file names*
   CANCELLED?: In addition, have a fallback `--source` for a task.
   
+* DONE (sort of - the current solution works, but would need cleaning
+  up): File suffixes and string substitutions in file names are
+  hard-coded. Turning substitutions into options would maybe solve the
+  issue of input parameter generation for tasks that are run several
+  times on files with different suffixes.

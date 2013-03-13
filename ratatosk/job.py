@@ -132,13 +132,6 @@ class BaseJobTask(luigi.Task):
     def __repr__(self):
         return self.task_id
 
-    def name_prefix(self):
-        """Generate a name prefix based on available labels for this task"""
-        print "in name_prefix"
-        print self.requires()
-        for r in flatten(self.requires()):
-            print r.label
-        
     def _update_config(self, config_file, *args, **kwargs):
         """Update configuration for this task"""
         config = interface.get_config(config_file)
@@ -359,3 +352,25 @@ class JobTask(BaseJobTask):
 
     def args(self):
         return []
+
+def name_prefix():
+    """Generate a name prefix based on available labels for task
+    graph. Traverse dependency tree, recording all possible joins of
+    labels from end leaf to "top" leaf. Note that this is similar, but
+    not identical, to the longest path problem (not all nodes have a
+    label and should therefore not contribute to string). See
+    http://en.wikipedia.org/wiki/Longest_path_problem.
+
+    EDIT: note that traversing the tree is crucial also for the
+    desired options
+
+    --restart (start from scratch)
+
+    --restart-from TASK (start from a given task)
+
+    Touching the first file is *not* enough since the requires
+    only looks at the directly preceding tasks.
+    """ 
+
+    pass
+

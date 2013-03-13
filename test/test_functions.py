@@ -29,17 +29,37 @@ def _luigi_args(args):
     return args
 
 class TestGeneralFunctions(unittest.TestCase):
-   def test_prefix_generation(self):
-      # See if it is possible from a task to construct a prefix that
-      # is unique and resolved for a particular task
-      tmp = PICARD.DuplicationMetrics()
-      tmp._update_config(localconf)
-      tmp.parent_task = "ratatosk.picard.SortSam"
-      tmp.target = "P001_101_index3_TGACCA_L001.sort.merge.dup_metrics"
-      tmp2 = PICARD.SortSam()
-      tmp2._update_config(localconf)
-      tmp2.parent_task = "ratatosk.picard.DuplicationMetrics"
-      tmp2.target = "P001_101_index3_TGACCA_L001.sort.sort.bam"
-      print tmp.name_prefix()
-      print tmp2.name_prefix()
+    def test_prefix_generation(self):
+        # See if it is possible from a task to construct a prefix that
+        # is unique and resolved for a particular task
+        localconf = "../config/ratatosk.yaml"
 
+
+        class gatk1(ratatosk.gatk.RealignerTargetCreator):
+            target = luigi.Parameter(default="dummy")
+
+        class gatk2(ratatosk.gatk.IndelRealigner):
+            target = luigi.Parameter(default="dummy")
+            def requires(self):
+                return gatk1(target=self.target)
+
+        class gatk3(ratatosk.gatk.BaseRecalibrator):
+            target = luigi.Parameter(default="dummy")
+            def requires(self):
+                return gatk2(target=self.target)
+        
+        class gatk4(ratatosk.gatk.PrintReads):
+            target = luigi.Parameter(default="dummy")
+            def requires(self):
+                return gatk3(target=self.target)
+            
+        # gatk4._update_config(localconf)
+        # gatk4.parent_class = gatk3
+        # gatk4.target = "dummy"
+
+        # gatk5 = ratatosk.gatk.RealignerTargetCreator()
+        # gatk5._update_config(localconf)
+        # gatk5.parent_class = gatk4
+        # gatk5.target = "dummy"
+        print "Parent class " + str(gatk4.parent_task)
+        gatk4().name_prefix()
