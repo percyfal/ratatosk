@@ -379,10 +379,10 @@ if task == "HaloPlex":
 ```
 
 where `config_dict['haloplex']` points to predefined config files
-located in the `ratatosk/config` folder. Best practice pipelines are
-currently located in `ratatosk.scilife`, but should be moved to a more
-general location once scilife-specific code has been removed. The
-reason for the current location is the function
+located in the `ratatosk/config` folder. Best practice pipeline
+classes are currently located in `ratatosk.scilife`, but should be
+moved to a more general location once scilife-specific code has been
+removed. The reason for the current location is the function
 `HaloPlex.target_generator` that is used to generate desired target
 names based on a directory structure specific to scilife.
 Incidentally, this demonstrates the boilerplate code needed to add a
@@ -506,7 +506,7 @@ from ratatosk.utils import rreplace
 At the very least, there should exist the following:
 
 ```python
-class WrapperJobRunner(DefaultShellJobRunner):
+class MyProgramJobRunner(DefaultShellJobRunner):
     pass
 ```
 
@@ -565,6 +565,10 @@ class MyProgram(JobTask):
         """Executable of this task"""
         return self.myprogram
 
+	# Must be present
+	def job_runner(self):
+        return MyProgramJobRunner()
+
 	# The following functions are inherited from JobTask and changing
 	# their behaviour is often not necessary
 	
@@ -582,9 +586,7 @@ class MyProgram(JobTask):
 	# the source name of the parent class that was used to generate
 	# the target
     def requires(self):
-		# Set the parent task
         cls = self.set_parent_task()
-		# Make source file name
         source = self._make_source_file_name()
         return cls(target=source)
     
@@ -600,7 +602,7 @@ class MyProgram(JobTask):
 
 To actually run the task, you need to import the module in your
 script, and `luigi` will automagically add the task `MyProgram` and
-it's options.
+its options.
 
 ## TODO/future ideas/issues ##
 
@@ -652,6 +654,8 @@ environment.
 * Some options in `opts()` are not really options - see e.g.
   `ratatosk.gatk.VariantEval`, which requires a reference. Move to
   `args()` for consistency?
+
+* Make `exe()` use `self.exe` and remove `exe()` from all subclasses.
 
 * DONE? Fix path handling so relative paths can be used (see e.g. run method in
   [fastq](https://github.com/percyfal/ratatosk/blob/master/ratatosk/fastq.py))

@@ -12,12 +12,14 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 import os
+import re
 import luigi
 import time
 import shutil
 from ratatosk.job import JobTask, DefaultShellJobRunner
-from ratatosk.utils import rreplace
+from ratatosk.utils import rreplace, fullclassname
 from cement.utils import shell
+
 
 class BwaJobRunner(DefaultShellJobRunner):
     pass
@@ -57,6 +59,9 @@ class BwaAln(BwaJobTask):
     parent_task = luigi.Parameter(default="ratatosk.bwa.InputFastqFile")
     target_suffix = luigi.Parameter(default=".sai")
     source_suffix = luigi.Parameter(default=".fastq.gz")
+    read1_suffix = luigi.Parameter(default="_R1_001")
+    read2_suffix = luigi.Parameter(default="_R2_001")
+    is_read1 = True
     can_multi_thread = True
 
     def main(self):
@@ -68,15 +73,32 @@ class BwaAln(BwaJobTask):
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
-        return cls(target=source)
+        # Ugly test hack for 1 -> 2 dependency
+        if fullclassname(cls) in ["ratatosk.misc.ResyncMatesJobTask"]:
+            if re.search(source, self.read1_suffix):
+                self.is_read1 = True
+                fq1 = source
+                fq2 = rreplace(source, self.read1_suffix, self.read2_suffix, 1)
+            else:
+                self.is_read1 = False
+                fq1 = rreplace(source, self.read2_suffix, self.read1_suffix, 1)
+                fq2 = source
+            return cls(target=[fq1, fq2])
+        else:
+            return cls(target=source)
     
     def output(self):
         return luigi.LocalTarget(self.target)
-        #return luigi.LocalTarget(os.path.abspath(self.input().fn))#).replace(".gz", "").replace(".fastq", ".sai"))
 
     def args(self):
         # bwa aln "-f" option seems to be broken!?!
-        return [self.bwaref, self.input(), ">", self.output()]
+        if len(self.input()) > 1:
+            if self.is_read1:
+                return [self.bwaref, self.input()[0], ">", self.output()]
+            else:
+                return [self.bwaref, self.input()[1], ">", self.output()]
+        else:
+            return [self.bwaref, self.input(), ">", self.output()]
 
 class BwaAlnWrapperTask(luigi.WrapperTask):
     fastqfiles = luigi.Parameter(default=[], is_list=True)

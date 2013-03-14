@@ -4,6 +4,7 @@ import sys
 import unittest
 import luigi
 import time
+import yaml
 import logging
 from ratatosk.job import JobTask
 import ratatosk.bwa as BWA
@@ -13,6 +14,7 @@ import ratatosk.picard as PICARD
 import ratatosk.gatk as GATK
 import ratatosk.cutadapt as CUTADAPT
 import ratatosk.fastqc as FASTQC
+import ratatosk.misc as MISC
 import ratatosk.external
 import ngstestdata as ntd
 
@@ -56,7 +58,7 @@ def _make_file_links():
         os.symlink(fastq1, os.path.join(os.curdir, os.path.basename(fastq1)))
     if not os.path.lexists(os.path.join(os.curdir, os.path.basename(fastq2))):
         os.symlink(fastq2, os.path.join(os.curdir, os.path.basename(fastq2)))
-    
+
 class TestSamtoolsWrappers(unittest.TestCase):
    def test_samtools_view(self):
       luigi.run(_luigi_args(['--target', bam, '--config-file', localconf, '--parent-task', 'ratatosk.bwa.BwaSampe']), main_task_cls=SAM.SamToBam)
@@ -79,6 +81,32 @@ class TestMiscWrappers(unittest.TestCase):
     def test_fastqc(self):
         _make_file_links()
         luigi.run(_luigi_args(['--target', os.path.basename(fastq1), '--config-file', localconf]), main_task_cls=FASTQC.FastQCJobTask)
+
+    # Here test trimming, resyncing, and finally bwa aln
+    def test_resyncmates(self):
+       luigi.run(_luigi_args(['--target', fastq1.replace(".fastq.gz", ".sync.fastq.gz"),
+                              '--target', fastq2.replace(".fastq.gz", ".sync.fastq.gz")]), main_task_cls=MISC.ResyncMatesJobTask)
+
+    def test_resyncmates_after_trim(self):
+       luigi.run(_luigi_args(['--target', fastq1.replace(".fastq.gz", ".trimmed.sync.fastq.gz"),
+                              '--target', fastq2.replace(".fastq.gz", ".trimmed.sync.fastq.gz"),
+                              '--parent-task', 'ratatosk.cutadapt.CutadaptJobTask']), main_task_cls=MISC.ResyncMatesJobTask)
+    def test_bwaaln_after_trim_resyncmates(self):
+       with open("mock.yaml", "w") as fp:
+          fp.write(yaml.safe_dump({
+                   'misc':{'ResyncMates':{'parent_task': 'ratatosk.cutadapt.CutadaptJobTask'}},
+                   'bwa' :{
+                         'bwaref': bwaref,
+                         'aln':{'parent_task':'ratatosk.misc.ResyncMatesJobTask'}}}, default_flow_style=False))
+       luigi.run(_luigi_args(['--target', sai1.replace(".sai", ".trimmed.sync.sai"),
+                              #'--parent-task', 'ratatosk.misc.ResyncMatesJobTask', 
+                              '--config-file', 'mock.yaml']), main_task_cls=BWA.BwaAln)
+       luigi.run(_luigi_args(['--target', sai2.replace(".sai", ".trimmed.sync.sai"),
+                              #'--parent-task', 'ratatosk.misc.ResyncMatesJobTask'
+                              '--config-file', 'mock.yaml']), main_task_cls=BWA.BwaAln)
+       os.unlink("mock.yaml")
+
+    
 
 class TestBwaWrappers(unittest.TestCase):
     def test_bwaaln(self):
