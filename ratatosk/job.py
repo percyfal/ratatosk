@@ -22,6 +22,7 @@ import luigi
 from itertools import izip
 from luigi.task import flatten
 from cement.utils import shell
+import ratatosk
 from ratatosk import interface
 from ratatosk.utils import rreplace
 
@@ -94,7 +95,8 @@ class DefaultShellJobRunner(JobRunner):
             raise Exception("Job '{}' failed: \n{}".format(' '.join(arglist), " ".join([stderr])))
                 
 class BaseJobTask(luigi.Task):
-    config_file = luigi.Parameter(is_global=True, default=os.path.join(os.getenv("HOME"), ".ratatosk/ratatosk.yaml"))
+    config_file = luigi.Parameter(is_global=True, default=os.path.join(os.path.join(ratatosk.__path__[0], os.pardir, "config", "seqcap.yaml")), description="Main configuration file.")
+    custom_config = luigi.Parameter(is_global=True, default=None, description="Custom configuration file for tuning options in predefined pipelines in which workflow may not be altered.")
     dry_run = luigi.Parameter(default=False, is_global=True, is_boolean=True)
     options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default=None)
@@ -121,10 +123,20 @@ class BaseJobTask(luigi.Task):
     def __init__(self, *args, **kwargs):
         params = self.get_params()
         param_values = self.get_param_values(params, args, kwargs)
+        # Main configuration file
         for key, value in param_values:
             if key == "config_file":
                 config_file = value
                 kwargs = self._update_config(config_file, *args, **kwargs)
+        # If a pipeline config has been loaded, but the user
+        # nevertheless wants to change program options, the
+        # --custom-config flag can be used. Note that updating
+        # 'parent_task' then is disabled so that program execution
+        # order cannot be changed.
+        for key, value in param_values:
+            if key == "custom_config":
+                custom_config = value
+                kwargs = self._update_config(custom_config, disable_parent_task_update=False, *args, **kwargs)
         super(BaseJobTask, self).__init__(*args, **kwargs)
         if self.dry_run:
             print "DRY RUN: " + str(self)
@@ -132,14 +144,17 @@ class BaseJobTask(luigi.Task):
     def __repr__(self):
         return self.task_id
 
-    def _update_config(self, config_file, *args, **kwargs):
+    def _update_config(self, config_file, disable_parent_task_update=False, *args, **kwargs):
         """Update configuration for this task"""
         config = interface.get_config(config_file)
+        if not config:
+            return kwargs
         if not config.has_section(self._config_section):
             return kwargs
         params = self.get_params()
         param_values = {x[0]:x[1] for x in self.get_param_values(params, args, kwargs)}
         for key, value in self.get_params():
+            print key
             new_value = None
             # Got a command line option => override config file
             if value.default != param_values.get(key, None):

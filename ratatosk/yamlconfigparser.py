@@ -102,6 +102,8 @@ class YAMLParserConfigHandler(config.CementConfigHandler):
         :returns: boolean
         
         """
+        if file_path is None:
+            return None
         file_path = os.path.abspath(os.path.expanduser(file_path))
         if os.path.exists(file_path):
             self.read(file_path)
