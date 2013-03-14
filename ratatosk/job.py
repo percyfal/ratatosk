@@ -48,8 +48,9 @@ class DefaultShellJobRunner(JobRunner):
                 if x.exists(): # input
                     args.append(x.path)
                 else: # output
+                    # Note the ugly ".gz" fix - cutadapt needs this to determine outfile type...
                     y = luigi.LocalTarget(x.path + \
-                                              '-luigi-tmp-%09d' % random.randrange(0, 1e10))
+                                              '-luigi-tmp-%09d.gz' % random.randrange(0, 1e10))
                     logger.info("Using temp path: {0} for path {1}".format(y.path, x.path))
                     args.append(y.path)
                     if job.add_suffix():

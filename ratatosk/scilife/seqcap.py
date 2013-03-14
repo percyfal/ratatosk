@@ -28,7 +28,7 @@ class HaloPlex(luigi.WrapperTask):
     sample = luigi.Parameter(default=None, description="Sample directory.")
     # Hard-code this for now - would like to calculate on the fly so that
     # implicit naming is unnecessary
-    final_target_suffix = "sort.merge.realign.recal.clip.filtered.eval_metrics"
+    final_target_suffix = "trimmed.sync.sort.merge.realign.recal.clip.filtered.eval_metrics"
 
     def requires(self):
         # List requirements for completion, consisting of classes above

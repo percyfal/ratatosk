@@ -99,11 +99,9 @@ class TestMiscWrappers(unittest.TestCase):
                          'bwaref': bwaref,
                          'aln':{'parent_task':'ratatosk.misc.ResyncMatesJobTask'}}}, default_flow_style=False))
        luigi.run(_luigi_args(['--target', sai1.replace(".sai", ".trimmed.sync.sai"),
-                              #'--parent-task', 'ratatosk.misc.ResyncMatesJobTask', 
-                              '--config-file', 'mock.yaml']), main_task_cls=BWA.BwaAln)
+                                     '--config-file', 'mock.yaml']), main_task_cls=BWA.BwaAln)
        luigi.run(_luigi_args(['--target', sai2.replace(".sai", ".trimmed.sync.sai"),
-                              #'--parent-task', 'ratatosk.misc.ResyncMatesJobTask'
-                              '--config-file', 'mock.yaml']), main_task_cls=BWA.BwaAln)
+                                     '--config-file', 'mock.yaml']), main_task_cls=BWA.BwaAln)
        os.unlink("mock.yaml")
 
     
