@@ -152,24 +152,25 @@ for nicely structured config files). By default, all `metrics`
 functions have as parent class `ratatosk.picard.InputBamFile`. This
 can easily be modified in the config file to:
 
-	picard:
-	  # input_bam_file "pipes" input from other modules
-	  input_bam_file:
-	    parent_task: ratatosk.samtools.SamToBam
-      hs_metrics:
+    picard:
+      # InputBamFile "pipes" input from other modules
+      InputBamFile:
+        parent_task: ratatosk.samtools.SamToBam
+      HsMetrics:
         parent_task: ratatosk.picard.SortSam
         targets: targets.interval_list
         baits: targets.interval_list
-      duplication_metrics:
+      DuplicationMetrics:
         parent_task: ratatosk.picard.SortSam
-      alignment_metrics:
+      AlignmentMetrics:
         parent_task: ratatosk.picard.SortSam
-      insert_metrics:
+      InsertMetrics:
         parent_task: ratatosk.picard.SortSam
-  
+    
     samtools:
-      samtobam:
-        parent_task: tests.test_wrapper.SampeToSamtools
+      SamToBam:
+        parent_task: test.test_wrapper.SampeToSamtools
+
 
 Note also that `input_bam_file` has been changed to depend on
 `ratatosk.samtools.SamToBam` (default value is
@@ -178,14 +179,13 @@ Note also that `input_bam_file` has been changed to depend on
 `tests.luigi.test_wrapper.SampeToSamtools`, a class defined in the
 test as
 
-    class SampeToSamtools(SAM.SamToBam):
-        def requires(self):
-            return BWA.BwaSampe(sai1=os.path.join(self.sam.replace(".sam", BWA.BwaSampe().read1_suffix + ".sai")),
-                                sai2=os.path.join(self.sam.replace(".sam", BWA.BwaSampe().read2_suffix + ".sai")))
+```python
+class SampeToSamtools(SAM.SamToBam):
+    def requires(self):
+        source = self._make_source_file_name()
+        return BWA.BwaSampe(target=source)
+```
 
-This is necessary as there is no default method to go from bam to sai.
-Future implementations should possibly include commong 'module
-connecting tasks' as these.
 	
 ## Example scripts  ##
 
@@ -281,10 +281,12 @@ class it's own configuration file location, you can configure the new
 task to depend on whatever you want. In `pipeline_custom.py` I have
 added the following class:
 
-	class HsMetricsNonDup(HsMetrics):
-		"""Run on non-deduplicated data"""
-		_config_subsection = "hs_metrics_non_dup"
-		parent_task = luigi.Parameter(default="ratatosk.picard.DuplicationMetrics")
+```python
+class HsMetricsNonDup(HsMetrics):
+	"""Run on non-deduplicated data"""
+	_config_subsection = "hs_metrics_non_dup"
+	parent_task = luigi.Parameter(default="ratatosk.picard.DuplicationMetrics")
+```
 
 The `picard` configuration section in the configuration file
 `align_seqcap_custom.yaml` now has a new subsection:
@@ -348,9 +350,9 @@ we get the dependencies as specified in the config file:
 
 ### Variant calling pipeline  ###
 
-Here's an example of a variant calling pipeline:
+Here's an example of a variant calling pipeline defined for analysis of HaloPlex data:
 
-	run_ratatosk.py SeqCap --project J.Doe_00_01 --projectdir ~/opt/ngs_test_data/data/projects/ --config-file ~/opt/ratatosk/config/seqcap.yaml --workers 4
+	run_ratatosk.py HaloPlex --project J.Doe_00_01 --projectdir ~/opt/ngs_test_data/data/projects/ --workers 4
 	
 resulting in 
 
@@ -407,12 +409,13 @@ class BestPractice(luigi.WrapperTask):
 		# Gather targets here
 ```
 
-
 If a pipeline config has been loaded, but the user nevertheless wants
 to change program options, the `--custom-config` flag can be used.
-Note then that updating 'parent_task' then is disabled so that program
-execution order cannot be changed.
-
+Note then that updating `parent_task` then is disabled so that program
+execution order cannot be changed. This allows for project-specific
+configuration files that contain metadata information about the
+project itself, as well as allowing for configurations of analysis
+options.
 
 ## Implementation ##
 
@@ -502,8 +505,6 @@ environment.
 * Check for program versions and command inconsistencies: for
   instance, BaseRecalibrator was introduced in GATK 2.0
 
-* Pickling states doesn't currently seem to work?
-
 * Speaking of file suffixes, currently assume all fastq files are
   gzipped
 
@@ -588,3 +589,5 @@ TODO: move these to github issue tracker
   hard-coded. Turning substitutions into options would maybe solve the
   issue of input parameter generation for tasks that are run several
   times on files with different suffixes.
+
+* CANCELLED: Pickling states doesn't currently seem to work?
