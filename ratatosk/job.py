@@ -129,11 +129,6 @@ class BaseJobTask(luigi.Task):
             if key == "config_file":
                 config_file = value
                 kwargs = self._update_config(config_file, *args, **kwargs)
-        # If a pipeline config has been loaded, but the user
-        # nevertheless wants to change program options, the
-        # --custom-config flag can be used. Note that updating
-        # 'parent_task' then is disabled so that program execution
-        # order cannot be changed.
         for key, value in param_values:
             if key == "custom_config":
                 custom_config = value

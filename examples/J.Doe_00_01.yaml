@@ -1,0 +1,27 @@
+# Project configuration file
+bwa:
+  bwaref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
+  aln:
+    # NB: shouldn't work since this is a custom config file
+    parent_task: ratatosk.bwa.BwaSampe
+    # However this should work
+    options: -e 2 -l 40
+  
+samtools:
+  SamToBam:
+    options:
+
+picard:
+  DuplicationMetrics:
+    options:
+
+gatk:
+  ref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
+  knownSites: 
+    - ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf
+  dbsnp: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf
+
+  RealignerTargetCreator:
+    options:
+  IndelRealigner:
+    options:

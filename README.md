@@ -289,10 +289,12 @@ added the following class:
 The `picard` configuration section in the configuration file
 `align_seqcap_custom.yaml` now has a new subsection:
 
-	hs_metrics_non_dup:
-		parent_task:
-		targets: ../test/targets.interval_list
-		baits: ../test/targets.interval_list
+```yaml
+hs_metrics_non_dup:
+	parent_task:
+	targets: ../test/targets.interval_list
+	baits: ../test/targets.interval_list
+```
 
 Running 
 
@@ -358,6 +360,59 @@ Blue boxes mean active processes (the command was run with `--workers
 4`, which uses 4 parallel processes). Note that we need to know what
 labels are applied to the file name (see issues). In this iteration,
 for the predefined pipelines the file names have been hardcoded.
+
+## Best practice pipelines ##
+
+The user can modify execution order of tasks by customising the
+`parent_task` attribute. However, some workflows should be immutable,
+thereby representing "standard" or "best-practice" pipelines. This is
+currently achieved by treating some tasks differently. For instance,
+when the task `HaloPlex` is called, the following code is executed in
+`run_ratatosk.py`:
+
+```python
+if task == "HaloPlex":
+    args = sys.argv[2:] + ['--config-file', config_dict['haloplex']]
+    luigi.run(args, main_task_cls=ratatosk.scilife.seqcap.HaloPlex)
+```
+
+where `config_dict['haloplex']` points to predefined config files
+located in the `ratatosk/config` folder. Best practice pipelines are
+currently located in `ratatosk.scilife`, but should be moved to a more
+general location once scilife-specific code has been removed. The
+reason for the current location is the function
+`HaloPlex.target_generator` that is used to generate desired target
+names based on a directory structure specific to scilife.
+Incidentally, this demonstrates the boilerplate code needed to add a
+new predefined pipeline. In `ratatosk.scilife.__init__.py`, add
+
+```python
+config_dict{
+	'bestpractice' : os.path.join(ratatosk.__path__[0], os.pardir, "config", "bestpractice.yaml"),
+	...
+	}
+```
+	
+and in `ratatosk.scilife.bestpractice`
+
+```python
+class BestPractice(luigi.WrapperTask):
+	...
+		
+	def requires(self):
+		target_list = ["...".format(x, self.final_target_suffix) for x in self.target_generator()]
+		return [FinalTarget(target=tgt) for tgt in target_list, ...]
+			
+	def target_generator(self):
+		# Gather targets here
+```
+
+
+If a pipeline config has been loaded, but the user nevertheless wants
+to change program options, the `--custom-config` flag can be used.
+Note then that updating 'parent_task' then is disabled so that program
+execution order cannot be changed.
+
 
 ## Implementation ##
 
