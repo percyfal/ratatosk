@@ -4,6 +4,7 @@ import yaml
 import unittest
 import luigi
 import logging
+import yaml
 import ratatosk
 from ratatosk.interface import get_config
 import ratatosk.bwa
@@ -25,8 +26,6 @@ class TestConfigParser(unittest.TestCase):
         with open(configfile) as fh:
             cls.yaml_config = yaml.load(fh)
             
-        #print cls.yaml_config
-
     def test_get_config(self):
         local_config = get_config(configfile)
         self.assertIsInstance(local_config, ratatosk.yamlconfigparser.YAMLParserConfigHandler)
@@ -37,21 +36,39 @@ class TestConfigParser(unittest.TestCase):
         self.assertListEqual(sorted(os.path.basename(x) for x in config.get(section="gatk", option="knownSites")), 
                              ['1000G_omni2.5.vcf', 'dbsnp132_chr11.vcf'])
 
-
-# Setup Mock files to capture output from tasks
-# Not quite sure how to capture stderr
-class MockBwaAln(ratatosk.bwa.BwaAln):
-    def output(self):
-        return File('/tmp/test_jobtask_config', mirror_on_stderr=True)
-
-class TestRatatoskConfig(unittest.TestCase):
+class TestConfigUpdate(unittest.TestCase):
     def setUp(self):
         global File
         File = MockFile
         MockFile._file_contents.clear()
 
-    def test_dry_run(self):
-        luigi.run(['--dry-run', '--bam', 'tabort.bam', '--config-file', '../config/ratatosk.yaml'], main_task_cls=ratatosk.gatk.UnifiedGenotyper)
+    def test_config_update(self):
+        """Test updating config with and without disable_parent_task_update"""
+        # reading mock in _update_config doesn't work
+        #mock_config = File("/tmp/mock.yaml")
+        #fp = mock_config.open("w")
+        #fp.close()
+        with open("mock.yaml", "w") as fp:
+            fp.write(yaml.safe_dump({'gatk':{'parent_task':'another.class', 'UnifiedGenotyper':{'parent_task': 'no.such.class'}}}, default_flow_style=False))
 
-    def test_jobtask_config(self):
-        luigi.run(['--parent-task', 'new.module.path', '--fastq', 'tabort.fastq','--config-file', '../config/ratatosk.yaml'], main_task_cls=MockBwaAln)
+        # Main gatk task
+        gatkjt = ratatosk.gatk.GATKJobTask()
+        self.assertEqual(gatkjt.parent_task, "ratatosk.gatk.InputBamFile")
+        kwargs = gatkjt._update_config("mock.yaml")
+        self.assertEqual(kwargs, {'parent_task':'another.class'})
+        kwargs = gatkjt._update_config("mock.yaml", disable_parent_task_update=True)
+        self.assertEqual(kwargs, {})
+
+        # UnifiedGenotyper
+        #
+        # Incidentally, this verifies that subsection key value 'no.such.class'
+        # overrides section key 'another.class'
+        ug = ratatosk.gatk.UnifiedGenotyper()
+        self.assertEqual(ug.parent_task, "ratatosk.gatk.ClipReads")
+        kwargs = ug._update_config("mock.yaml")
+        self.assertEqual(kwargs, {'parent_task':'no.such.class'})
+        kwargs = ug._update_config("mock.yaml", disable_parent_task_update=True)
+        self.assertEqual(kwargs, {})
+        os.unlink("mock.yaml")
+        
+

@@ -22,8 +22,9 @@ from ratatosk.gatk import VariantEval
 logger = logging.getLogger('luigi-interface')
 
 class HaloPlex(luigi.WrapperTask):
-    project = luigi.Parameter(description="Project name (equals directory name)")
-    projectdir = luigi.Parameter(description="Where projects live")
+    # TODO: remove project, projectdir and just use indir?
+    project = luigi.Parameter(description="Project name (equals directory name")
+    projectdir = luigi.Parameter(description="Where projects live", default=os.curdir)
     sample = luigi.Parameter(default=None, description="Sample directory.")
     # Hard-code this for now - would like to calculate on the fly so that
     # implicit naming is unnecessary

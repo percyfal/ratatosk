@@ -14,9 +14,7 @@ if __name__ == "__main__":
     else:
         task = None
     if task == "HaloPlex":
-        print "adding file " + config_dict['haloplex']
-        args = sys.argv[2:] + ['--config-file', config_dict['seqcap']]
-        print args
+        args = sys.argv[2:] + ['--config-file', config_dict['haloplex']]
         luigi.run(args, main_task_cls=ratatosk.scilife.seqcap.HaloPlex)
     # Add more standard pipelines here...
     elif task == "Exome":

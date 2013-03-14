@@ -95,9 +95,10 @@ class DefaultShellJobRunner(JobRunner):
             raise Exception("Job '{}' failed: \n{}".format(' '.join(arglist), " ".join([stderr])))
                 
 class BaseJobTask(luigi.Task):
-    config_file = luigi.Parameter(is_global=True, default=os.path.join(os.path.join(ratatosk.__path__[0], os.pardir, "config", "seqcap.yaml")), description="Main configuration file.")
+    config_file = luigi.Parameter(is_global=True, default=os.path.join(os.path.join(ratatosk.__path__[0], os.pardir, "config", "ratatosk.yaml")), description="Main configuration file.")
     custom_config = luigi.Parameter(is_global=True, default=None, description="Custom configuration file for tuning options in predefined pipelines in which workflow may not be altered.")
     dry_run = luigi.Parameter(default=False, is_global=True, is_boolean=True)
+    restart = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="Restart pipeline from scratch.")
     options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default=None)
     num_threads = luigi.Parameter(default=1)
@@ -136,7 +137,7 @@ class BaseJobTask(luigi.Task):
         for key, value in param_values:
             if key == "custom_config":
                 custom_config = value
-                kwargs = self._update_config(custom_config, disable_parent_task_update=False, *args, **kwargs)
+                kwargs = self._update_config(custom_config, disable_parent_task_update=True, *args, **kwargs)
         super(BaseJobTask, self).__init__(*args, **kwargs)
         if self.dry_run:
             print "DRY RUN: " + str(self)
@@ -154,7 +155,6 @@ class BaseJobTask(luigi.Task):
         params = self.get_params()
         param_values = {x[0]:x[1] for x in self.get_param_values(params, args, kwargs)}
         for key, value in self.get_params():
-            print key
             new_value = None
             # Got a command line option => override config file
             if value.default != param_values.get(key, None):
@@ -168,8 +168,11 @@ class BaseJobTask(luigi.Task):
                         new_value = config.get(self._config_section, key, self._config_subsection)
                         logger.debug("Reading config file, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__))
             if new_value:
-                kwargs[key] = new_value
-                logger.debug("Updating config, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__))
+                if key == "parent_task" and disable_parent_task_update:
+                    logger.debug("disable_parent_task_update set; not updating '{0}' for task class '{1}'".format(key, self.__class__))
+                else:
+                    kwargs[key] = new_value
+                    logger.debug("Updating config, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__))
             else:
                 pass
             logger.debug("Using default value for '{0}' for task class '{1}'".format(key, self.__class__))
@@ -223,6 +226,8 @@ class BaseJobTask(luigi.Task):
         outputs = flatten(self.output())
         inputs = flatten(self.input())
         if self.dry_run:
+            return False
+        if self.restart:
             return False
         if len(outputs) == 0:
             # TODO: unclear if tasks without outputs should always run or never run
@@ -377,9 +382,7 @@ def name_prefix():
     http://en.wikipedia.org/wiki/Longest_path_problem.
 
     EDIT: note that traversing the tree is crucial also for the
-    desired options
-
-    --restart (start from scratch)
+    desired option
 
     --restart-from TASK (start from a given task)
 

@@ -10,7 +10,6 @@ fastq:
     indir: ${fastq}
 
 gatk:
-  # NB: I don't know if these even works
   knownSites: 
     - ${knownSites1}
     - ${knownSites2}

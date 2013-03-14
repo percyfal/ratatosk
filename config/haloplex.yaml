@@ -1,4 +1,4 @@
-# Main configuration file
+# Main configuration file for HaloPlex analysis
 bwa:
   bwaref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
 
