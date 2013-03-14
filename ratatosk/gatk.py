@@ -335,6 +335,7 @@ class VariantEval(GATKJobTask):
 
     def opts(self):
         retval = self.options if self.options else ""
+        # TODO: shouldn't this live in args? it's not really an option, is it now?
         if not self.ref:
             raise Exception("need reference for VariantEval")
         # TODO: Sort this one out

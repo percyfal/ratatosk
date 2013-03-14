@@ -482,6 +482,126 @@ an interface from
 It allows sections and subsections in yaml, treating everything below
 that level as lists/dicts/variables. 
 
+
+## HOWTO: Adding task wrappers ##
+
+In essence, `ratatosk` is a library of program wrappers. There are
+already a couple of wrappers available, but many more could easily be
+added. Here is a short HOWTO on how to add a wrapper module
+`myprogram`.
+
+### 1. Create the file ###
+
+Create the file `myprogram.py` (doh!), with at least the following imports:
+
+```python
+import os
+import luigi
+from ratatosk.job import JobTask, DefaultShellJobRunner
+from ratatosk.utils import rreplace
+```
+
+### 2. Add job runners ###
+
+At the very least, there should exist the following:
+
+```python
+class WrapperJobRunner(DefaultShellJobRunner):
+    pass
+```
+
+This is in part for consistency, in part in case the `myprogram`
+program group needs special handling of command construction (see e.g.
+`ratatosk.gatk`).
+
+### 3. Add default inputs ###
+
+There should be at least one input class that subclasses one of the
+`ratatosk.external` classes. Mainly here for naming consistency.
+
+```python
+class InputFastqFile(JobTask):
+    _config_section = "myprogram"
+    _config_subsection = "InputFastqFile"
+    target = luigi.Parameter(default=None)
+    parent_task = luigi.Parameter(default="ratatosk.external.FastqFile")
+    
+    def requires(self):
+        cls = self.set_parent_task()
+        return cls(target=self.target)
+    def output(self):
+        return luigi.LocalTarget(self.target)
+    def run(self):
+        pass
+```
+
+### 4. Add wrapper tasks ###
+
+Once steps 1-3 are done, tasks can be added. If the program has
+subprograms (e.g. `bwa aln`), it is advisable to create a generic
+'top' job task. In any case, a task should at least consist of the
+following:
+
+```python
+class MyProgram(JobTask):
+	# Corresponding section and subsection in config file
+	_config_section = "myprogram"
+    _config_subsection = "myprogram_subsection"
+	# Name of executable. This is a parameter so the user can specify
+	# the version
+	myprogram = luigi.Parameter(default="myprogram")
+	# program options
+    options = luigi.Parameter(default=None)
+    parent_task = luigi.Parameter(default="myprogram.InputFastqFile")
+	# Target and source suffixes are necessary for generating target
+	# names
+    target_suffix = luigi.Parameter(default=".sai")
+    source_suffix = luigi.Parameter(default=".fastq.gz")
+	# Add label if this task should add label to file name (e.g.
+	# file.txt -> file.label.txt)
+	label = luigi.Parameter(default="label")
+
+    def exe(self):
+        """Executable of this task"""
+        return self.myprogram
+
+	# The following functions are inherited from JobTask and changing
+	# their behaviour is often not necessary
+	
+	# Subprogram name, e.g. 'aln' in 'bwa aln'	
+    #def main(self):
+    #    return "subprogram"
+
+	# Returns the options string. This may need a lot of tampering
+	# with, see e.g. 'ratatosk.gatk.VariantEval' (but see also comment
+	# in issues)
+    #def opts(self):
+    #return self.options
+
+	# Must be present: defines the requirement. Idea is to generate
+	# the source name of the parent class that was used to generate
+	# the target
+    def requires(self):
+		# Set the parent task
+        cls = self.set_parent_task()
+		# Make source file name
+        source = self._make_source_file_name()
+        return cls(target=source)
+    
+	# Output = target
+    def output(self):
+        return luigi.LocalTarget(self.target)
+
+	# Here gather the *required* arguments to 'myprogram'. Often input
+	# redirected to output suffices
+    def args(self):
+        return [self.input(), ">", self.output()]
+```
+
+To actually run the task, you need to import the module in your
+script, and `luigi` will automagically add the task `MyProgram` and
+it's options.
+
 ## TODO/future ideas/issues ##
 
 NB: many of the issues/ideas are relevant only to our compute
@@ -528,6 +648,10 @@ environment.
   - shell commands are wrapped with
 	[shell.exec_cmd](https://github.com/cement/cement/blob/master/cement/utils/shell.py#L8)
      from the cement package
+
+* Some options in `opts()` are not really options - see e.g.
+  `ratatosk.gatk.VariantEval`, which requires a reference. Move to
+  `args()` for consistency?
 
 * DONE? Fix path handling so relative paths can be used (see e.g. run method in
   [fastq](https://github.com/percyfal/ratatosk/blob/master/ratatosk/fastq.py))
