@@ -14,7 +14,7 @@ samtools:
 picard:
   DuplicationMetrics:
     options:
-  HsMetrics:
+  #HsMetrics:
     # FIXME: add test targets and baits
     # targets:
     # baits:
