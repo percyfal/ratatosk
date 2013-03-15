@@ -21,6 +21,7 @@ from ratatosk.gatk import VariantEval
 
 logger = logging.getLogger('luigi-interface')
 
+
 class HaloPlex(luigi.WrapperTask):
     # TODO: remove project, projectdir and just use indir?
     project = luigi.Parameter(description="Project name (equals directory name")
