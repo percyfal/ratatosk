@@ -15,11 +15,65 @@ import os
 import luigi
 import time
 import shutil
+import random
+import logging
 from ratatosk.job import JobTask, DefaultShellJobRunner
 from cement.utils import shell
 
+logger = logging.getLogger('luigi-interface')
+
+# Aaarrgh - it doesn't get uglier than this. cutadapt "seamlessly"
+# reads and writes gzipped files using the '-o' option for output. In
+# the job runner we work with temp files, so the output is not
+# compressed... Took me a while to figure out. Solution for now
+#  is to add suffix 'gz' to the temp file. Obviously this won't work
+#  for uncompressed input (SIGH)
 class CutadaptJobRunner(DefaultShellJobRunner):
-    pass
+
+    @staticmethod
+    def _fix_paths(job):
+        """Modelled after hadoop_jar.HadoopJarJobRunner._fix_paths.
+        """
+        tmp_files = []
+        args = []
+        for x in job.args():
+            if isinstance(x, luigi.LocalTarget): # input/output
+                if x.exists(): # input
+                    args.append(x.path)
+                else: # output
+                    # Note the ugly ".gz" fix - cutadapt needs this to determine outfile type...
+                    y = luigi.LocalTarget(x.path + \
+                                              '-luigi-tmp-%09d' % random.randrange(0, 1e10) + '.gz')
+                    logger.info("Using temp path: {0} for path {1}".format(y.path, x.path))
+                    args.append(y.path)
+                    tmp_files.append((y, x))
+            else:
+                args.append(str(x))
+        return (tmp_files, args)
+
+    def run_job(self, job):
+        if not job.exe():# or not os.path.exists(job.exe()):
+            logger.error("Can't find executable: {0}, full path {1}".format(job.exe(),
+                                                                            os.path.abspath(job.exe())))
+            raise Exception("executable does not exist")
+        arglist = [job.exe()]
+        if job.main():
+            arglist.append(self._get_main(job))
+        if job.opts():
+            arglist.append(job.opts())
+        (tmp_files, job_args) = CutadaptJobRunner._fix_paths(job)
+        arglist += job_args
+        cmd = ' '.join(arglist)
+        logger.info(cmd)
+        (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)
+        if returncode == 0:
+            logger.info("Shell job completed")
+            for a, b in tmp_files:
+                logger.info("renaming {0} to {1}".format(a.path, b.path))
+                a.move(os.path.join(os.curdir, b.path))
+        else:
+            raise Exception("Job '{}' failed: \n{}".format(' '.join(arglist), " ".join([stderr])))
+
 
 class InputFastqFile(JobTask):
     _config_section = "cutadapt"

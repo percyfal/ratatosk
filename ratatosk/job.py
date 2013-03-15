@@ -48,9 +48,8 @@ class DefaultShellJobRunner(JobRunner):
                 if x.exists(): # input
                     args.append(x.path)
                 else: # output
-                    # Note the ugly ".gz" fix - cutadapt needs this to determine outfile type...
                     y = luigi.LocalTarget(x.path + \
-                                              '-luigi-tmp-%09d.gz' % random.randrange(0, 1e10))
+                                              '-luigi-tmp-%09d' % random.randrange(0, 1e10))
                     logger.info("Using temp path: {0} for path {1}".format(y.path, x.path))
                     args.append(y.path)
                     if job.add_suffix():
@@ -143,7 +142,6 @@ class BaseJobTask(luigi.Task):
 
     def _update_config(self, config_file, disable_parent_task_update=False, *args, **kwargs):
         """Update configuration for this task"""
-        print "Reading config file " + str(config_file)
         config = interface.get_config(config_file)
         if not config:
             return kwargs
@@ -163,7 +161,6 @@ class BaseJobTask(luigi.Task):
                 if config.has_section(self._config_section, self._config_subsection):
                     if config.has_key(self._config_section, key, self._config_subsection):
                         new_value = config.get(self._config_section, key, self._config_subsection)
-                        print "Reading config file, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__)
                         logger.debug("Reading config file, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__))
 
             if new_value:
