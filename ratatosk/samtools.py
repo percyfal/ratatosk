@@ -129,7 +129,6 @@ class IndexBam(SamtoolsJobTask):
     def requires(self):
         cls = self.set_parent_task()
         self.source = self._make_source_file_name()
-        print self.source
         return cls(target=self.source)
 
     def output(self):

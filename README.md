@@ -654,6 +654,12 @@ environment.
   `ratatosk.gatk.VariantEval`, which requires a reference. Move to
   `args()` for consistency?
 
+* Sort out dependencies between IndelRealigner and
+  RealignerTargetCreator. Right now IndelRealigner depends on
+  RealignerTargetCreator, and a source bam file name is calculated
+  dynamically. Shouldn't the dependency really be on the bam file used
+  as input for RealignerTargetCreator?
+
 * Make `exe()` use `self.exe` and remove `exe()` from all subclasses.
 
 * DONE? Fix path handling so relative paths can be used (see e.g. run method in

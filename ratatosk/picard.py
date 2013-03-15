@@ -215,6 +215,7 @@ class PicardMetrics(luigi.WrapperTask):
     target = luigi.Parameter(default=None)
     def requires(self):
         return [InsertMetrics(target=self.target + str(InsertMetrics.target_suffix.default[0])),
-                DuplicationMetrics(target= self.target + str(DuplicationMetrics.label.default[0]) + str(DuplicationMetrics.target_suffix.default[0])),
+                # This currently gives the wrong target
+                # DuplicationMetrics(target= self.target + str(DuplicationMetrics.label.default[0]) + str(DuplicationMetrics.target_suffix.default[0])),
                 HsMetrics(target=self.target + str(HsMetrics.target_suffix.default)),
                 AlignmentMetrics(target=self.target + str(AlignmentMetrics.target_suffix.default))]

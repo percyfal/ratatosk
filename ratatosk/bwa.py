@@ -73,9 +73,9 @@ class BwaAln(BwaJobTask):
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
-        # Ugly test hack for 1 -> 2 dependency
-        if fullclassname(cls) in ["ratatosk.misc.ResyncMatesJobTask"]:
-            if re.search(source, self.read1_suffix):
+        # Ugly hack for 1 -> 2 dependency: works but should be dealt with otherwise
+        if str(fullclassname(cls)) in ["ratatosk.misc.ResyncMatesJobTask"]:
+            if re.search(self.read1_suffix, source):
                 self.is_read1 = True
                 fq1 = source
                 fq2 = rreplace(source, self.read1_suffix, self.read2_suffix, 1)

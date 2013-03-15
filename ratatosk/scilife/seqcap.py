@@ -17,9 +17,69 @@ import glob
 import csv
 import logging
 import ratatosk
-from ratatosk.gatk import VariantEval
+from ratatosk.utils import rreplace, fullclassname
+from ratatosk.bwa import BwaSampe, BwaAln
+from ratatosk.gatk import VariantEval, UnifiedGenotyper, RealignerTargetCreator, IndelRealigner
+from ratatosk.picard import PicardMetrics
 
 logger = logging.getLogger('luigi-interface')
+
+# Dirty fix: standard bwa sampe calculates the wrong target names when
+# trimming and syncing has been done. This once again shows the
+# importance of collecting all labels preceding a given node in order
+# to calculate the target name
+class HaloBwaSampe(BwaSampe):
+    _config_subsection = "HaloBwaSampe"
+    parent_task = luigi.Parameter(default="ratatosk.bwa.BwaAln")
+
+    def requires(self):
+        # From target name, generate sai1, sai2, fastq1, fastq2
+        sai1 = rreplace(rreplace(rreplace(self._make_source_file_name(), self.source_suffix, self.read1_suffix + self.source_suffix, 1), ".trimmed.sync", "", 1), ".sai", ".trimmed.sync.sai", 1)
+        sai2 = rreplace(rreplace(rreplace(self._make_source_file_name(), self.source_suffix, self.read2_suffix + self.source_suffix, 1), ".trimmed.sync", "", 1), ".sai", ".trimmed.sync.sai", 1)
+        return [BwaAln(target=sai1), BwaAln(target=sai2)]
+
+
+# Raw variant calling class done on merged data to generate a list of
+# raw candidates around which realignment is done.
+class RawUnifiedGenotyper(UnifiedGenotyper):
+    _config_subsection = "RawUnifiedGenotyper"
+    parent_task = luigi.Parameter(default="ratatosk.picard.MergeSamFiles")
+    options = luigi.Parameter(default="-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH")
+    label = ".BOTH.raw"
+
+# Override RealignerTargetCreator and IndelRealigner to use
+# RawUnifiedGenotyper vcf as input for known sites
+class RawRealignerTargetCreator(RealignerTargetCreator):
+    _config_subsection = "RawRealignerTargetCreator"
+    parent_task = luigi.Parameter(default="ratatosk.picard.MergeSamFiles")
+    target_suffix = luigi.Parameter(default=".intervals")
+    
+    def requires(self):
+        cls = self.set_parent_task()
+        source = self._make_source_file_name()
+        return [cls(target=source), ratatosk.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls)), ratatosk.scilife.seqcap.RawUnifiedGenotyper(target=rreplace(source, ".bam", ".BOTH.raw.vcf", 1))]
+
+    def args(self):
+        return ["-I", self.input()[0], "-o", self.output(), "-known", self.input()[2]]
+
+# NOTE: Here I redefine target dependencies for IndelRealigner, the way I believe it should be
+class RawIndelRealigner(IndelRealigner):
+    _config_subsection = "RawIndelRealigner"
+    parent_task = luigi.Parameter(default="ratatosk.picard.MergeSamFiles")
+    source_suffix = luigi.Parameter(default=".bam")
+    
+    def requires(self):
+        cls = self.set_parent_task()
+        source = self._make_source_file_name()
+        return [cls(target=source), 
+                ratatosk.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task="ratatosk.picard.MergeSamFiles"), 
+                ratatosk.scilife.seqcap.RawRealignerTargetCreator(target=rreplace(source, ".bam", ".intervals", 1)),
+                ratatosk.scilife.seqcap.RawUnifiedGenotyper(target=rreplace(source, ".bam", ".BOTH.raw.vcf", 1))]
+    
+    def args(self):
+        return ["-I", self.input()[0], "-o", self.output(),
+                "--targetIntervals", self.input()[2],
+                "-known", self.input()[3]]
 
 
 class HaloPlex(luigi.WrapperTask):
@@ -33,8 +93,10 @@ class HaloPlex(luigi.WrapperTask):
 
     def requires(self):
         # List requirements for completion, consisting of classes above
-        target_list = ["{}.{}".format(x, self.final_target_suffix) for x in self.target_generator()]
-        return [VariantEval(target=tgt) for tgt in target_list]
+        target_list = self.target_generator()
+        variant_target_list = ["{}.{}".format(x, self.final_target_suffix) for x in target_list]
+        picard_metrics_target_list = ["{}.{}".format(x, "trimmed.sync.sort.merge") for x in target_list]
+        return [VariantEval(target=tgt) for tgt in variant_target_list] + [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_target_list]
 
     def target_generator(self):
         """Make all desired target output names based on the final target

@@ -48,8 +48,8 @@ class GATKJobRunner(DefaultShellJobRunner):
         arglist += job_args
         cmd = ' '.join(arglist)        
         logger.info(cmd)
-        (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)
 
+        (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)
         if returncode == 0:
             logger.info("Shell job completed")
             for a, b in tmp_files:
@@ -238,7 +238,6 @@ class PrintReads(GATKJobTask):
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
-        print "PrintReads source name " + source
         return cls(target=source)
 
     def output(self):
@@ -258,7 +257,6 @@ class PrintReads(GATKJobTask):
             retval = ["-BQSR", self.input(), "-o", self.output(), "-I", inputfile]
         else:
             retval = ["-I", self.input(), "-o", self.output()]
-        print "Arguments to PrintReads" + str(retval)
         return retval
 
 class ClipReads(GATKJobTask):
@@ -341,6 +339,7 @@ class VariantEval(GATKJobTask):
         # TODO: Sort this one out
         if not self.dbsnp:
             raise Exception("need dbsnp for VariantEval")
+        retval += " --dbsnp {}".format(self.dbsnp)
         retval += " -R {}".format(self.ref)
         # TODO: This too
         if self.target_region:
@@ -363,6 +362,7 @@ class UnifiedGenotyper(GATKJobTask):
     _config_subsection = "UnifiedGenotyper"
     options = luigi.Parameter(default="-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH")
     target_suffix = luigi.Parameter(default=".vcf")
+    dbsnp = luigi.Parameter(default=None)
     #label = luigi.Parameter(default=".RAW")?
 
     def opts(self):
@@ -372,6 +372,8 @@ class UnifiedGenotyper(GATKJobTask):
         retval += " -R {}".format(self.ref)
         if self.target_region:
             retval += "-L {}".format(self.target_region)
+        if self.dbsnp:
+            retval += " --dbsnp {}".format(self.dbsnp)
         return retval
 
     def main(self):
