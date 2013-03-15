@@ -143,9 +143,12 @@ class VisualizeHandler(tornado.web.RequestHandler):
             fillcolor = colors[selector][0]
             fontcolor = colors[selector][1]
             shape = 'box'
-            label = task.replace('(', '\\n(').replace(',', ',\\n')  # force GraphViz to break lines
+            # Task is a unicode object representing the task_id
+            if re.search('use_long_names=True', task):
+                label = task.replace('(', '\\n(').replace(',', ',\\n')  # force GraphViz to break lines
+            else:
+                label = task.replace('(', '\\n(').replace(',', ',\\n').split('\\n')[0]
             # TODO: if the ( or , is a part of the argument we shouldn't really break it
-
             # TODO: FIXME: encoding strings is not compatible with newer pygraphviz
             graphviz.add_node(task.encode('utf-8'), label=label.encode('utf-8'), style='filled', fillcolor=fillcolor, fontcolor=fontcolor, shape=shape, fontname='Helvetica', fontsize=11)
             n_nodes += 1

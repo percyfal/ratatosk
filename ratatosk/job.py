@@ -108,6 +108,8 @@ class BaseJobTask(luigi.Task):
     target_suffix = luigi.Parameter(default=None)
     source_suffix = luigi.Parameter(default=None)
     source = None
+    # Use for changing labels in graph visualization
+    use_long_names = luigi.Parameter(default=False, description="Use long names (including all options) in graph vizualization", is_boolean=True, is_global=True)
     # Needed for merging samples; list of tuples (sample, sample_run)
     # sample_runs = luigi.Parameter(default=[], is_global=True)
     sample_runs = []

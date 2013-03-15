@@ -615,8 +615,6 @@ environment.
   `a.move(b)` doesn't work (I modelled this after
   [luigi hadoop_jar](https://github.com/spotify/luigi/blob/master/luigi/hadoop_jar.py#L63))
 
-* Modify graph representation so only task name is shown
-
 * Currently need to know target name. Add function that prints in
   which order labels are added to facilitate target name construction.
 
@@ -666,6 +664,12 @@ environment.
 
 * Have tasks talk to a central planner so task lists can be easily
   monitored via a web page
+  
+* Have had weird problems with cutadapt. Using the '-o' flag should
+  generate gzipped output. However, the job runner uses tmp files,
+  which by default don't use 'gz'-suffix. A workaround for now is to
+  add the suffix in CutadaptJobRunner. This works on Linux, but for
+  some reason I can't get it to work on MacOSX.
 
 * Integrate with hadoop. This may be extremely easy: set the job
   runner for the JobTasks via the config file; by default, they use
@@ -719,3 +723,5 @@ TODO: move these to github issue tracker
   times on files with different suffixes.
 
 * CANCELLED: Pickling states doesn't currently seem to work?
+
+* DONE: Modify graph representation so only task name is shown
