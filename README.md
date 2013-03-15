@@ -352,7 +352,7 @@ we get the dependencies as specified in the config file:
 
 Here's an example of a variant calling pipeline defined for analysis of HaloPlex data:
 
-	run_ratatosk.py HaloPlex --project J.Doe_00_01 --projectdir ~/opt/ngs_test_data/data/projects/ --workers 4
+	run_ratatosk.py HaloPlex --project J.Doe_00_01 --projectdir ~/opt/ngs_test_data/data/projects/ --workers 1 --custom-config ~/opt/ratatosk/config/J.Doe_00_01.yaml
 	
 resulting in 
 
