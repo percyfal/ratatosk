@@ -308,7 +308,7 @@ will add hybrid selection calculation on non-deduplicated bam file for sample *P
 
 ## Examples with *run_ratatosk.py* ##
 
-The installation procuder will install an executable script,
+The installation procedure will install an executable script,
 `run_ratatosk.py`, in your search path. The script collects all tasks
 currently available in the ratatosk modules:
 
@@ -336,6 +336,8 @@ requirements, so for instance to run BwaSampe, you would do:
 	  
 Here I've used a 'global' config file
 [ratatosk.yaml](https://github.com/percyfal/ratatosk/blob/master/config/ratatosk.yaml).
+You actually don't need to pass it as in the example above as it's
+loaded by default.
 
 ### Dry run ###
 
