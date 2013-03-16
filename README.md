@@ -108,7 +108,6 @@ machine).
 	nosetests -v -s test_wrapper.py:TestLuigiWrappers.test_fastqln
 
 ![FastqLn](https://raw.github.com/percyfal/ratatosk/master/doc/test_fastqln.png)
-	       
 	
 ### Alignment with bwa sampe ###
 
@@ -619,10 +618,6 @@ environment.
 * Currently need to know target name. Add function that prints in
   which order labels are added to facilitate target name construction.
 
-* Add ratatosk.pipelines in which pipeline wrappers are put. In the
-  main script then import different pre-defined pipelines so one could
-  change them via the command line following luigi rules
-
 * Check for program versions and command inconsistencies: for
   instance, BaseRecalibrator was introduced in GATK 2.0
 
@@ -671,12 +666,18 @@ environment.
 
 * Have tasks talk to a central planner so task lists can be easily
   monitored via a web page
+
+* Use pipes whereever possible. See
+  `luigi.format.InputPipeProcessWrapper` etc and `luigi.file`
+
+* Add task for cleaning up intermediate output (related to issue on
+  pipes).
   
-* Have had weird problems with cutadapt. Using the '-o' flag should
-  generate gzipped output. However, the job runner uses tmp files,
-  which by default don't use 'gz'-suffix. A workaround for now is to
-  add the suffix in CutadaptJobRunner. This works on Linux, but for
-  some reason I can't get it to work on MacOSX.
+* Implement options `--restart` and `--restart-from` that restart from
+  scratch or from a given task. Would require calculation of target
+  names between any two vertices in the dependency graph. The idea
+  would be to add a condition in the `complete` function that returns
+  False until the provide task name is reached.
 
 * Integrate with hadoop. This may be extremely easy: set the job
   runner for the JobTasks via the config file; by default, they use
@@ -732,3 +733,15 @@ TODO: move these to github issue tracker
 * CANCELLED: Pickling states doesn't currently seem to work?
 
 * DONE: Modify graph representation so only task name is shown
+
+* DONE: Have had weird problems with cutadapt. Using the '-o' flag should
+  generate gzipped output. However, the job runner uses tmp files,
+  which by default don't use 'gz'-suffix. A workaround for now is to
+  add the suffix in CutadaptJobRunner. This works on Linux, but for
+  some reason I can't get it to work on MacOSX.
+
+* 'DONE': Currently they live in ratatosk.scilife, but the principle
+  is clear. Add ratatosk.pipelines in which pipeline wrappers are put.
+  In the main script then import different pre-defined pipelines so
+  one could change them via the command line following luigi rules
+

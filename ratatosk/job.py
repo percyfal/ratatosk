@@ -24,7 +24,7 @@ from luigi.task import flatten
 from cement.utils import shell
 import ratatosk
 from ratatosk import interface
-from ratatosk.utils import rreplace
+from ratatosk.utils import rreplace, update
 
 # Use luigi-interface for now
 logger = logging.getLogger('luigi-interface')
@@ -97,19 +97,22 @@ class DefaultShellJobRunner(JobRunner):
 class BaseJobTask(luigi.Task):
     config_file = luigi.Parameter(is_global=True, default=os.path.join(os.path.join(ratatosk.__path__[0], os.pardir, "config", "ratatosk.yaml")), description="Main configuration file.")
     custom_config = luigi.Parameter(is_global=True, default=None, description="Custom configuration file for tuning options in predefined pipelines in which workflow may not be altered.")
-    dry_run = luigi.Parameter(default=False, is_global=True, is_boolean=True)
+    dry_run = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="Generate pipeline graph/flow without running any commands")
     restart = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="Restart pipeline from scratch.")
-    options = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default=None)
+    restart_from = luigi.Parameter(default=None, is_global=True, description="NOT YET IMPLEMENTED: Restart pipeline from a given task.")
+    print_config = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="Print configuration for pipeline")
+    options = luigi.Parameter(default=None, description="Program options")
+    parent_task = luigi.Parameter(default=None, description="Main parent task from which the current task receives (parts) of its input")
     num_threads = luigi.Parameter(default=1)
     # Note: output should generate one file only; in special cases we
     # need to do hacks
-    target = luigi.Parameter(default=None)
-    target_suffix = luigi.Parameter(default=None)
-    source_suffix = luigi.Parameter(default=None)
+    target = luigi.Parameter(default=None, description="Output target name")
+    target_suffix = luigi.Parameter(default=None, description="File suffix for target")
+    source_suffix = luigi.Parameter(default=None, description="File suffix for source")
     source = None
     # Use for changing labels in graph visualization
     use_long_names = luigi.Parameter(default=False, description="Use long names (including all options) in graph vizualization", is_boolean=True, is_global=True)
+    
     # Needed for merging samples; list of tuples (sample, sample_run)
     # sample_runs = luigi.Parameter(default=[], is_global=True)
     sample_runs = []
@@ -122,6 +125,8 @@ class BaseJobTask(luigi.Task):
     # Not all tasks are allowed to "label" their output
     label = luigi.Parameter(default=None)
     suffix = luigi.Parameter(default=None)
+    # Global configuration
+    global_config = dict()
 
     def __init__(self, *args, **kwargs):
         params = self.get_params()
@@ -135,6 +140,10 @@ class BaseJobTask(luigi.Task):
             if key == "custom_config":
                 custom_config = value
                 kwargs = self._update_config(custom_config, disable_parent_task_update=True, *args, **kwargs)
+        if self.print_config:
+            logger.setLevel(logging.INFO)
+            # Move to print_config function for better processing
+            print self.global_config
         super(BaseJobTask, self).__init__(*args, **kwargs)
         if self.dry_run:
             print "DRY RUN: " + str(self)
@@ -145,6 +154,8 @@ class BaseJobTask(luigi.Task):
     def _update_config(self, config_file, disable_parent_task_update=False, *args, **kwargs):
         """Update configuration for this task"""
         config = interface.get_config(config_file)
+        #Update global configuration here for printing everything in run() function
+        #self.global_config = update(self.global_config, config)
         if not config:
             return kwargs
         if not config.has_section(self._config_section):
@@ -221,6 +232,8 @@ class BaseJobTask(luigi.Task):
         If the task has any outputs, return true if all outputs exists.
         Otherwise, return whether or not the task has run or not
         """
+        if self.print_config:
+            return True
         outputs = flatten(self.output())
         inputs = flatten(self.input())
         if self.dry_run:
@@ -371,6 +384,11 @@ class JobTask(BaseJobTask):
     def args(self):
         return []
 
+class PrintConfig(luigi.Task):
+    def run(self):
+        print "Print config"
+    
+
 def name_prefix():
     """Generate a name prefix based on available labels for task
     graph. Traverse dependency tree, recording all possible joins of
@@ -389,4 +407,5 @@ def name_prefix():
     """ 
 
     pass
+
 

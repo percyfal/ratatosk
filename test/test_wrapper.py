@@ -72,7 +72,7 @@ class TestMiscWrappers(unittest.TestCase):
             pass
 
     def test_fastqln(self):
-        luigi.run(_luigi_args(['--target', fastq1, '--config-file', localconf]), main_task_cls=FASTQ.FastqFileLink)
+        luigi.run(_luigi_args(['--target', fastq1, '--config-file', localconf, '--use-long-names']), main_task_cls=FASTQ.FastqFileLink)
 
     def test_cutadapt(self):
         _make_file_links()
