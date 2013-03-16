@@ -48,7 +48,7 @@ class InputBamFile(JobTask):
     _config_section = "fastqc"
     _config_subsection = "InputBamFile"
     bam = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="ratatosk.external.BamFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
     def requires(self):
         cls = self.set_parent_task()
         return cls(bam=self.bam)
@@ -61,7 +61,7 @@ class InputFastqFile(JobTask):
     _config_section = "fastqc"
     _config_subsection = "input_fastq_file"
     fastq = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="ratatosk.external.FastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
     def requires(self):
         cls = self.set_parent_task()
         return cls(fastq=self.fastq)

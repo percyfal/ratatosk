@@ -2,13 +2,13 @@ import luigi
 import os
 import glob
 from ratatosk.job import JobTask
-from ratatosk.picard import PicardMetrics, SortSam, HsMetrics, InputBamFile
-from ratatosk.fastq import FastqFileLink
+from ratatosk.lib.tools.picard import PicardMetrics, SortSam, HsMetrics, InputBamFile
+from ratatosk.lib.files.fastq import FastqFileLink
 
 class HsMetricsNonDup(HsMetrics):
     """Run on non-deduplicated data"""
     _config_subsection = "hs_metrics_non_dup"
-    parent_task = luigi.Parameter(default="ratatosk.picard.DuplicationMetrics")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.DuplicationMetrics")
 
 class AlignSeqcap(luigi.WrapperTask):
     sample = luigi.Parameter(default=[], is_list=True)

@@ -14,7 +14,7 @@
 import os
 import luigi
 import logging
-import ratatosk.external
+import ratatosk.lib.files.external
 from ratatosk.utils import rreplace, fullclassname
 from ratatosk.job import JobTask, DefaultShellJobRunner
 from cement.utils import shell
@@ -67,7 +67,7 @@ class InputBamFile(JobTask):
     _config_section = "gatk"
     _config_subsection = "InputBamFile"
     target = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="ratatosk.external.BamFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
     target_suffix = luigi.Parameter(default=".bam")
     def requires(self):
         cls = self.set_parent_task()
@@ -79,7 +79,7 @@ class InputVcfFile(JobTask):
     _config_section = "gatk"
     _config_subsection = "input_vcf_file"
     target = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="ratatosk.external.VcfFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
     def requires(self):
         cls = self.set_parent_task()
         return cls(target=self.target)
@@ -113,7 +113,7 @@ class GATKJobTask(JobTask):
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
-        return [cls(target=source), ratatosk.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls))]
+        return [cls(target=source), ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls))]
 
 class RealignerTargetCreator(GATKJobTask):
     _config_subsection = "RealignerTargetCreator"
@@ -135,7 +135,7 @@ class RealignerTargetCreator(GATKJobTask):
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
-        return [cls(target=source), ratatosk.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls))]
+        return [cls(target=source), ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls))]
     
     def main(self):
         return "RealignerTargetCreator"
@@ -206,7 +206,7 @@ class BaseRecalibrator(GATKJobTask):
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
-        return [cls(target=source), ratatosk.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls))]
+        return [cls(target=source), ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls))]
 
     def output(self):
         return luigi.LocalTarget(self.target)

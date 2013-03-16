@@ -28,7 +28,7 @@ class InputFastqFile(JobTask):
     _config_section = "bwa"
     _config_subsection = "InputFastqFile"
     target = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="ratatosk.external.FastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
     
     def requires(self):
         cls = self.set_parent_task()
@@ -56,7 +56,7 @@ class BwaJobTask(JobTask):
 class BwaAln(BwaJobTask):
     _config_subsection = "aln"
     options = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="ratatosk.bwa.InputFastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.align.bwa.InputFastqFile")
     target_suffix = luigi.Parameter(default=".sai")
     source_suffix = luigi.Parameter(default=".fastq.gz")
     read1_suffix = luigi.Parameter(default="_R1_001")
@@ -74,7 +74,7 @@ class BwaAln(BwaJobTask):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
         # Ugly hack for 1 -> 2 dependency: works but should be dealt with otherwise
-        if str(fullclassname(cls)) in ["ratatosk.misc.ResyncMatesJobTask"]:
+        if str(fullclassname(cls)) in ["ratatosk.lib.utils.misc.ResyncMatesJobTask"]:
             if re.search(self.read1_suffix, source):
                 self.is_read1 = True
                 fq1 = source
@@ -92,7 +92,7 @@ class BwaAln(BwaJobTask):
 
     def args(self):
         # bwa aln "-f" option seems to be broken!?!
-        if len(self.input()) > 1:
+        if isinstance(self.input(), list):
             if self.is_read1:
                 return [self.bwaref, self.input()[0], ">", self.output()]
             else:

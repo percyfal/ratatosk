@@ -28,7 +28,7 @@ class InputFastqFile(JobTask):
     _config_section = "misc"
     _config_subsection = "InputFastqFile"
     target = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="ratatosk.external.FastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
     
     def requires(self):
         cls = self.set_parent_task()
@@ -44,7 +44,7 @@ class ResyncMatesJobTask(JobTask):
     resyncmates = luigi.Parameter(default="resyncMates.pl")
     label = luigi.Parameter(default=".sync")
     target = luigi.Parameter(default=[], is_list=True)
-    parent_task = luigi.Parameter(default="ratatosk.misc.InputFastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.utils.misc.InputFastqFile")
     read1_suffix = luigi.Parameter(default="_R1_001")
     read2_suffix = luigi.Parameter(default="_R2_001")
 

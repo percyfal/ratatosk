@@ -18,9 +18,9 @@ import csv
 import logging
 import ratatosk
 from ratatosk.utils import rreplace, fullclassname
-from ratatosk.bwa import BwaSampe, BwaAln
-from ratatosk.gatk import VariantEval, UnifiedGenotyper, RealignerTargetCreator, IndelRealigner
-from ratatosk.picard import PicardMetrics
+from ratatosk.lib.align.bwa import BwaSampe, BwaAln
+from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, RealignerTargetCreator, IndelRealigner
+from ratatosk.lib.tools.picard import PicardMetrics
 
 logger = logging.getLogger('luigi-interface')
 
@@ -30,7 +30,7 @@ logger = logging.getLogger('luigi-interface')
 # to calculate the target name
 class HaloBwaSampe(BwaSampe):
     _config_subsection = "HaloBwaSampe"
-    parent_task = luigi.Parameter(default="ratatosk.bwa.BwaAln")
+    parent_task = luigi.Parameter(default="ratatosk.lib.align.bwa.BwaAln")
 
     def requires(self):
         # From target name, generate sai1, sai2, fastq1, fastq2
@@ -43,7 +43,7 @@ class HaloBwaSampe(BwaSampe):
 # raw candidates around which realignment is done.
 class RawUnifiedGenotyper(UnifiedGenotyper):
     _config_subsection = "RawUnifiedGenotyper"
-    parent_task = luigi.Parameter(default="ratatosk.picard.MergeSamFiles")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.MergeSamFiles")
     options = luigi.Parameter(default="-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH")
     label = ".BOTH.raw"
 
@@ -51,13 +51,13 @@ class RawUnifiedGenotyper(UnifiedGenotyper):
 # RawUnifiedGenotyper vcf as input for known sites
 class RawRealignerTargetCreator(RealignerTargetCreator):
     _config_subsection = "RawRealignerTargetCreator"
-    parent_task = luigi.Parameter(default="ratatosk.picard.MergeSamFiles")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.MergeSamFiles")
     target_suffix = luigi.Parameter(default=".intervals")
     
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
-        return [cls(target=source), ratatosk.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls)), ratatosk.scilife.seqcap.RawUnifiedGenotyper(target=rreplace(source, ".bam", ".BOTH.raw.vcf", 1))]
+        return [cls(target=source), ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls)), ratatosk.scilife.seqcap.RawUnifiedGenotyper(target=rreplace(source, ".bam", ".BOTH.raw.vcf", 1))]
 
     def args(self):
         return ["-I", self.input()[0], "-o", self.output(), "-known", self.input()[2]]
@@ -65,14 +65,14 @@ class RawRealignerTargetCreator(RealignerTargetCreator):
 # NOTE: Here I redefine target dependencies for IndelRealigner, the way I believe it should be
 class RawIndelRealigner(IndelRealigner):
     _config_subsection = "RawIndelRealigner"
-    parent_task = luigi.Parameter(default="ratatosk.picard.MergeSamFiles")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.MergeSamFiles")
     source_suffix = luigi.Parameter(default=".bam")
     
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
         return [cls(target=source), 
-                ratatosk.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task="ratatosk.picard.MergeSamFiles"), 
+                ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task="ratatosk.lib.tools.picard.MergeSamFiles"), 
                 ratatosk.scilife.seqcap.RawRealignerTargetCreator(target=rreplace(source, ".bam", ".intervals", 1)),
                 ratatosk.scilife.seqcap.RawUnifiedGenotyper(target=rreplace(source, ".bam", ".BOTH.raw.vcf", 1))]
     

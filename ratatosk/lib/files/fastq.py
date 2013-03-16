@@ -14,7 +14,7 @@
 import os
 import luigi
 import logging
-import ratatosk.external
+import ratatosk.lib.files.external
 from ratatosk.job import JobTask
 
 logger = logging.getLogger('luigi-interface')
@@ -31,7 +31,7 @@ class FastqFileLink(JobTask):
     # know where the link came from; hence, we need an indir parameter
     # for downstream tasks.
     indir = luigi.Parameter(default=os.curdir)
-    parent_task = luigi.Parameter(default="ratatosk.external.FastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
 
     def requires(self):
         cls = self.set_parent_task()

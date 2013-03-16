@@ -1,10 +1,10 @@
 import luigi
 import os
 import sys
-import ratatosk.bwa
-import ratatosk.gatk
-import ratatosk.samtools
-import ratatosk.picard
+import ratatosk.lib.align.bwa
+import ratatosk.lib.tools.gatk
+import ratatosk.lib.tools.samtools
+import ratatosk.lib.tools.picard
 from ratatosk.scilife.seqcap import HaloPlex
 from ratatosk.scilife import config_dict
 
