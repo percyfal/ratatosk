@@ -1,11 +1,11 @@
 # Main configuration file for HaloPlex analysis
 bwa:
   aln:
-    parent_task: ratatosk.misc.ResyncMatesJobTask
+    parent_task: ratatosk.lib.utils.misc.ResyncMatesJobTask
 
 misc:
   ResyncMates:
-    parent_task: ratatosk.cutadapt.CutadaptJobTask
+    parent_task: ratatosk.lib.utils.cutadapt.CutadaptJobTask
 
 samtools:
   SamToBam:
@@ -13,44 +13,44 @@ samtools:
 
 picard:
   SortSam:
-    parent_task: ratatosk.samtools.SamToBam
+    parent_task: ratatosk.lib.tools.samtools.SamToBam
   MergeSamFiles:
-    parent_task: ratatosk.picard.SortSam
+    parent_task: ratatosk.lib.tools.picard.SortSam
   DuplicationMetrics:
-    parent_task: ratatosk.picard.MergeSamFiles
+    parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   AlignmentMetrics:
-    parent_task: ratatosk.picard.MergeSamFiles
+    parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   InsertMetrics:
-    parent_task: ratatosk.picard.MergeSamFiles
+    parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   HsMetrics:
-    parent_task: ratatosk.picard.MergeSamFiles
+    parent_task: ratatosk.lib.tools.picard.MergeSamFiles
 
 gatk:
   # These are all subclassed for Halo, see dependencies below
   # RealignerTargetCreator:
-  #   parent_task: ratatosk.picard.MergeSamFiles
+  #   parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   # IndelRealigner:
-  #   parent_task: ratatosk.gatk.RealignerTargetCreator
+  #   parent_task: ratatosk.lib.tools.gatk.RealignerTargetCreator
   # BaseRecalibrator:
-  #   parent_task: ratatosk.gatk.IndelRealigner
+  #   parent_task: ratatosk.lib.tools.gatk.IndelRealigner
   PrintReads:
-    parent_task: ratatosk.gatk.BaseRecalibrator
+    parent_task: ratatosk.lib.tools.gatk.BaseRecalibrator
   ClipReads:
-    parent_task: ratatosk.gatk.PrintReads
+    parent_task: ratatosk.lib.tools.gatk.PrintReads
   UnifiedGenotyper:
-    parent_task: ratatosk.gatk.ClipReads
+    parent_task: ratatosk.lib.tools.gatk.ClipReads
   VariantFiltration:
-    parent_task: ratatosk.gatk.UnifiedGenotyper
+    parent_task: ratatosk.lib.tools.gatk.UnifiedGenotyper
   VariantEval:
-    parent_task: ratatosk.gatk.VariantFiltration
+    parent_task: ratatosk.lib.tools.gatk.VariantFiltration
 
   # Addon tasks needed for HaloPlex
   RawUnifiedGenotyper:
-    parent_task: ratatosk.picard.MergeSamFiles
+    parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   RawRealignerTargetCreator:
-    parent_task: ratatosk.picard.MergeSamFiles
+    parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   RawIndelRealigner:
-    parent_task: ratatosk.picard.MergeSamFiles
+    parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   # Finally, make BaseRecalibrator depend on RawIndelRealigner
   BaseRecalibrator:
     parent_task: ratatosk.scilife.seqcap.RawIndelRealigner

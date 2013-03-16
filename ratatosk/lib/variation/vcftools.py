@@ -14,7 +14,7 @@
 import os
 import luigi
 import logging
-import ratatosk.external
+import ratatosk.lib.files.external
 from ratatosk.job import JobTask, DefaultShellJobRunner
 
 class VcfJobRunner(DefaultShellJobRunner):

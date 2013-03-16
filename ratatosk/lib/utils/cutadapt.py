@@ -79,7 +79,7 @@ class InputFastqFile(JobTask):
     _config_section = "cutadapt"
     _config_subsection = "input_fastq_file"
     target = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="ratatosk.external.FastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
     
     def requires(self):
         cls = self.set_parent_task()
@@ -95,7 +95,7 @@ class CutadaptJobTask(JobTask):
     options = luigi.Parameter(default=None)
     label = luigi.Parameter(default=".trimmed")
     cutadapt = luigi.Parameter(default="cutadapt")
-    parent_task = luigi.Parameter(default="ratatosk.cutadapt.InputFastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.utils.cutadapt.InputFastqFile")
     # Use Illumina TruSeq adapter sequences as default
     threeprime = luigi.Parameter(default="AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC")
     fiveprime = luigi.Parameter(default="AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC")

@@ -16,7 +16,7 @@ import luigi
 import logging
 import time
 import glob
-import ratatosk.external
+import ratatosk.lib.files.external
 from ratatosk.utils import rreplace
 from ratatosk.job import JobTask, DefaultShellJobRunner
 from cement.utils import shell
@@ -59,7 +59,7 @@ class InputBamFile(JobTask):
     _config_section = "picard"
     _config_subsection = "InputBamFile"
     target = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="ratatosk.external.BamFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
     def requires(self):
         cls = self.set_parent_task()
         return cls(target=self.target)

@@ -28,7 +28,7 @@ class InputFastqFile(JobTask):
     _config_section = "bwa"
     _config_subsection = "InputFastqFile"
     target = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="ratatosk.external.FastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
     
     def requires(self):
         cls = self.set_parent_task()
@@ -56,7 +56,7 @@ class BwaJobTask(JobTask):
 class BwaAln(BwaJobTask):
     _config_subsection = "aln"
     options = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="ratatosk.bwa.InputFastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.align.bwa.InputFastqFile")
     target_suffix = luigi.Parameter(default=".sai")
     source_suffix = luigi.Parameter(default=".fastq.gz")
     read1_suffix = luigi.Parameter(default="_R1_001")
