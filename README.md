@@ -98,10 +98,10 @@ These examples are currently based on the tests in
 ### Creating file links ###
 
 The task
-[ratatosk.fastq.FastqFileLink](https://github.com/percyfal/ratatosk/blob/master/ratatosk/fastq.py)
+[ratatosk.lib.files.fastq.FastqFileLink](https://github.com/percyfal/ratatosk/blob/master/ratatosk/lib/files/fastq.py)
 creates a link from source to a target. The source in this case
 depends on an *external* task
-([ratatosk.external.FastqFile](https://github.com/percyfal/ratatosk/blob/master/ratatosk/external.py)
+([ratatosk.lib.files.external.FastqFile](https://github.com/percyfal/ratatosk/blob/master/ratatosk/lib/files/external.py)
 meaning this file was created by some outside process (e.g. sequencing
 machine).
 
@@ -121,7 +121,7 @@ external task.
 ### Wrapping up metrics tasks ###
 
 The class
-[ratatosk.picard.PicardMetrics](https://github.com/percyfal/ratatosk/blob/master/ratatosk/picard.py)
+[ratatosk.lib.tools.picard.PicardMetrics](https://github.com/percyfal/ratatosk/blob/master/ratatosk/lib/tools/picard.py)
 subclasses
 [luigi.WrapperTask](https://github.com/spotify/luigi/blob/master/luigi/task.py#L294)
 that can be used to require that several tasks have completed. Here
@@ -148,23 +148,24 @@ python code of choice. In addition to the `parent_task` variable,
 config file, which should be in yaml format (see
 [google app](https://developers.google.com/appengine/docs/python/config/appconfig)
 for nicely structured config files). By default, all `metrics`
-functions have as parent class `ratatosk.picard.InputBamFile`. This
-can easily be modified in the config file to:
+functions have as parent class
+`ratatosk.lib.tools.picard.InputBamFile`. This can easily be modified
+in the config file to:
 
     picard:
       # InputBamFile "pipes" input from other modules
       InputBamFile:
-        parent_task: ratatosk.samtools.SamToBam
+        parent_task: ratatosk.lib.tools.samtools.SamToBam
       HsMetrics:
-        parent_task: ratatosk.picard.SortSam
+        parent_task: ratatosk.lib.tools.picard.SortSam
         targets: targets.interval_list
         baits: targets.interval_list
       DuplicationMetrics:
-        parent_task: ratatosk.picard.SortSam
+        parent_task: ratatosk.lib.tools.picard.SortSam
       AlignmentMetrics:
-        parent_task: ratatosk.picard.SortSam
+        parent_task: ratatosk.lib.tools.picard.SortSam
       InsertMetrics:
-        parent_task: ratatosk.picard.SortSam
+        parent_task: ratatosk.lib.tools.picard.SortSam
     
     samtools:
       SamToBam:
@@ -172,17 +173,17 @@ can easily be modified in the config file to:
 
 
 Note also that `input_bam_file` has been changed to depend on
-`ratatosk.samtools.SamToBam` (default value is
-`ratatosk.external.BamFile`). In addition, the parent task to
-`ratatosk.samtools.SamToBam` has been changed to
+`ratatosk.lib.tools.samtools.SamToBam` (default value is
+`ratatosk.lib.files.external.BamFile`). In addition, the parent task to
+`ratatosk.lib.tools.samtools.SamToBam` has been changed to
 `tests.luigi.test_wrapper.SampeToSamtools`, a class defined in the
 test as
 
 ```python
-class SampeToSamtools(SAM.SamToBam):
+class SampeToSamtools(ratatosk.lib.tools.samtools.SamToBam):
     def requires(self):
         source = self._make_source_file_name()
-        return BWA.BwaSampe(target=source)
+        return ratatosk.lib.align.bwa.BwaSampe(target=source)
 ```
 
 	
@@ -212,21 +213,21 @@ The basic configuration setting is
     picard:
       # input_bam_file "pipes" input from other modules
       input_bam_file:
-        parent_task: ratatosk.samtools.SamToBam
+        parent_task: ratatosk.lib.tools.samtools.SamToBam
       hs_metrics:
-        parent_task: ratatosk.picard.SortSam
+        parent_task: ratatosk.lib.tools.picard.SortSam
         targets: ../test/targets.interval_list
         baits: ../test/targets.interval_list
       duplication_metrics:
-        parent_task: ratatosk.picard.SortSam
+        parent_task: ratatosk.lib.tools.picard.SortSam
       alignment_metrics:
-        parent_task: ratatosk.picard.SortSam
+        parent_task: ratatosk.lib.tools.picard.SortSam
       insert_metrics:
-        parent_task: ratatosk.picard.SortSam
+        parent_task: ratatosk.lib.tools.picard.SortSam
     
     samtools:
       samtobam:
-        parent_task: ratatosk.samtools.SampeToSamtools
+        parent_task: ratatosk.lib.tools.samtools.SampeToSamtools
 
 
 ### Basic align seqcap pipeline ###
@@ -245,7 +246,7 @@ Changing the following configuration section (see `align_adapter_trim_seqcap.yam
 
 	bwa:
 	  aln:
-        parent_task: ratatosk.cutadapt.CutadaptJobTask
+        parent_task: ratatosk.lib.utils.cutadapt.CutadaptJobTask
 
 and running 
 
@@ -256,8 +257,8 @@ runs the same pipeline as before, but on adapter-trimmed data.
 ### Merging samples over several runs ###
 
 Sample *P001_101_index3* has data from two separate runs that should
-be merged. The class `ratatosk.picard.MergeSamFiles` merges sample_run
-files and places the result in the sample directory. The
+be merged. The class `ratatosk.lib.tools.picard.MergeSamFiles` merges
+sample_run files and places the result in the sample directory. The
 implementation currently depends on the directory structure
 'sample/fc1', sample/fc2' etc.
 
@@ -284,7 +285,7 @@ added the following class:
 class HsMetricsNonDup(HsMetrics):
 	"""Run on non-deduplicated data"""
 	_config_subsection = "hs_metrics_non_dup"
-	parent_task = luigi.Parameter(default="ratatosk.picard.DuplicationMetrics")
+	parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.DuplicationMetrics")
 ```
 
 The `picard` configuration section in the configuration file
@@ -311,13 +312,14 @@ The installation procuder will install an executable script,
 `run_ratatosk.py`, in your search path. The script collects all tasks
 currently available in the ratatosk modules:
 
-    run_ratatosk.py  -h 
-    usage: run_ratatosk.py [-h] [--config-file CONFIG_FILE] [--lock]
+    usage: run_ratatosk.py [-h] [--config-file CONFIG_FILE] [--dry-run] [--lock]
                            [--workers WORKERS] [--lock-pid-dir LOCK_PID_DIR]
-                           [--scheduler-host SCHEDULER_HOST] [--short-task-names]
-                           [--local-scheduler]
+                           [--scheduler-host SCHEDULER_HOST]
+                           [--restart-from RESTART_FROM]
+                           [--custom-config CUSTOM_CONFIG] [--print-config]
+                           [--use-long-names] [--local-scheduler] [--restart]
                            
-                           {SortBam,IndexBam,BwaAlnWrapperTask,VariantEval,SamtoolsJobTask,PrintReads,ClipReads,DuplicationMetrics,RealignmentTargetCreator,BaseRecalibrator,InputSamFile,WrapperTask,PicardJobTask,InputVcfFile,GATKJobTask,InsertMetrics,PicardMetrics,InputFastqFile,EnvironmentParamsContainer,SortSam,AlignmentMetrics,Task,UnifiedGenotyper,BwaJobTask,VariantFiltration,BwaAln,HsMetrics,SamToBam,JobTask,BwaSampe,MergeSamFiles,InputBamFile,BaseJobTask,IndelRealigner,SampeToSamtools}
+                           {RawRealignerTargetCreator,IndexBam,BwaAlnWrapperTask,VariantEval,SamtoolsJobTask,PrintReads,ClipReads,DuplicationMetrics,RawIndelRealigner,HaloBwaSampe,BaseRecalibrator,RealignerTargetCreator,InputSamFile,WrapperTask,PicardJobTask,InputVcfFile,GATKJobTask,InsertMetrics,PicardMetrics,InputFastqFile,EnvironmentParamsContainer,RawUnifiedGenotyper,SortSam,SortBam,AlignmentMetrics,Task,HaloPlex,UnifiedGenotyper,BwaJobTask,VariantFiltration,BwaAln,HsMetrics,SamToBam,JobTask,BwaSampe,MergeSamFiles,PrintConfig,InputBamFile,BaseJobTask,IndelRealigner,SampeToSamtools}
                            ...
 
 
@@ -450,7 +452,7 @@ couple of functions that are essential for general behaviour:
 ### Program modules ###
 
 `ratatosk` submodules are named after the application/program to be
-run (e.g. `ratatosk.bwa` for `bwa`). For consistency, the modules
+run (e.g. `ratatosk.lib.align.bwa` for `bwa`). For consistency, the modules
 shoud contain
 
 1. a **job runner** that subclasses
@@ -458,14 +460,15 @@ shoud contain
    program is run
    
 2. **input** file task(s) that subclass `ratatosk.job.JobTask` and
-   that depend on external tasks in `ratatosk.external`. The idea is
+   that depend on external tasks in `ratatosk.lib.files.external`. The idea is
    that all acceptable file formats be defined as external inputs, and
    that parent tasks therefore must use one/any of these inputs
    
 3. a **main job task** that subclasses `ratatosk.job.JobTask` and has
    as default parent task one of the inputs (previous point). The
    `_config_section` should be set to the module name (e.g. `bwa` for
-   `ratatosk.bwa`). It should also return the *job runner* defined in 1.
+   `ratatosk.lib.align.bwa`). It should also return the *job runner*
+   defined in 1.
    
 4. **tasks** that subclass the *main job task*. The
    `_config_subsection` should represent the task name in some way
@@ -512,19 +515,19 @@ class MyProgramJobRunner(DefaultShellJobRunner):
 
 This is in part for consistency, in part in case the `myprogram`
 program group needs special handling of command construction (see e.g.
-`ratatosk.gatk`).
+`ratatosk.lib.tools.gatk`).
 
 ### 3. Add default inputs ###
 
 There should be at least one input class that subclasses one of the
-`ratatosk.external` classes. Mainly here for naming consistency.
+`ratatosk.lib.files.external` classes. Mainly here for naming consistency.
 
 ```python
 class InputFastqFile(JobTask):
     _config_section = "myprogram"
     _config_subsection = "InputFastqFile"
     target = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="ratatosk.external.FastqFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
     
     def requires(self):
         cls = self.set_parent_task()
@@ -646,7 +649,7 @@ environment.
      from the cement package
 
 * Some options in `opts()` are not really options - see e.g.
-  `ratatosk.gatk.VariantEval`, which requires a reference. Move to
+  `ratatosk.lib.tools.gatk.VariantEval`, which requires a reference. Move to
   `args()` for consistency?
 
 * Sort out dependencies between IndelRealigner and
@@ -658,7 +661,7 @@ environment.
 * Make `exe()` use `self.exe` and remove `exe()` from all subclasses.
 
 * DONE? Fix path handling so relative paths can be used (see e.g. run method in
-  [fastq](https://github.com/percyfal/ratatosk/blob/master/ratatosk/fastq.py))
+  [fastq](https://github.com/percyfal/ratatosk/blob/master/ratatosk/lib/files/fastq.py))
   
 * Implement class validation of `parent_task`. Currently, any code can
   be used, but it would be nice if the class be validated against the
