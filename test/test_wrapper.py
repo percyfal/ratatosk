@@ -7,15 +7,15 @@ import time
 import yaml
 import logging
 from ratatosk.job import JobTask
-import ratatosk.bwa as BWA
-import ratatosk.samtools as SAM
-import ratatosk.fastq as FASTQ
-import ratatosk.picard as PICARD
-import ratatosk.gatk as GATK
-import ratatosk.cutadapt as CUTADAPT
-import ratatosk.fastqc as FASTQC
-import ratatosk.misc as MISC
-import ratatosk.external
+import ratatosk.lib.align.bwa as BWA
+import ratatosk.lib.tools.samtools as SAM
+import ratatosk.lib.files.fastq as FASTQ
+import ratatosk.lib.tools.picard as PICARD
+import ratatosk.lib.tools.gatk as GATK
+import ratatosk.lib.utils.cutadapt as CUTADAPT
+import ratatosk.lib.tools.fastqc as FASTQC
+import ratatosk.lib.utils.misc as MISC
+import ratatosk.lib.files.external
 import ngstestdata as ntd
 
 logging.basicConfig(level=logging.DEBUG)
@@ -61,7 +61,7 @@ def _make_file_links():
 
 class TestSamtoolsWrappers(unittest.TestCase):
    def test_samtools_view(self):
-      luigi.run(_luigi_args(['--target', bam, '--config-file', localconf, '--parent-task', 'ratatosk.bwa.BwaSampe']), main_task_cls=SAM.SamToBam)
+      luigi.run(_luigi_args(['--target', bam, '--config-file', localconf, '--parent-task', 'ratatosk.lib.align.bwa.BwaSampe']), main_task_cls=SAM.SamToBam)
 
 
 class TestMiscWrappers(unittest.TestCase):

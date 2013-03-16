@@ -74,7 +74,7 @@ class BwaAln(BwaJobTask):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
         # Ugly hack for 1 -> 2 dependency: works but should be dealt with otherwise
-        if str(fullclassname(cls)) in ["ratatosk.misc.ResyncMatesJobTask"]:
+        if str(fullclassname(cls)) in ["ratatosk.lib.utils.misc.ResyncMatesJobTask"]:
             if re.search(self.read1_suffix, source):
                 self.is_read1 = True
                 fq1 = source
@@ -92,7 +92,7 @@ class BwaAln(BwaJobTask):
 
     def args(self):
         # bwa aln "-f" option seems to be broken!?!
-        if len(self.input()) > 1:
+        if isinstance(self.input(), list):
             if self.is_read1:
                 return [self.bwaref, self.input()[0], ">", self.output()]
             else:

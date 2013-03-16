@@ -140,11 +140,11 @@ class BaseJobTask(luigi.Task):
             if key == "custom_config":
                 custom_config = value
                 kwargs = self._update_config(custom_config, disable_parent_task_update=True, *args, **kwargs)
+        super(BaseJobTask, self).__init__(*args, **kwargs)
         if self.print_config:
             logger.setLevel(logging.INFO)
             # Move to print_config function for better processing
-            print self.global_config
-        super(BaseJobTask, self).__init__(*args, **kwargs)
+            print "Global configuration: " + str(self.global_config)
         if self.dry_run:
             print "DRY RUN: " + str(self)
 

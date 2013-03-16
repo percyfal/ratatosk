@@ -3,7 +3,7 @@
 bwa:
   bwaref: ${bwaref}
   InputFastqFile:
-    parent_task: ratatosk.fastq.FastqFileLink
+    parent_task: ratatosk.lib.files.fastq.FastqFileLink
 
 fastq:
   link:
@@ -19,17 +19,17 @@ gatk:
 picard:
   # InputBamFile "pipes" input from other modules
   InputBamFile:
-    parent_task: ratatosk.samtools.SamToBam
+    parent_task: ratatosk.lib.tools.samtools.SamToBam
   HsMetrics:
-    parent_task: ratatosk.picard.SortSam
+    parent_task: ratatosk.lib.tools.picard.SortSam
     targets: targets.interval_list
     baits: targets.interval_list
   DuplicationMetrics:
-    parent_task: ratatosk.picard.SortSam
+    parent_task: ratatosk.lib.tools.picard.SortSam
   AlignmentMetrics:
-    parent_task: ratatosk.picard.SortSam
+    parent_task: ratatosk.lib.tools.picard.SortSam
   InsertMetrics:
-    parent_task: ratatosk.picard.SortSam
+    parent_task: ratatosk.lib.tools.picard.SortSam
 
 samtools:
   SamToBam:

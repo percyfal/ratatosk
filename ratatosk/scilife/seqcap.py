@@ -57,7 +57,7 @@ class RawRealignerTargetCreator(RealignerTargetCreator):
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
-        return [cls(target=source), ratatosk.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls)), ratatosk.scilife.seqcap.RawUnifiedGenotyper(target=rreplace(source, ".bam", ".BOTH.raw.vcf", 1))]
+        return [cls(target=source), ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls)), ratatosk.scilife.seqcap.RawUnifiedGenotyper(target=rreplace(source, ".bam", ".BOTH.raw.vcf", 1))]
 
     def args(self):
         return ["-I", self.input()[0], "-o", self.output(), "-known", self.input()[2]]
@@ -72,7 +72,7 @@ class RawIndelRealigner(IndelRealigner):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
         return [cls(target=source), 
-                ratatosk.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task="ratatosk.lib.tools.picard.MergeSamFiles"), 
+                ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task="ratatosk.lib.tools.picard.MergeSamFiles"), 
                 ratatosk.scilife.seqcap.RawRealignerTargetCreator(target=rreplace(source, ".bam", ".intervals", 1)),
                 ratatosk.scilife.seqcap.RawUnifiedGenotyper(target=rreplace(source, ".bam", ".BOTH.raw.vcf", 1))]
     
