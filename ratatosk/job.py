@@ -19,12 +19,13 @@ import subprocess
 import logging
 import warnings
 import luigi
+import importlib
 from itertools import izip
 from luigi.task import flatten
 import ratatosk.shell as shell
 import ratatosk
 from ratatosk import interface
-from ratatosk.utils import rreplace, update
+from ratatosk.utils import rreplace, update, utc_time
 
 # Use luigi-interface for now
 logger = logging.getLogger('luigi-interface')
@@ -104,6 +105,13 @@ class BaseJobTask(luigi.Task):
     options = luigi.Parameter(default=(), description="Program options", is_list=True)
     parent_task = luigi.Parameter(default=None, description="Main parent task from which the current task receives (parts) of its input")
     num_threads = luigi.Parameter(default=1)
+    # Track start time and end time; currently we need to set these as
+    # luigi parameters, otherwise they won't get passed to the graph
+    # and table visualization. Obviously, these aren't options in the
+    # true sense, but are set internally at runtime.
+    start_time = luigi.Parameter(default=None)
+    end_time = luigi.Parameter(default=None)
+
     # Note: output should generate one file only; in special cases we
     # need to do hacks
     target = luigi.Parameter(default=None, description="Output target name")
@@ -169,6 +177,8 @@ class BaseJobTask(luigi.Task):
         for key, value in self.get_params():
             new_value = None
             # Got a command line option => override config file
+            print key
+            print  value.default
             if value.default != param_values.get(key, None):
                 new_value = param_values.get(key, None)
                 logger.debug("option '{0}'; got value '{1}' from command line, overriding configuration file setting default '{2}' for task class '{3}'".format(key, new_value, value.default, self.__class__))
@@ -240,10 +250,15 @@ class BaseJobTask(luigi.Task):
         pass
 
     def run(self):
-        """Init job runner"""
+        """Init job runner.
+
+        FIXME: start_time and end_time don't currently get recorded
+        """
+        self.start_time = utc_time()
         self.init_local()
         if not self.dry_run:
             self.job_runner().run_job(self)
+        self.end_time = utc_time()
 
 
     def output(self):
@@ -292,6 +307,25 @@ class BaseJobTask(luigi.Task):
             if k == key:
                 return value.default
         return None
+
+    def set_target_generator_function(self):
+        """Try to import a module task class represented as string in
+        target_generator_function and use it as such.
+
+        """
+        opt_mod = ".".join(self.target_generator_function.split(".")[0:-1])
+        opt_fn = self.target_generator_function.split(".")[-1]
+        if not self.target_generator_function:
+            return None
+        try:
+            m = __import__(opt_mod, fromlist=[opt_fn])
+            fn = getattr(sys.modules[m.__name__], opt_fn)
+            return fn
+        except:
+            logger.warn("No function '{}' found: need to define a generator function for task '{}'".format(".".join([opt_mod, opt_fn]), 
+                                                                                                           self.__class__))
+            return None
+        
 
     def set_parent_task(self):
         """Try to import a module task class represented as string in
@@ -430,9 +464,41 @@ class InputJobTask(JobTask):
         """No run should be defined"""
         pass
 
-class JobWrapperTask(luigi.WrapperTask):
+class JobWrapperTask(BaseJobTask):
     """Wrapper task that adds target by default"""
-    target = luigi.Parameter(default=None, description="Output target name")    
+    def complete(self):
+        return all(r.complete() for r in flatten(self.requires()))
+
+
+class PipelineTask(JobWrapperTask):
+    """Wrapper task for predefined pipelines. Adds option
+    target_generator_function which must be defined in order to
+    collect targets.
+    """
+    target_generator_function = luigi.Parameter(default=None)
+
+    def set_target_generator_function(self):
+        """Try to import a module task class represented as string in
+        target_generator_function and use it as such.
+
+        """
+        print "Setting target generator"
+        opt_mod = ".".join(self.target_generator_function.split(".")[0:-1])
+        opt_fn = self.target_generator_function.split(".")[-1]
+        print opt_mod
+        print opt_fn
+        if not self.target_generator_function:
+            return None
+        try:
+            m = __import__(opt_mod, fromlist=[opt_fn])
+            fn = getattr(sys.modules[m.__name__], opt_fn)
+            return fn
+        except:
+            logger.warn("No function '{}' found: need to define a generator function for task '{}'".format(".".join([opt_mod, opt_fn]), 
+                                                                                                           self.__class__))
+            return None
+    
+
     
 class PrintConfig(luigi.Task):
     """Print global configuration for a task, including all parameters

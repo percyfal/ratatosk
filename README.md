@@ -42,8 +42,6 @@ The tests depend on the following software to run:
    install cutadapt`
 6. [fastqc](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 
-
-
 You also need to install the test data set:
 
 	git clone https://github.com/percyfal/ngs.test.data
@@ -105,9 +103,20 @@ depends on an *external* task
 meaning this file was created by some outside process (e.g. sequencing
 machine).
 
-	nosetests -v -s test_wrapper.py:TestLuigiWrappers.test_fastqln
+	nosetests -v -s test_wrapper.py:TestMiscWrappers.test_fastqln
 
 ![FastqLn](https://raw.github.com/percyfal/ratatosk/master/doc/test_fastqln.png)
+
+A couple of comments are warranted. First, the boxes shows tasks,
+where the `FastqFile` is an external task. The file it points to must
+exist for the task `FastqFileLink` executes. The color of the box
+indicates status; here, green means the task has completed
+successfully. Second, every task has its own set of options that can
+be passed via the command line or in the code. In the `FastqFileLink`
+task box we can see the options that were passed to the task. For
+instance, the option `use_long_names=True` prints complete task names,
+as shown above. In the following examples, this option will be set to
+false.
 	
 ### Alignment with bwa sampe ###
 
@@ -153,7 +162,6 @@ functions have as parent class
 in the config file to:
 
     picard:
-      # InputBamFile "pipes" input from other modules
       InputBamFile:
         parent_task: ratatosk.lib.tools.samtools.SamToBam
       HsMetrics:
@@ -211,7 +219,6 @@ The basic configuration setting is
         ref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
     
     picard:
-      # input_bam_file "pipes" input from other modules
       input_bam_file:
         parent_task: ratatosk.lib.tools.samtools.SamToBam
       hs_metrics:
@@ -671,6 +678,10 @@ environment.
 
 * Have tasks talk to a central planner so task lists can be easily
   monitored via a web page
+
+* I have added `start_time` and `end_time` to `BaseJobTask`, but
+  currently the times don't get submitted to the graph/table
+  interface.
 
 * Use pipes whereever possible. See
   `luigi.format.InputPipeProcessWrapper` etc and `luigi.file`.

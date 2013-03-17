@@ -17,6 +17,7 @@ import glob
 import csv
 import logging
 import ratatosk
+from ratatosk.job import PipelineTask, JobTask
 from ratatosk.utils import rreplace, fullclassname
 from ratatosk.lib.align.bwa import BwaSampe, BwaAln
 from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, RealignerTargetCreator, IndelRealigner
@@ -89,10 +90,13 @@ class RawIndelRealigner(IndelRealigner):
         retval.append(" -R {}".format(self.ref))
         return retval
 
-
-class HaloPlex(luigi.WrapperTask):
+class HaloPlex(PipelineTask):
     # TODO: remove project, projectdir and just use indir?
-    project = luigi.Parameter(description="Project name (equals directory name")
+    _config_section = "pipeline"
+    _config_subsection = "HaloPlex"
+    # Weird: after subclassing job.PipelineTask, not having a default
+    # here throws an incomprehensible error
+    project = luigi.Parameter(description="Project name (equals directory name", default=None)
     projectdir = luigi.Parameter(description="Where projects live", default=os.curdir)
     sample = luigi.Parameter(default=None, description="Sample directory.")
     # Hard-code this for now - would like to calculate on the fly so that
@@ -101,41 +105,12 @@ class HaloPlex(luigi.WrapperTask):
 
     def requires(self):
         # List requirements for completion, consisting of classes above
-        target_list = self.target_generator()
+        if self.project is None:
+            return []
+        tgt_fun = self.set_target_generator_function()
+        target_list = tgt_fun(self)
         variant_target_list = ["{}.{}".format(x, self.final_target_suffix) for x in target_list]
         picard_metrics_target_list = ["{}.{}".format(x, "trimmed.sync.sort.merge") for x in target_list]
         return [VariantEval(target=tgt) for tgt in variant_target_list] + [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_target_list]
 
-    def target_generator(self):
-        """Make all desired target output names based on the final target
-        suffix.
-        """
-        target_list = []
-        project_indir = os.path.join(self.projectdir, self.project)
-        if not os.path.exists(project_indir):
-            logger.warn("No such project '{}' found in project directory '{}'".format(self.project, self.projectdir))
-            return target_list
-        samples = os.listdir(project_indir)
-        # Only run this sample if provided at command line.
-        if self.sample:
-            samples = self.sample
-        for s in samples:
-            sampledir = os.path.join(project_indir, s)
-            if not os.path.isdir(sampledir):
-                continue
-            flowcells = os.listdir(sampledir)
-            for fc in flowcells:
-                if not fc.endswith("XX"):
-                    continue
-                fc_dir = os.path.join(sampledir, fc)
-                # Yes folks, we also need to know the barcode and the lane...
-                # Parse the flowcell config
-                if not os.path.exists(os.path.join(fc_dir, "SampleSheet.csv")):
-                    logger.warn("No sample sheet for sample '{}' in flowcell '{}';  skipping".format(s, fc))
-                    continue
-                ssheet = csv.DictReader(open(os.path.join(fc_dir, "SampleSheet.csv"), "r"))
-                for line in ssheet:
-                    logger.info("Adding sample '{0}' from flowcell '{1}' (barcode '{2}') to analysis".format(s, fc, line['Index']))
-                    target_list.append(os.path.join(sampledir, "{}_{}_L00{}".format(s, line['Index'], line['Lane'] )))
-        return target_list
 

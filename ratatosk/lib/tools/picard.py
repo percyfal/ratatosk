@@ -107,6 +107,7 @@ class MergeSamFiles(PicardJobTask):
     executable = "MergeSamFiles.jar"
     label = luigi.Parameter(default=".merge")
     read1_suffix = luigi.Parameter(default="_R1_001")
+    target_generator_function = luigi.Parameter(default=None)
     # FIXME: TMP_DIR should not be hard-coded
     options = luigi.Parameter(default=["SO=coordinate TMP_DIR=./tmp"], is_list=True)
 
@@ -115,29 +116,12 @@ class MergeSamFiles(PicardJobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        sources = self.organize_sample_runs(cls)
-        return [cls(target=src) for src in sources]    
-
-    def organize_sample_runs(self, cls):
-        # This currently relies on the folder structure sample/fc1,
-        # sample/fc2 etc... This should possibly also be a
-        # configurable function?
-        # NB: this is such a pain to get right I'm adding lots of debug right now
-        logger.debug("Organizing samples for {}".format(self.target))
-        targetdir = os.path.dirname(self.target)
-        flowcells = os.listdir(targetdir)
-        bam_list = []
-        for fc in flowcells:
-            fc_dir = os.path.join(targetdir, fc)
-            if not os.path.isdir(fc_dir):
-                continue
-            if not fc_dir.endswith("XX"):
-                continue
-            logger.debug("Looking in directory {}".format(fc))
-            # This assumes only one sample run per flowcell
-            bam_list.append(os.path.join(fc_dir, os.path.basename(rreplace(self.target, "{}{}".format(self.label, self.target_suffix), self.source_suffix, 1))))
-        logger.debug("Generated target bamfile list {}".format(bam_list))
-        return bam_list
+        tgt_fun = self.set_target_generator_function()
+        if tgt_fun:
+            sources = tgt_fun(self, cls)
+            return [cls(target=src) for src in sources]    
+        else:
+            return []
     
 class AlignmentMetrics(PicardJobTask):
     _config_subsection = "AlignmentMetrics"

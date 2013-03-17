@@ -17,6 +17,9 @@ picard:
   HsMetrics:
     target_regions: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seqcap/chr11_targets.interval_list
     bait_regions: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seqcap/chr11_baits.interval_list
+  MergeSamFiles:
+    # How is this module found?!?
+    target_generator_function: test.site_functions.organize_sample_runs
 
 gatk:
   ref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
@@ -28,3 +31,7 @@ gatk:
     options:
   IndelRealigner:
     options:
+
+pipeline:
+  HaloPlex:
+    target_generator_function: test.site_functions.target_generator

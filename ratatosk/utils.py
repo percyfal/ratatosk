@@ -12,8 +12,9 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 import collections
+from datetime import datetime
+import time
 import luigi
-from cement.core import config
 
 # http://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
 # FIX ME: make override work
@@ -27,6 +28,8 @@ def update(d, u, override=True):
             d[k] = u[k]
     return d
 
+# FIXME: this is obsolete!
+from cement.core import config
 def config_to_dict(d):
     """Convert config handler or OrderedDict entries to dict for yaml
     output.
@@ -90,3 +93,7 @@ def rreplace(s, old, new, occurrence):
 # http://stackoverflow.com/questions/2020014/get-fully-qualified-class-name-of-an-object-in-python
 def fullclassname(o):
     return o.__module__ + "." + o.__name__
+
+def utc_time():
+    """Make an utc_time with appended 'Z'"""
+    return str(datetime.utcnow()) + 'Z'

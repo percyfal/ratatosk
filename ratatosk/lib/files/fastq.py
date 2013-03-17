@@ -22,7 +22,6 @@ logger = logging.getLogger('luigi-interface')
 class FastqFileLink(JobTask):
     _config_section = "fastq"
     _config_subsection = "link"
-    target = luigi.Parameter(default=None)
     outdir = luigi.Parameter(default=os.curdir)
     # This is tricky: it is easy enough to make links based on
     # absolute file names. The problem is that the information about
@@ -35,14 +34,16 @@ class FastqFileLink(JobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        return cls(target=os.path.relpath(self.target))
+        return cls(target=os.path.join(self.indir, os.path.basename(self.target)))
 
     def output(self):
-        return luigi.LocalTarget(os.path.join(os.path.relpath(self.outdir), os.path.basename(self.target)))
+        return luigi.LocalTarget(os.path.join(self.outdir, os.path.basename(self.target)))
 
     def run(self):
         # TODO: need to separate handling of paths
         if not os.path.exists(os.path.relpath(self.outdir)):
             os.makedirs(os.path.relpath(self.outdir))
-        os.symlink(self.input().fn, self.output().fn)
-        
+        if not os.path.lexists(self.output().fn):
+            os.symlink(self.input().fn, self.output().fn)
+        else:
+            print "Path {} already exists; something wrong!".format(self.output().fn)
