@@ -39,7 +39,7 @@ class GATKJobRunner(DefaultShellJobRunner):
             logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),
                                                                      os.path.abspath(job.jar())))
             raise Exception("job jar does not exist")
-        arglist = ['java', job.java_opt(), '-jar', os.path.join(self.path, job.jar())]
+        arglist = [JAVA, job.java_opt(), '-jar', os.path.join(self.path, job.jar())]
         if job.main():
             arglist.append(self._get_main(job))
         if job.opts():
@@ -88,27 +88,30 @@ class InputVcfFile(JobTask):
     
 class GATKJobTask(JobTask):
     _config_section = "gatk"
-    gatk = luigi.Parameter(default=GATK_JAR)
+    executable = luigi.Parameter(default=GATK_JAR)
     target = luigi.Parameter(default=None)
     source_suffix = luigi.Parameter(default=".bam")
     target_suffix = luigi.Parameter(default=".bam")
-    java_options = luigi.Parameter(default="-Xmx2g")
+    java_options = luigi.Parameter(default=["-Xmx2g"], description="Java options")
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
     ref = luigi.Parameter(default=None)
     # Additional commonly used options
     target_region = luigi.Parameter(default=None)
 
     def jar(self):
-        return self.gatk
+        return self.executable
 
     def exe(self):
         return self.jar()
 
     def java_opt(self):
-        return self.java_options
+        return " ".join(self.java_options)
 
     def job_runner(self):
         return GATKJobRunner()
+
+    def output(self):
+        return luigi.LocalTarget(self.target)
 
     def requires(self):
         cls = self.set_parent_task()
@@ -117,69 +120,62 @@ class GATKJobTask(JobTask):
 
 class RealignerTargetCreator(GATKJobTask):
     _config_subsection = "RealignerTargetCreator"
+    sub_executable = "RealignerTargetCreator"
     target = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
     known = luigi.Parameter(default=[], is_list=True)
     target_suffix = luigi.Parameter(default=".intervals")
 
     def opts(self):
-        retval = self.options if self.options else ""
-        if not self.ref:
-            raise Exception("need reference for Realignment")
-        retval += " -R {}".format(self.ref)
+        retval = self.options
         if self.target_region:
-            retval += "-L {}".format(self.target_region)
-        retval += " ".join(["-known {}".format(x) for x in self.known])
-        return retval
+            retval.append("-L {}".format(self.target_region))
+        retval.append(" ".join(["-known {}".format(x) for x in self.known]))
+        return " ".join(retval)
 
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
         return [cls(target=source), ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls))]
-    
-    def main(self):
-        return "RealignerTargetCreator"
-
-    def output(self):
-        return luigi.LocalTarget(self.target)
 
     def args(self):
-        return ["-I", self.input()[0], "-o", self.output()]
+        retval = ["-I", self.input()[0], "-o", self.output()]
+        if not self.ref:
+            raise Exception("need reference for Realignment")
+        retval.append(" -R {}".format(self.ref))
+        return retval
 
 class IndelRealigner(GATKJobTask):
     _config_subsection = "IndelRealigner"
-    bam = luigi.Parameter(default=None)
+    sub_executable = "IndelRealigner"
+    target = luigi.Parameter(default=None)
     known = luigi.Parameter(default=[], is_list=True)
     label = luigi.Parameter(default=".realign")
-    parent_task = luigi.Parameter(default="ratatosk.gatk.RealignerTargetCreator")
-    source_suffix = luigi.Parameter(default=".intervals")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
+    source_suffix = luigi.Parameter(default=".bam")
     source = None
-    
-    def main(self):
-        return "IndelRealigner"
 
     def requires(self):
         cls = self.set_parent_task()
-        self.source = self._make_source_file_name()
-        return cls(target=self.source)
+        source = self._make_source_file_name()
+        return [cls(target=source),
+                ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task="ratatosk.lib.tools.gatk.InputBamFile"), 
+                ratatosk.lib.tools.gatk.RealignerTargetCreator(target=rreplace(source, ".bam", ".intervals", 1))]
+
+    def opts(self):
+        retval = list(self.options)
+        retval += ["{}".format(" ".join(["-known {}".format(x) for x in self.known]))]
+        return " ".join(retval)
 
     def output(self):
         return luigi.LocalTarget(self.target)
 
-    def opts(self):
-        retval = self.options if self.options else ""
+    def args(self):
+        retval = ["-I", self.input()[0], "-o", self.output(), "--targetIntervals", self.input()[2]]
         if not self.ref:
             raise Exception("need reference for Realignment")
-        retval += " -R {}".format(self.ref)
-        retval += "{}".format(" ".join(["-known {}".format(x) for x in self.known]))
+        retval += [" -R {}".format(self.ref)]
         return retval
-
-    def args(self):
-        # FIXME: For now, assume that if RealignerTargetCreator is done,
-        # it should have a bam file. Note that using InputBamFile in
-        # requires will not work
-        sourceBam = rreplace(self.source, self.source_suffix, InputBamFile.target_suffix.default, 1)
-        return ["-I", sourceBam, "-o", self.output(), "--targetIntervals", self.input()]
 
 class BaseRecalibrator(GATKJobTask):
     _config_subsection = "BaseRecalibrator"
@@ -192,7 +188,7 @@ class BaseRecalibrator(GATKJobTask):
         return "BaseRecalibrator"
 
     def opts(self):
-        retval = self.options if self.options else ""
+        retval = list(self.options)
         if not self.ref:
             raise Exception("need reference for BaseRecalibrator")
         if not self.knownSites:
