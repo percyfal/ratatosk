@@ -177,8 +177,6 @@ class BaseJobTask(luigi.Task):
         for key, value in self.get_params():
             new_value = None
             # Got a command line option => override config file
-            print key
-            print  value.default
             if value.default != param_values.get(key, None):
                 new_value = param_values.get(key, None)
                 logger.debug("option '{0}'; got value '{1}' from command line, overriding configuration file setting default '{2}' for task class '{3}'".format(key, new_value, value.default, self.__class__))
@@ -464,11 +462,13 @@ class InputJobTask(JobTask):
         """No run should be defined"""
         pass
 
-class JobWrapperTask(BaseJobTask):
+class JobWrapperTask(JobTask):
     """Wrapper task that adds target by default"""
     def complete(self):
         return all(r.complete() for r in flatten(self.requires()))
 
+    def run(self):
+        pass
 
 class PipelineTask(JobWrapperTask):
     """Wrapper task for predefined pipelines. Adds option
@@ -482,11 +482,8 @@ class PipelineTask(JobWrapperTask):
         target_generator_function and use it as such.
 
         """
-        print "Setting target generator"
         opt_mod = ".".join(self.target_generator_function.split(".")[0:-1])
         opt_fn = self.target_generator_function.split(".")[-1]
-        print opt_mod
-        print opt_fn
         if not self.target_generator_function:
             return None
         try:

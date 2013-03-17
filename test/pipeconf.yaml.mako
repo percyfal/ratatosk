@@ -39,8 +39,8 @@ picard:
     parent_task: ratatosk.lib.tools.samtools.SamToBam
   HsMetrics:
     parent_task: ratatosk.lib.tools.picard.SortSam
-    targets: ${targets}
-    baits: ${baits}
+    target_regions: ${targets}
+    bait_regions: ${baits}
   DuplicationMetrics:
     parent_task: ratatosk.lib.tools.picard.SortSam
   AlignmentMetrics:

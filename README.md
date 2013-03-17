@@ -2,7 +2,7 @@
 
 `ratatosk` is a library of [luigi](https://github.com/spotify/luigi)
 tasks, currently focused on, but not limited to, common
-bioinformatical tasks.
+bioinformatical tasks. 
 
 ## Installing  ##
 
@@ -115,15 +115,13 @@ successfully. Second, every task has its own set of options that can
 be passed via the command line or in the code. In the `FastqFileLink`
 task box we can see the options that were passed to the task. For
 instance, the option `use_long_names=True` prints complete task names,
-as shown above. In the following examples, this option will be set to
-false.
+as shown above. 
 	
 ### Alignment with bwa sampe ###
 
-Here I've created the links manually. Orange means dependency on
-external task.
+Here's a more useful example; paired-end alignment using `bwa`.
 
-	nosetests -v -s test_wrapper.py:TestLuigiWrappers.test_bwasampe
+	nosetests -v -s test_wrapper.py:TestBwaWrappers.test_bwasampe
 
 ![BwaSampe](https://raw.github.com/percyfal/ratatosk/master/doc/test_bwasampe.png)
 	
@@ -132,16 +130,19 @@ external task.
 The class
 [ratatosk.lib.tools.picard.PicardMetrics](https://github.com/percyfal/ratatosk/blob/master/ratatosk/lib/tools/picard.py)
 subclasses
-[luigi.WrapperTask](https://github.com/spotify/luigi/blob/master/luigi/task.py#L294)
+[ratatosk.job.JobWrapperTask](https://github.com/percyfal/ratatosk/blob/master/ratatosk/job.py)
 that can be used to require that several tasks have completed. Here
 I've used it to group picard metrics tasks:
 
-	nosetests -v -s test_wrapper.py:TestLuigiWrappers.test_picard_metrics
+	nosetests -v -s test_wrapper.py:TestPicardWrappers.test_picard_metrics
 
 ![PicardMetrics](https://raw.github.com/percyfal/ratatosk/master/doc/test_picard_metrics.png)
 
-This example utilizes a configuration file that links tasks together.
-More about that in the next example.
+
+Here, I've set the option `--use-long-names` to `False`, which changes
+the output to show only the class names for each task. This example
+utilizes a configuration file that links tasks together. More about
+that in the next example.
 
 ### Working with parent tasks and configuration files ###
 
@@ -194,124 +195,7 @@ class SampeToSamtools(ratatosk.lib.tools.samtools.SamToBam):
         return ratatosk.lib.align.bwa.BwaSampe(target=source)
 ```
 
-	
-## Example scripts  ##
 
-NOTE: some of these are currently broken due to recent changes in
-parameter naming. The following section using *run_ratatosk.py* should
-work though.
-
-There are also a couple of example scripts in
-[ratatosk.examples](https://github.com/percyfal/ratatosk/tree/master/examples)
-The following examples show how to modify behaviour with configuration
-files and custom classes. Note that currently you'll need to modify
-the reference paths in the config files manually to point to the
-*ngs_test_data* installation. The test data consists of two samples,
-one of which (P001_101) has data from two flowcell runs.
-
-The basic configuration setting is 
-
-    bwa:
-      bwaref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
-    
-    gatk:
-      unifiedgenotyper:
-        ref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
-    
-    picard:
-      input_bam_file:
-        parent_task: ratatosk.lib.tools.samtools.SamToBam
-      hs_metrics:
-        parent_task: ratatosk.lib.tools.picard.SortSam
-        targets: ../test/targets.interval_list
-        baits: ../test/targets.interval_list
-      duplication_metrics:
-        parent_task: ratatosk.lib.tools.picard.SortSam
-      alignment_metrics:
-        parent_task: ratatosk.lib.tools.picard.SortSam
-      insert_metrics:
-        parent_task: ratatosk.lib.tools.picard.SortSam
-    
-    samtools:
-      samtobam:
-        parent_task: ratatosk.lib.tools.samtools.SampeToSamtools
-
-
-### Basic align seqcap pipeline ###
-
-In examples directory, running
-
-	python pipeline.py  --project J.Doe_00_01 --indir path/to/ngs_test_data/data/projects --config-file align_seqcap.yaml
-	
-will execute a basic analysis pipeline:
-
-![AlignSeqcap](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap.png)
-
-### Adding adapter trimming  ###
-
-Changing the following configuration section (see `align_adapter_trim_seqcap.yaml`):
-
-	bwa:
-	  aln:
-        parent_task: ratatosk.lib.utils.cutadapt.CutadaptJobTask
-
-and running 
-
-	python pipeline.py  --project J.Doe_00_01 --indir /path/to/ngs_test_data/data/projects --config-file align_adapter_trim_seqcap.yaml
-	
-runs the same pipeline as before, but on adapter-trimmed data.
-
-### Merging samples over several runs ###
-
-Sample *P001_101_index3* has data from two separate runs that should
-be merged. The class `ratatosk.lib.tools.picard.MergeSamFiles` merges
-sample_run files and places the result in the sample directory. The
-implementation currently depends on the directory structure
-'sample/fc1', sample/fc2' etc.
-
-	python pipeline_merge.py  --project J.Doe_00_01 --indir /path/to/ngs_test_data/data/projects --config-file align_seqcap_merge.yaml  --sample P001_101_index3
-
-results in 
-
-![AlignSeqcapMerge](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap_merge.png)
-
-See `align_seqcap_merge.yaml` for relevant changes. Note that in this
-implementation the merged files end up directly in the sample
-directory (i.e. *P001_101_index3*).
-
-### Extending workflows with subclassed tasks ###
-
-It's dead simple to add tasks of a given type. Say you want to
-calculate hybrid selection on bam files that have and haven't been
-mark duplicated. By subclassing an existing task and giving the new
-class it's own configuration file location, you can configure the new
-task to depend on whatever you want. In `pipeline_custom.py` I have
-added the following class:
-
-```python
-class HsMetricsNonDup(HsMetrics):
-	"""Run on non-deduplicated data"""
-	_config_subsection = "hs_metrics_non_dup"
-	parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.DuplicationMetrics")
-```
-
-The `picard` configuration section in the configuration file
-`align_seqcap_custom.yaml` now has a new subsection:
-
-```yaml
-hs_metrics_non_dup:
-	parent_task:
-	targets: ../test/targets.interval_list
-	baits: ../test/targets.interval_list
-```
-
-Running 
-
-	python pipeline_custom.py  --project J.Doe_00_01 --indir /path/to/ngs_test_data/data/projects --config-file align_seqcap.yaml --sample P001_102_index6
-	
-will add hybrid selection calculation on non-deduplicated bam file for sample *P001_102_index6*:
-
-![CustomDedup](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap_custom_dup.png)
 
 ## Examples with *run_ratatosk.py* ##
 
@@ -350,19 +234,28 @@ loaded by default.
 
 The `--dry-run` option will resolve dependencies but not actually run
 anything. In addition, it will print the tasks that will be called.
-By passing a dummy file 
-
-	run_ratatosk.py UnifiedGenotyper --dry-run --bam dummy.bam --config config/ratatosk.yaml
+By passing a target
 	
+	run_ratatosk.py RawIndelRealigner 
+	  --target P001_101_index3/P001_101_index3_TGACCA_L001.trimmed.sync.sort.merge.realign.bam
+	  --custom-config ~/opt/ratatosk/examples/J.Doe_00_01.yaml --dry-run
+
 we get the dependencies as specified in the config file:
 
 ![DryRun](https://raw.github.com/percyfal/ratatosk/master/doc/ratatosk_dry_run.png)
 
-### Variant calling pipeline  ###
+The task `RawIndelRealigner` is defined in
+`ratatosk.pipeline.haloplex` and is a modified version of
+`ratatosk.lib.tools.gatk.IndelRealigner`. It is used for analysis of
+HaloPlex data (next section).
+
+### HaloPlex calling pipeline  ###
 
 Here's an example of a variant calling pipeline defined for analysis of HaloPlex data:
 
-	run_ratatosk.py HaloPlex --project J.Doe_00_01 --projectdir ~/opt/ngs_test_data/data/projects/ --workers 1 --custom-config ~/opt/ratatosk/config/J.Doe_00_01.yaml
+	run_ratatosk.py HaloPlex --project J.Doe_00_01 
+	  --projectdir ~/opt/ngs_test_data/data/projects/ 
+	  --workers 1 --custom-config ~/opt/ratatosk/config/J.Doe_00_01.yaml
 	
 resulting in 
 
@@ -372,7 +265,6 @@ Blue boxes mean active processes (the command was run with `--workers
 4`, which uses 4 parallel processes). Note that we need to know what
 labels are applied to the file name (see issues). In this iteration,
 for the predefined pipelines the file names have been hardcoded. 
-
 
 ## Best practice pipelines ##
 
@@ -386,18 +278,29 @@ when the task `HaloPlex` is called, the following code is executed in
 ```python
 if task == "HaloPlex":
     args = sys.argv[2:] + ['--config-file', config_dict['haloplex']]
-    luigi.run(args, main_task_cls=ratatosk.scilife.seqcap.HaloPlex)
+    luigi.run(args, main_task_cls=ratatosk.pipeline.haloplex.HaloPlex)
 ```
 
 where `config_dict['haloplex']` points to predefined config files
 located in the `ratatosk/config` folder. Best practice pipeline
-classes are currently located in `ratatosk.scilife`, but should be
-moved to a more general location once scilife-specific code has been
-removed. The reason for the current location is the function
-`HaloPlex.target_generator` that is used to generate desired target
-names based on a directory structure specific to scilife.
+classes are currently located in `ratatosk.pipeline`. For a pipeline
+to run, the final targets have to be calculated. This is currently
+done by providing a function in the configuration that the pipeline
+will load in the `set_target_generator_function`. For instance, the
+corresponding configuration section in the example configuration file
+`J.Doe_00_01.yaml` is
+
+```
+pipeline:
+  HaloPlex:
+    target_generator_function: test.site_functions.target_generator
+```
+
+In contrast to `parent_task`, there is no default function to fall
+back on, so not providing this function will result in an error.
+
 Incidentally, this demonstrates the boilerplate code needed to add a
-new predefined pipeline. In `ratatosk.scilife.__init__.py`, add
+new predefined pipeline. In `ratatosk.pipeline.__init__.py`, add
 
 ```python
 config_dict{
@@ -406,27 +309,31 @@ config_dict{
 	}
 ```
 	
-and in `ratatosk.scilife.bestpractice`
+and in `ratatosk.pipeline.bestpractice`
 
 ```python
-class BestPractice(luigi.WrapperTask):
+class BestPractice(PipelineTask):
 	...
 		
 	def requires(self):
-		target_list = ["...".format(x, self.final_target_suffix) for x in self.target_generator()]
+		tgt_fun = self.set_target_generator_function()
+		# Need to pass the class to tgt_fun
+		target_list = tgt_fun(self)
+		target_list = ["...".format(x, self.final_target_suffix) for x in target_list]
 		return [FinalTarget(target=tgt) for tgt in target_list, ...]
 			
-	def target_generator(self):
-		# Gather targets here
 ```
+
+This feature is likely to change soon. Among other things, it would be
+nice to dynamically generate target names based on task labels.
 
 If a pipeline config has been loaded, but the user nevertheless wants
 to change program options, the `--custom-config` flag can be used.
-Note then that updating `parent_task` then is disabled so that program
-execution order cannot be changed. This allows for project-specific
-configuration files that contain metadata information about the
-project itself, as well as allowing for configurations of analysis
-options.
+Note then that updating `parent_task` is disabled so that program
+execution order cannot be changed - after all, it is a fixed pipeline.
+This allows for project-specific configuration files that contain
+metadata information about the project itself, as well as allowing for
+configurations of analysis options.
 
 ## Implementation ##
 
@@ -450,13 +357,14 @@ couple of functions that are essential for general behaviour:
   it would be nice to implement validation of the parent task in some
   way (via interface classes?)
   
-* `set_parent_task_list` that sets a parent task list. Not sure if
-  this is the right way to go; the motivation stems from the fact that
-  if a task is to be run on several targets (e.g. UnifiedGenotyper on
-  sample.bam, sample.clip.bam) the task would only depend on the first
-  file. EDIT: or would it? This is probably more related to giving the
-  task the correct file name, so this configuration option should
-  probably provide a list of 2-tuples of from,to string substitutions.
+* `set_parent_task_list` that sets a parent task list. This is
+  currently not used, and I'm not sure if this is the right way to go;
+  the motivation stems from the fact that if a task is to be run on
+  several targets (e.g. UnifiedGenotyper on sample.bam,
+  sample.clip.bam) the task would only depend on the first file. EDIT:
+  or would it? This is probably more related to giving the task the
+  correct file name, so this configuration option should probably
+  provide a list of 2-tuples of from,to string substitutions.
 
 ### Program modules ###
 
@@ -482,18 +390,17 @@ shoud contain
 4. **tasks** that subclass the *main job task*. The
    `_config_subsection` should represent the task name in some way
    (e.g. `aln` for `bwa aln`command)
+   
+5. possibly **wrapper tasks** that group common tasks in a module
 
 ### Configuration parser ###
 
 Python's standard configuration parser works on `.ini` files allowing
 section levels followed by customizations. It would be nice with at
-least sections/subsections (python's `ConfigObj` does this), but I
-prefer yaml files. Previously, I wrote a config parser that subclasses
-an interface from
-[cement.core.config](https://github.com/cement/cement/blob/master/cement/core/config.py).
-It allows sections and subsections in yaml, treating everything below
-that level as lists/dicts/variables. 
-
+least sections/subsections (python's `ConfigObj` does this), but since
+I prefer yaml files, I have implemented a config parser that enforces
+section and subsections, treating everything below that level as
+lists/dicts/variables.
 
 ## HOWTO: Adding task wrappers ##
 
@@ -616,6 +523,125 @@ To actually run the task, you need to import the module in your
 script, and `luigi` will automagically add the task `MyProgram` and
 its options.
 
+## DEPRECATED: Example scripts  ##
+
+NOTE: most of these are currently broken due to recent changes in
+parameter naming, but I've kept them here for now until I've
+implemented corresponding examples with *run_ratatosk.py*.
+
+There are a couple of example scripts in
+[ratatosk.examples](https://github.com/percyfal/ratatosk/tree/master/examples)
+The following examples show how to modify behaviour with configuration
+files and custom classes. Note that currently you'll need to modify
+the reference paths in the config files manually to point to the
+*ngs_test_data* installation. The test data consists of two samples,
+one of which (P001_101) has data from two flowcell runs.
+
+The basic configuration setting is 
+
+    bwa:
+      bwaref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
+    
+    gatk:
+      unifiedgenotyper:
+        ref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
+    
+    picard:
+      input_bam_file:
+        parent_task: ratatosk.lib.tools.samtools.SamToBam
+      hs_metrics:
+        parent_task: ratatosk.lib.tools.picard.SortSam
+        targets: ../test/targets.interval_list
+        baits: ../test/targets.interval_list
+      duplication_metrics:
+        parent_task: ratatosk.lib.tools.picard.SortSam
+      alignment_metrics:
+        parent_task: ratatosk.lib.tools.picard.SortSam
+      insert_metrics:
+        parent_task: ratatosk.lib.tools.picard.SortSam
+    
+    samtools:
+      samtobam:
+        parent_task: ratatosk.lib.tools.samtools.SampeToSamtools
+
+
+### Basic align seqcap pipeline ###
+
+In examples directory, running
+
+	python pipeline.py  --project J.Doe_00_01 --indir path/to/ngs_test_data/data/projects --config-file align_seqcap.yaml
+	
+will execute a basic analysis pipeline:
+
+![AlignSeqcap](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap.png)
+
+### Adding adapter trimming  ###
+
+Changing the following configuration section (see `align_adapter_trim_seqcap.yaml`):
+
+	bwa:
+	  aln:
+        parent_task: ratatosk.lib.utils.cutadapt.CutadaptJobTask
+
+and running 
+
+	python pipeline.py  --project J.Doe_00_01 --indir /path/to/ngs_test_data/data/projects --config-file align_adapter_trim_seqcap.yaml
+	
+runs the same pipeline as before, but on adapter-trimmed data.
+
+### Merging samples over several runs ###
+
+Sample *P001_101_index3* has data from two separate runs that should
+be merged. The class `ratatosk.lib.tools.picard.MergeSamFiles` merges
+sample_run files and places the result in the sample directory. The
+implementation currently depends on the directory structure
+'sample/fc1', sample/fc2' etc.
+
+	python pipeline_merge.py  --project J.Doe_00_01 --indir /path/to/ngs_test_data/data/projects --config-file align_seqcap_merge.yaml  --sample P001_101_index3
+
+results in 
+
+![AlignSeqcapMerge](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap_merge.png)
+
+See `align_seqcap_merge.yaml` for relevant changes. Note that in this
+implementation the merged files end up directly in the sample
+directory (i.e. *P001_101_index3*).
+
+### Extending workflows with subclassed tasks ###
+
+It's dead simple to add tasks of a given type. Say you want to
+calculate hybrid selection on bam files that have and haven't been
+mark duplicated. By subclassing an existing task and giving the new
+class it's own configuration file location, you can configure the new
+task to depend on whatever you want. In `pipeline_custom.py` I have
+added the following class:
+
+```python
+class HsMetricsNonDup(HsMetrics):
+	"""Run on non-deduplicated data"""
+	_config_subsection = "hs_metrics_non_dup"
+	parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.DuplicationMetrics")
+```
+
+The `picard` configuration section in the configuration file
+`align_seqcap_custom.yaml` now has a new subsection:
+
+```yaml
+hs_metrics_non_dup:
+	parent_task:
+	targets: ../test/targets.interval_list
+	baits: ../test/targets.interval_list
+```
+
+Running 
+
+	python pipeline_custom.py  --project J.Doe_00_01 --indir /path/to/ngs_test_data/data/projects --config-file align_seqcap.yaml --sample P001_102_index6
+	
+will add hybrid selection calculation on non-deduplicated bam file for sample *P001_102_index6*:
+
+![CustomDedup](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap_custom_dup.png)
+
+
 ## TODO/future ideas/issues ##
 
 NB: many of the issues/ideas are relevant only to our compute
@@ -638,16 +664,11 @@ environment.
   the responsibility of combining correct program versions to the end
   user. Otherwise, this can become overly complex.
 
-* Speaking of file suffixes, currently assume all fastq files are
-  gzipped. EDIT: actually, this is a good thing. If a program can't
-  take gzipped input, use pipes.
-
 * Configuration issues:
 
   - Read configuration file on startup, and not for every task as is currently the case
   - Variable expansion would be nice (e.g. $GATK_HOME) 
   - Global section for globals, such as num_threads, dbsnp, etc?
-
 
 * Instead of `bwaref` etc for setting alignment references, utilise
   cloudbiolinux/tool-data
@@ -655,22 +676,8 @@ environment.
 * Modules `server.py`, the subdirectory `static`, and the daemon are
   more or less copies from `luigi`.
 
-
-* Some options in `opts()` are not really options - see e.g.
-  `ratatosk.lib.tools.gatk.VariantEval`, which requires a reference. Move to
-  `args()` for consistency?
-
-* Sort out dependencies between IndelRealigner and
-  RealignerTargetCreator. Right now IndelRealigner depends on
-  RealignerTargetCreator, and a source bam file name is calculated
-  dynamically. Shouldn't the dependency really be on the bam file used
-  as input for RealignerTargetCreator?
-
 * Add 'target_grouping' or something similar to BaseJobTask to use for
   grouping in table output.
-  
-* Add 'start_time', 'end_time' to tasks to monitor timing. Should be
-  luigi parameter in order to get passed to web interface
 
 * Implement class validation of `parent_task`. Currently, any code can
   be used, but it would be nice if the class be validated against the
@@ -681,7 +688,8 @@ environment.
 
 * I have added `start_time` and `end_time` to `BaseJobTask`, but
   currently the times don't get submitted to the graph/table
-  interface.
+  interface. This would allow monitoring execution times and
+  identifying pipeline bottlenecks.
 
 * Use pipes whereever possible. See
   `luigi.format.InputPipeProcessWrapper` etc and `luigi.file`.
@@ -760,7 +768,7 @@ TODO: move these to github issue tracker
   some reason I can't get it to work on MacOSX.
 
 * 'DONE': Currently they live in ratatosk.scilife, but the principle
-  is clear. Add ratatosk.pipelines in which pipeline wrappers are put.
+  is clear. Add `ratatosk.pipeline` in which pipeline wrappers are put.
   In the main script then import different pre-defined pipelines so
   one could change them via the command line following luigi rules
 
@@ -785,3 +793,16 @@ TODO: move these to github issue tracker
 * DONE: Function `opts()` is inconsistent at present. Best is probably to
   init empty list and do a join on return.
 
+* DONE: Speaking of file suffixes, currently assume all fastq files are
+  gzipped. EDIT: actually, this is a good thing. If a program can't
+  take gzipped input, use pipes.
+
+* DONE: Sort out dependencies between IndelRealigner and
+  RealignerTargetCreator. Right now IndelRealigner depends on
+  RealignerTargetCreator, and a source bam file name is calculated
+  dynamically. Shouldn't the dependency really be on the bam file used
+  as input for RealignerTargetCreator?
+
+* DONE: Some options in `opts()` are not really options - see e.g.
+  `ratatosk.lib.tools.gatk.VariantEval`, which requires a reference. Move to
+  `args()` for consistency?
