@@ -15,51 +15,32 @@ import os
 import luigi
 import logging
 import ratatosk.lib.files.external
-from ratatosk.job import JobTask, DefaultShellJobRunner
+from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner
 
 logger = logging.getLogger('luigi-interface')
 
 class SamtoolsJobRunner(DefaultShellJobRunner):
     pass
 
-class InputSamFile(JobTask):
+class InputSamFile(InputJobTask):
     """Wrapper task that serves as entry point for samtools tasks that take sam file as input"""
     _config_section = "samtools"
     _config_subsection = "InputSamFile"
-    target = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.SamFile")
 
-    def requires(self):
-        cls = self.set_parent_task()
-        return cls(target=self.target)
-    def output(self):
-        return luigi.LocalTarget(self.target)
-
-class InputBamFile(JobTask):
+class InputBamFile(InputJobTask):
     """Wrapper task that serves as entry point for samtools tasks that take bam file as input"""
     _config_section = "samtools"
     _config_subsection = "InputBamFile"
-    target = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
-
-    def requires(self):
-        cls = self.set_parent_task()
-        return cls(target=self.target)
-    def output(self):
-        return luigi.LocalTarget(self.target)
     
 class SamtoolsJobTask(JobTask):
     """Main samtools job task"""
     _config_section = "samtools"
-    target = luigi.Parameter(default=None)
-    samtools = luigi.Parameter(default="samtools")
+    executable = luigi.Parameter(default="samtools")
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.samtools.InputSamFile")
     target_suffix = luigi.Parameter(default=".bam")
     source_suffix = luigi.Parameter(default=".bam")
-
-    def exe(self):
-        """Executable"""
-        return self.samtools
 
     def job_runner(self):
         return SamtoolsJobRunner()
@@ -67,77 +48,45 @@ class SamtoolsJobTask(JobTask):
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
+        return cls(target=source)
 
 class SamToBam(SamtoolsJobTask):
     _config_subsection = "SamToBam"
-    options = luigi.Parameter(default="-bSh")
+    sub_executable = "view"
+    options = luigi.Parameter(default=["-bSh"], is_list=True)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.samtools.InputSamFile")
     target_suffix = luigi.Parameter(default=".bam")
     source_suffix = luigi.Parameter(default=".sam")
-
-    def main(self):
-        return "view"
-
-    def requires(self):
-        cls = self.set_parent_task()
-        source = self._make_source_file_name()
-        return cls(target=source)
-
-    def output(self):
-        return luigi.LocalTarget(self.target)
 
     def args(self):
         return [self.input(), ">", self.output()]
 
 class SortBam(SamtoolsJobTask):
     _config_subsection = "sortbam"
-    target = luigi.Parameter(default=None)
+    sub_executable = "sort"
     target_suffix = luigi.Parameter(default=".bam")
     source_suffix = luigi.Parameter(default=".bam")
     label = luigi.Parameter(default=".sort")
-    options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.samtools.SamToBam")
-    source = None
-
-    def requires(self):
-        cls = self.set_parent_task()
-        self.source = self._make_source_file_name()
-        return SamToBam(target=self.source)
-
-    def output(self):
-        return luigi.LocalTarget(self.target)
-
-    def main(self):
-        return "sort"
 
     def add_suffix(self):
-        return ".bam"
+        """samtools sort generates its output based on a prefix, hence
+        we need to add a suffix here"""
+        return self.target_suffix
 
     def args(self):
         output_prefix = luigi.LocalTarget(self.output().fn.replace(".bam", ""))
-        return [self.source, output_prefix]
+        return [self.input(), output_prefix]
 
 class IndexBam(SamtoolsJobTask):
     _config_subsection = "indexbam"
-    target = luigi.Parameter(default=None)
+    sub_executable = "index"
     target_suffix = luigi.Parameter(default=".bai")
     source_suffix = luigi.Parameter(default=".bam")
-    options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.samtools.InputBamFile")
-    source = None
-    def requires(self):
-        cls = self.set_parent_task()
-        self.source = self._make_source_file_name()
-        return cls(target=self.source)
-
-    def output(self):
-        return luigi.LocalTarget(self.target)
-
-    def main(self):
-        return "index"
 
     def args(self):
-        return [self.source, self.output()]
+        return [self.input(), self.output()]
 
 # "Connection" tasks
 import ratatosk.lib.align.bwa as bwa

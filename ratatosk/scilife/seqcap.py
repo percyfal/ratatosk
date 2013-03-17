@@ -44,7 +44,7 @@ class HaloBwaSampe(BwaSampe):
 class RawUnifiedGenotyper(UnifiedGenotyper):
     _config_subsection = "RawUnifiedGenotyper"
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.MergeSamFiles")
-    options = luigi.Parameter(default="-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH")
+    options = luigi.Parameter(default=["-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH"], is_list=True)
     label = ".BOTH.raw"
 
 # Override RealignerTargetCreator and IndelRealigner to use
@@ -60,7 +60,11 @@ class RawRealignerTargetCreator(RealignerTargetCreator):
         return [cls(target=source), ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls)), ratatosk.scilife.seqcap.RawUnifiedGenotyper(target=rreplace(source, ".bam", ".BOTH.raw.vcf", 1))]
 
     def args(self):
-        return ["-I", self.input()[0], "-o", self.output(), "-known", self.input()[2]]
+        retval = ["-I", self.input()[0], "-o", self.output(), "-known", self.input()[2]]
+        if not self.ref:
+            raise Exception("need reference for Realignment")
+        retval.append(" -R {}".format(self.ref))
+        return retval
 
 # NOTE: Here I redefine target dependencies for IndelRealigner, the way I believe it should be
 class RawIndelRealigner(IndelRealigner):
@@ -77,9 +81,13 @@ class RawIndelRealigner(IndelRealigner):
                 ratatosk.scilife.seqcap.RawUnifiedGenotyper(target=rreplace(source, ".bam", ".BOTH.raw.vcf", 1))]
     
     def args(self):
-        return ["-I", self.input()[0], "-o", self.output(),
-                "--targetIntervals", self.input()[2],
-                "-known", self.input()[3]]
+        retval = ["-I", self.input()[0], "-o", self.output(),
+                  "--targetIntervals", self.input()[2],
+                  "-known", self.input()[3]]
+        if not self.ref:
+            raise Exception("need reference for Realignment")
+        retval.append(" -R {}".format(self.ref))
+        return retval
 
 
 class HaloPlex(luigi.WrapperTask):

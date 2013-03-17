@@ -27,8 +27,8 @@ bwaseqref = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "ge
 indir = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX"))
 projectdir = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "projects", "J.Doe_00_01"))
 sample = "P001_101_index3_TGACCA_L001"
-fastq1 = os.path.join(indir, sample + "_R1_001.fastq.gz")
-fastq2 = os.path.join(indir, sample + "_R2_001.fastq.gz")
+fastq1 = os.path.join(os.curdir, sample + "_R1_001.fastq.gz")
+fastq2 = os.path.join(os.curdir, sample + "_R2_001.fastq.gz")
 
 sai1 = os.path.join(sample + "_R1_001.sai")
 sai2 = os.path.join(sample + "_R2_001.sai")
@@ -77,6 +77,7 @@ class TestMiscWrappers(unittest.TestCase):
     def test_cutadapt(self):
         _make_file_links()
         luigi.run(_luigi_args(['--target', os.path.basename(fastq1.replace(".fastq.gz", ".trimmed.fastq.gz")), '--config-file', localconf]), main_task_cls=CUTADAPT.CutadaptJobTask)
+        luigi.run(_luigi_args(['--target', os.path.basename(fastq2.replace(".fastq.gz", ".trimmed.fastq.gz")), '--config-file', localconf]), main_task_cls=CUTADAPT.CutadaptJobTask)
         
     def test_fastqc(self):
         _make_file_links()
@@ -90,14 +91,14 @@ class TestMiscWrappers(unittest.TestCase):
     def test_resyncmates_after_trim(self):
        luigi.run(_luigi_args(['--target', fastq1.replace(".fastq.gz", ".trimmed.sync.fastq.gz"),
                               '--target', fastq2.replace(".fastq.gz", ".trimmed.sync.fastq.gz"),
-                              '--parent-task', 'ratatosk.cutadapt.CutadaptJobTask']), main_task_cls=MISC.ResyncMatesJobTask)
+                              '--parent-task', 'ratatosk.lib.utils.cutadapt.CutadaptJobTask']), main_task_cls=MISC.ResyncMatesJobTask)
     def test_bwaaln_after_trim_resyncmates(self):
        with open("mock.yaml", "w") as fp:
           fp.write(yaml.safe_dump({
-                   'misc':{'ResyncMates':{'parent_task': 'ratatosk.cutadapt.CutadaptJobTask'}},
+                   'misc':{'ResyncMates':{'parent_task': 'ratatosk.lib.utils.cutadapt.CutadaptJobTask'}},
                    'bwa' :{
                          'bwaref': bwaref,
-                         'aln':{'parent_task':'ratatosk.misc.ResyncMatesJobTask'}}}, default_flow_style=False))
+                         'aln':{'parent_task':'ratatosk.lib.utils.misc.ResyncMatesJobTask'}}}, default_flow_style=False))
        luigi.run(_luigi_args(['--target', sai1.replace(".sai", ".trimmed.sync.sai"),
                                      '--config-file', 'mock.yaml']), main_task_cls=BWA.BwaAln)
        luigi.run(_luigi_args(['--target', sai2.replace(".sai", ".trimmed.sync.sai"),

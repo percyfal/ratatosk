@@ -18,8 +18,8 @@ import time
 import glob
 import ratatosk.lib.files.external
 from ratatosk.utils import rreplace
-from ratatosk.job import JobTask, DefaultShellJobRunner
-from cement.utils import shell
+from ratatosk.job import InputJobTask, JobWrapperTask, JobTask, DefaultShellJobRunner
+import ratatosk.shell as shell
 
 # TODO: make these configurable 
 JAVA="java"
@@ -35,16 +35,16 @@ class PicardJobRunner(DefaultShellJobRunner):
             logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),
                                                                      os.path.abspath(job.jar())))
             raise Exception("job jar does not exist")
-        arglist = ['java', job.java_opt(), '-jar', os.path.join(self.path, job.jar())]
+        arglist = [JAVA] + job.java_opt() + ['-jar', os.path.join(self.path, job.jar())]
         if job.main():
             arglist.append(job.main())
         if job.opts():
-            arglist.append(job.opts())
+            arglist += job.opts()
         (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
 
         arglist += job_args
         cmd = ' '.join(arglist)        
-        logger.info(cmd.replace("= ", "="))
+        logger.info("\nJob runner '{0}';\n\trunning command '{1}'".format(self.__class__, cmd.replace("= ", "=")))
         (stdout, stderr, returncode) = shell.exec_cmd(cmd.replace("= ", "="), shell=True)
 
         if returncode == 0:
@@ -58,7 +58,6 @@ class PicardJobRunner(DefaultShellJobRunner):
 class InputBamFile(JobTask):
     _config_section = "picard"
     _config_subsection = "InputBamFile"
-    target = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
     def requires(self):
         cls = self.set_parent_task()
@@ -70,17 +69,18 @@ class InputBamFile(JobTask):
 
 class PicardJobTask(JobTask):
     _config_section = "picard"
-    java_options = "-Xmx2g"
+    java_options = luigi.Parameter(default=["-Xmx2g"], is_list=True)
+    executable = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.InputBamFile")
     target_suffix = luigi.Parameter(default=".bam")
     source_suffix = luigi.Parameter(default=".bam")
 
     def jar(self):
         """Path to the jar for this Picard job"""
-        return None
-
+        return self.executable
+    
     def java_opt(self):
-        return self.java_options
+        return list(self.java_options)
 
     def exe(self):
         return self.jar()
@@ -95,40 +95,29 @@ class PicardJobTask(JobTask):
 
 class SortSam(PicardJobTask):
     _config_subsection = "SortSam"
-    options = luigi.Parameter(default="SO=coordinate MAX_RECORDS_IN_RAM=750000")
+    executable = "SortSam.jar"
+    options = luigi.Parameter(default=["SO=coordinate MAX_RECORDS_IN_RAM=750000"], is_list=True)
     label = luigi.Parameter(default=".sort")
 
-    def jar(self):
-        return "SortSam.jar"
-    def requires(self):
-        cls = self.set_parent_task()
-        source = self._make_source_file_name()
-        return cls(target=source)
-    def output(self):
-        return luigi.LocalTarget(self.target)
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()]
 
 class MergeSamFiles(PicardJobTask):
     _config_subsection = "MergeSamFiles"
+    executable = "MergeSamFiles.jar"
     label = luigi.Parameter(default=".merge")
     read1_suffix = luigi.Parameter(default="_R1_001")
     # FIXME: TMP_DIR should not be hard-coded
-    options = luigi.Parameter(default="SO=coordinate TMP_DIR=./tmp")
-
-    def jar(self):
-        return "MergeSamFiles.jar"
-    def requires(self):
-        cls = self.set_parent_task()
-        sources = self.organize_sample_runs(cls)
-        return [cls(target=src) for src in sources]
-
-    def output(self):
-        return luigi.LocalTarget(self.target)
+    options = luigi.Parameter(default=["SO=coordinate TMP_DIR=./tmp"], is_list=True)
 
     def args(self):
         return ["OUTPUT=", self.output()] + [item for sublist in [["INPUT=", x] for x in self.input()] for item in sublist]
-    
+
+    def requires(self):
+        cls = self.set_parent_task()
+        sources = self.organize_sample_runs(cls)
+        return [cls(target=src) for src in sources]    
+
     def organize_sample_runs(self, cls):
         # This currently relies on the folder structure sample/fc1,
         # sample/fc2 etc... This should possibly also be a
@@ -152,27 +141,17 @@ class MergeSamFiles(PicardJobTask):
     
 class AlignmentMetrics(PicardJobTask):
     _config_subsection = "AlignmentMetrics"
-    options = luigi.Parameter(default=None)
+    executable = "CollectAlignmentSummaryMetrics.jar"
     target_suffix = luigi.Parameter(default=".align_metrics")
     
-    def jar(self):
-        return "CollectAlignmentSummaryMetrics.jar"
-    def output(self):
-        return luigi.LocalTarget(self.target)
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()]
 
 class InsertMetrics(PicardJobTask):
     _config_subsection = "InsertMetrics"
-    options = luigi.Parameter(default=None)
+    executable = "CollectInsertSizeMetrics.jar"
     target_suffix = luigi.Parameter(default=[".insert_metrics", ".insert_hist"], is_list=True)
     
-    def jar(self):
-        return "CollectInsertSizeMetrics.jar"
-    def requires(self):
-        cls = self.set_parent_task()
-        source = self._make_source_file_name()
-        return cls(target=source)
     def output(self):
         return [luigi.LocalTarget(self.target),
                 luigi.LocalTarget(rreplace(self.target, self.target_suffix[0], self.target_suffix[1], 1))]
@@ -181,38 +160,26 @@ class InsertMetrics(PicardJobTask):
 
 class DuplicationMetrics(PicardJobTask):
     _config_subsection = "DuplicationMetrics"
-    options = luigi.Parameter(default=None)
+    executable = "MarkDuplicates.jar"
     label = luigi.Parameter(default=".dup")
     target_suffix = luigi.Parameter(default=[".bam", ".dup_metrics"], is_list=True)
 
-    def jar(self):
-        return "MarkDuplicates.jar"
-    def requires(self):
-        cls = self.set_parent_task()
-        source = self._make_source_file_name()
-        return cls(target=source)
-    def output(self):
-        return luigi.LocalTarget(self.target)
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output(), "METRICS_FILE=", rreplace(self.output().fn, "{}{}".format(self.label, self.target_suffix[0]), self.target_suffix[1], 1)]
 
 class HsMetrics(PicardJobTask):
     _config_subsection = "HsMetrics"
-    bam = luigi.Parameter(default=None)
-    options = luigi.Parameter(default=None)
-    baits = luigi.Parameter(default=None)
-    targets = luigi.Parameter(default=None)
+    executable = "CalculateHsMetrics.jar"
+    bait_regions = luigi.Parameter(default=None)
+    target_regions = luigi.Parameter(default=None)
     target_suffix = luigi.Parameter(default=".hs_metrics")
     
-    def jar(self):
-        return "CalculateHsMetrics.jar"
-    def output(self):
-        return luigi.LocalTarget(self.target)
     def args(self):
-        return ["INPUT=", self.input(), "OUTPUT=", self.output(), "BAIT_INTERVALS=", self.baits, "TARGET_INTERVALS=", self.targets]
+        if not self.bait_regions or not self.target_regions:
+            raise Exception("need bait and target regions to run CalculateHsMetrics")
+        return ["INPUT=", self.input(), "OUTPUT=", self.output(), "BAIT_INTERVALS=", os.path.expanduser(self.bait_regions), "TARGET_INTERVALS=", os.path.expanduser(self.target_regions)]
 
-class PicardMetrics(luigi.WrapperTask):
-    target = luigi.Parameter(default=None)
+class PicardMetrics(JobWrapperTask):
     def requires(self):
         return [InsertMetrics(target=self.target + str(InsertMetrics.target_suffix.default[0])),
                 # This currently gives the wrong target

@@ -17,7 +17,7 @@ import time
 import shutil
 import random
 import logging
-from ratatosk.job import JobTask, DefaultShellJobRunner
+from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner
 from cement.utils import shell
 
 logger = logging.getLogger('luigi-interface')
@@ -27,7 +27,8 @@ logger = logging.getLogger('luigi-interface')
 # the job runner we work with temp files, so the output is not
 # compressed... Took me a while to figure out. Solution for now
 #  is to add suffix 'gz' to the temp file. Obviously this won't work
-#  for uncompressed input (SIGH)
+#  for uncompressed input (SIGH), but as I discuss in issues, maybe
+#  this is a good thing.
 class CutadaptJobRunner(DefaultShellJobRunner):
 
     @staticmethod
@@ -64,7 +65,7 @@ class CutadaptJobRunner(DefaultShellJobRunner):
         (tmp_files, job_args) = CutadaptJobRunner._fix_paths(job)
         arglist += job_args
         cmd = ' '.join(arglist)
-        logger.info(cmd)
+        logger.info("\nJob runner '{0}';\n\trunning command '{1}'".format(self.__class__, cmd))
         (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)
         if returncode == 0:
             logger.info("Shell job completed")
@@ -75,26 +76,17 @@ class CutadaptJobRunner(DefaultShellJobRunner):
             raise Exception("Job '{}' failed: \n{}".format(' '.join(arglist), " ".join([stderr])))
 
 
-class InputFastqFile(JobTask):
+class InputFastqFile(InputJobTask):
     _config_section = "cutadapt"
     _config_subsection = "input_fastq_file"
-    target = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
     
-    def requires(self):
-        cls = self.set_parent_task()
-        return cls(target=self.target)
-    def output(self):
-        return luigi.LocalTarget(self.target)
-    def run(self):
-        pass
 
 # NB: cutadapt is a non-hiearchical tool. Group under, say, utils?
 class CutadaptJobTask(JobTask):
     _config_section = "cutadapt"
-    options = luigi.Parameter(default=None)
     label = luigi.Parameter(default=".trimmed")
-    cutadapt = luigi.Parameter(default="cutadapt")
+    executable = luigi.Parameter(default="cutadapt")
     parent_task = luigi.Parameter(default="ratatosk.lib.utils.cutadapt.InputFastqFile")
     # Use Illumina TruSeq adapter sequences as default
     threeprime = luigi.Parameter(default="AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC")
@@ -106,19 +98,8 @@ class CutadaptJobTask(JobTask):
         # Assume read 2 if no match...
         return self.input().fn.find(self.read1_suffix) > 0
 
-    def exe(self):
-        return self.cutadapt
-
     def job_runner(self):
         return CutadaptJobRunner()
-
-    def requires(self):
-        cls = self.set_parent_task()
-        source = self._make_source_file_name()
-        return cls(target=source)
-
-    def output(self):
-        return luigi.LocalTarget(self.target)
 
     def args(self):
         seq = self.threeprime if self.read1() else self.fiveprime

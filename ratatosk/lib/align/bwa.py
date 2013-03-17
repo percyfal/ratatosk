@@ -16,7 +16,7 @@ import re
 import luigi
 import time
 import shutil
-from ratatosk.job import JobTask, DefaultShellJobRunner
+from ratatosk.job import JobTask, JobWrapperTask, DefaultShellJobRunner
 from ratatosk.utils import rreplace, fullclassname
 from cement.utils import shell
 
@@ -41,21 +41,20 @@ class InputFastqFile(JobTask):
 class BwaJobTask(JobTask):
     """Main bwa class with parameters necessary for all bwa classes"""
     _config_section = "bwa"
-    bwa = luigi.Parameter(default="bwa")
+    executable = luigi.Parameter(default="bwa")
     bwaref = luigi.Parameter(default=None)
     num_threads = luigi.Parameter(default=1)
-
-    def exe(self):
-        """Executable of this task"""
-        return self.bwa
 
     def job_runner(self):
         return BwaJobRunner()
 
+    def output(self):
+        return luigi.LocalTarget(self.target)
+
 
 class BwaAln(BwaJobTask):
     _config_subsection = "aln"
-    options = luigi.Parameter(default=None)
+    sub_executable = "aln"
     parent_task = luigi.Parameter(default="ratatosk.lib.align.bwa.InputFastqFile")
     target_suffix = luigi.Parameter(default=".sai")
     source_suffix = luigi.Parameter(default=".fastq.gz")
@@ -64,11 +63,10 @@ class BwaAln(BwaJobTask):
     is_read1 = True
     can_multi_thread = True
 
-    def main(self):
-        return "aln"
-    
     def opts(self):
-        return '-t {} {}'.format(str(self.threads()), self.options if self.options else "")
+        # Threads is an option so handle it here
+        retval = list(self.options)
+        return retval + ['-t {}'.format(str(self.threads()))]
 
     def requires(self):
         cls = self.set_parent_task()
@@ -86,9 +84,6 @@ class BwaAln(BwaJobTask):
             return cls(target=[fq1, fq2])
         else:
             return cls(target=source)
-    
-    def output(self):
-        return luigi.LocalTarget(self.target)
 
     def args(self):
         # bwa aln "-f" option seems to be broken!?!
@@ -100,33 +95,29 @@ class BwaAln(BwaJobTask):
         else:
             return [self.bwaref, self.input(), ">", self.output()]
 
-class BwaAlnWrapperTask(luigi.WrapperTask):
+class BwaAlnWrapperTask(JobWrapperTask):
     fastqfiles = luigi.Parameter(default=[], is_list=True)
     def requires(self):
         return [BwaAln(target=x) for x in self.fastqfiles]
 
 class BwaSampe(BwaJobTask):
     _config_subsection = "sampe"
+    sub_executable = "sampe"
     # Get these with static methods
     read1_suffix = luigi.Parameter(default="_R1_001")
     read2_suffix = luigi.Parameter(default="_R2_001")
     source_suffix = luigi.Parameter(default=".sai")
     target_suffix = luigi.Parameter(default=".sam")
     read_group = luigi.Parameter(default=None)
+    platform = luigi.Parameter(default="Illumina")
     can_multi_thread = False
     max_memory_gb = 5 # bwa documentation says ~5.4 for human genome
-
-    def main(self):
-        return "sampe"
 
     def requires(self):
         # From target name, generate sai1, sai2, fastq1, fastq2
         sai1 = rreplace(self._make_source_file_name(), self.source_suffix, self.read1_suffix + self.source_suffix, 1)
         sai2 = rreplace(self._make_source_file_name(), self.source_suffix, self.read2_suffix + self.source_suffix, 1)
         return [BwaAln(target=sai1), BwaAln(target=sai2)]
-
-    def output(self):
-        return luigi.LocalTarget(self.target)
 
     def args(self):
         sai1 = self.input()[0]
@@ -136,7 +127,7 @@ class BwaSampe(BwaJobTask):
         if not self.read_group:
             foo = sai1.fn.replace(".sai", "")
             # The platform should be configured elsewhere
-            self.read_group = "-r \"{}\"".format("\t".join(["@RG", "ID:{}".format(foo), "SM:{}".format(foo), "PL:Illumina"]))
+            self.read_group = "-r \"{}\"".format("\t".join(["@RG", "ID:{}".format(foo), "SM:{}".format(foo), "PL:{}".format(self.platform)]))
         return [self.read_group, self.bwaref, sai1, sai2, fastq1, fastq2, ">", self.output()]
 
     
