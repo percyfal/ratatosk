@@ -9,7 +9,7 @@ bwa:
 
 samtools:
   SamToBam:
-    parent_task: ratatosk.scilife.seqcap.HaloBwaSampe
+    parent_task: ratatosk.pipeline.haloplex.HaloBwaSampe
 
 picard:
   SortSam:
@@ -53,4 +53,4 @@ gatk:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   # Finally, make BaseRecalibrator depend on RawIndelRealigner
   BaseRecalibrator:
-    parent_task: ratatosk.scilife.seqcap.RawIndelRealigner
+    parent_task: ratatosk.pipeline.haloplex.RawIndelRealigner

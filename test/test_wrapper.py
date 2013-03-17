@@ -168,8 +168,8 @@ class TestLuigiParallel(unittest.TestCase):
         pass
 
 class TestLuigiPipelines(unittest.TestCase):
-    def test_sampe_to_samtools(self):
-        luigi.run(_luigi_args(['--target', sam, '--config-file', localconf]), main_task_cls=SampeToSamtools)
+    # def test_sampe_to_samtools(self):
+    #     luigi.run(_luigi_args(['--target', sam, '--config-file', localconf]), main_task_cls=SampeToSamtools)
 
     def test_sampe_to_samtools_sort(self):
         luigi.run(_luigi_args(['--target', bam, '--config-file', localconf]), main_task_cls=SAM.SortBam)

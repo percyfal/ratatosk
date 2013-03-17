@@ -17,11 +17,12 @@ import glob
 import csv
 import logging
 import ratatosk
-from ratatosk.job import PipelineTask, JobTask
+from ratatosk.job import PipelineTask, JobTask, JobWrapperTask
 from ratatosk.utils import rreplace, fullclassname
 from ratatosk.lib.align.bwa import BwaSampe, BwaAln
 from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, RealignerTargetCreator, IndelRealigner
-from ratatosk.lib.tools.picard import PicardMetrics
+from ratatosk.lib.tools.picard import PicardMetrics, MergeSamFiles
+from ratatosk.lib.tools.fastqc import FastQCJobTask
 
 logger = logging.getLogger('luigi-interface')
 
@@ -38,7 +39,6 @@ class HaloBwaSampe(BwaSampe):
         sai1 = rreplace(rreplace(rreplace(self._make_source_file_name(), self.source_suffix, self.read1_suffix + self.source_suffix, 1), ".trimmed.sync", "", 1), ".sai", ".trimmed.sync.sai", 1)
         sai2 = rreplace(rreplace(rreplace(self._make_source_file_name(), self.source_suffix, self.read2_suffix + self.source_suffix, 1), ".trimmed.sync", "", 1), ".sai", ".trimmed.sync.sai", 1)
         return [BwaAln(target=sai1), BwaAln(target=sai2)]
-
 
 # Raw variant calling class done on merged data to generate a list of
 # raw candidates around which realignment is done.
@@ -108,9 +108,14 @@ class HaloPlex(PipelineTask):
         if self.project is None:
             return []
         tgt_fun = self.set_target_generator_function()
+        if not tgt_fun:
+            return []
         target_list = tgt_fun(self)
+        # Hardcode read suffixes here for now
+        # TODO: this is also a local modification so should be moved out of here. 
+        reads = ["{}_R1_001.fastq.gz".format(x) for x in target_list] +  ["{}_R2_001.fastq.gz".format(x) for x in target_list]
         variant_target_list = ["{}.{}".format(x, self.final_target_suffix) for x in target_list]
         picard_metrics_target_list = ["{}.{}".format(x, "trimmed.sync.sort.merge") for x in target_list]
-        return [VariantEval(target=tgt) for tgt in variant_target_list] + [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_target_list]
+        return [VariantEval(target=tgt) for tgt in variant_target_list] + [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_target_list]# + [FastQCJobTask(target=tgt) for tgt in reads]
 
 
