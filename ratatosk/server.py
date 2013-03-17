@@ -92,15 +92,7 @@ class TableVisualizeHandler(tornado.web.RequestHandler):
         
         # TODO: this code definitely should not live here:
         html_header = pkg_resources.resource_string(__name__, 'static/header.html')
-
-        # self.write(''.join([html_header,
-        #                     tasks,
-        #                     "</body></html>"]))
-
-
-
         self.finish()
-        
 
 class VisualizeHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous

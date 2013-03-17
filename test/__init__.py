@@ -44,7 +44,9 @@ def setUpModule():
         'knownSites1' : os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "variation", "dbsnp132_chr11.vcf")),
         'knownSites2' : os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "variation", "1000G_omni2.5.vcf")),
         'ref' : os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "seq", "chr11.fa")),
-        'dbsnp' : os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "variation", "dbsnp132_chr11.vcf"))
+        'dbsnp' : os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "variation", "dbsnp132_chr11.vcf")),
+        'baits' : os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "seqcap", "chr11_baits.interval_list")),
+        'targets' : os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "seqcap", "chr11_targets.interval_list"))
         }
     config_template = Template(filename=os.path.join(os.path.dirname(__file__), "pipeconf.yaml.mako"))
     with open("pipeconf.yaml", "w") as fh:

@@ -34,6 +34,7 @@ class FastQCJobRunner(DefaultShellJobRunner):
         os.makedirs(os.path.join(os.curdir, tmpdir.fn))
         # Need to send output to temporary *directory*, not file
         cmd = ' '.join(arglist)        
+        logger.info("Job runner '{0}'; running command '{1}'".format(self.__class__, cmd))
         (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)
 
         if returncode == 0:

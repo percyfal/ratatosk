@@ -47,8 +47,7 @@ class GATKJobRunner(DefaultShellJobRunner):
         (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
         arglist += job_args
         cmd = ' '.join(arglist)        
-        logger.info(cmd)
-
+        logger.info("\nJob runner '{0}';\n\trunning command '{1}'".format(self.__class__, cmd))
         (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)
         if returncode == 0:
             logger.info("Shell job completed")
@@ -92,7 +91,7 @@ class GATKJobTask(JobTask):
         return self.jar()
 
     def java_opt(self):
-        return " ".join(self.java_options)
+        return list(self.java_options)
 
     def job_runner(self):
         return GATKJobRunner()
@@ -228,7 +227,7 @@ class ClipReads(GATKJobTask):
     _config_subsection = "ClipReads"
     sub_executable = "ClipReads"
     # Tailored for HaloPlex
-    options = luigi.Parameter(default="--cyclesToTrim 1-5 --clipRepresentation WRITE_NS")
+    options = luigi.Parameter(default=["--cyclesToTrim 1-5 --clipRepresentation WRITE_NS"], is_list=True)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
     label = luigi.Parameter(default=".clip")
 
@@ -243,19 +242,18 @@ class VariantFiltration(GATKJobTask):
     _config_subsection = "VariantFiltration"
     sub_executable = "VariantFiltration"
     # Options from Halo
-    options = luigi.Parameter(default='--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL > 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 1.5" --filterName "LowQD"')
+    options = luigi.Parameter(default=['--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL > 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 1.5" --filterName "LowQD"'], is_list=True)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputVcfFile")
     label = luigi.Parameter(default=".filtered")
     target_suffix = luigi.Parameter(default=".vcf")
     source_suffix = luigi.Parameter(default=".vcf")
 
     def args(self):
+        retval = ["--variant", self.input(), "-o", self.output()]
         if not self.ref:
             raise Exception("need reference for VariantFiltration")
         retval += [" -R {}".format(self.ref)]
-
-        return ["--variant", self.input(), "-o", self.output()]
-
+        return retval
 
 class VariantEval(GATKJobTask):
     _config_subsection = "VariantEval"
@@ -267,7 +265,7 @@ class VariantEval(GATKJobTask):
     target_suffix = luigi.Parameter(default=".eval_metrics")
 
     def opts(self):
-        retval = self.options
+        retval = list(self.options)
         # TODO: Sort this one out
         if not self.dbsnp:
             raise Exception("need dbsnp for VariantEval")
@@ -287,6 +285,7 @@ class VariantEval(GATKJobTask):
         
 class UnifiedGenotyper(GATKIndexedJobTask):
     _config_subsection = "UnifiedGenotyper"
+    sub_executable = "UnifiedGenotyper"
     options = luigi.Parameter(default=["-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH"], is_list=True)
     target_suffix = luigi.Parameter(default=".vcf")
     dbsnp = luigi.Parameter(default=None)

@@ -67,9 +67,7 @@ class SortBam(SamtoolsJobTask):
     target_suffix = luigi.Parameter(default=".bam")
     source_suffix = luigi.Parameter(default=".bam")
     label = luigi.Parameter(default=".sort")
-    options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.samtools.SamToBam")
-    source = None
 
     def add_suffix(self):
         """samtools sort generates its output based on a prefix, hence
@@ -78,7 +76,7 @@ class SortBam(SamtoolsJobTask):
 
     def args(self):
         output_prefix = luigi.LocalTarget(self.output().fn.replace(".bam", ""))
-        return [self.source, output_prefix]
+        return [self.input(), output_prefix]
 
 class IndexBam(SamtoolsJobTask):
     _config_subsection = "indexbam"
@@ -86,10 +84,9 @@ class IndexBam(SamtoolsJobTask):
     target_suffix = luigi.Parameter(default=".bai")
     source_suffix = luigi.Parameter(default=".bam")
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.samtools.InputBamFile")
-    source = None
 
     def args(self):
-        return [self.source, self.output()]
+        return [self.input(), self.output()]
 
 # "Connection" tasks
 import ratatosk.lib.align.bwa as bwa

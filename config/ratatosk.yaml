@@ -1,6 +1,6 @@
 # Main configuration file
 bwa:
-  bwaref: ../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
+  bwaref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
 
 samtools:
   SamToBam:
@@ -19,9 +19,9 @@ picard:
     parent_task: ratatosk.lib.tools.picard.SortSam
 
 gatk:
-  ref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
-  knownSites: [../../ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf]
-  dbsnp: ../../ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf
+  ref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
+  knownSites: [~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf]
+  dbsnp: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf
 
   RealignerTargetCreator:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles

@@ -5,7 +5,7 @@ bwa:
     # NB: shouldn't work since this is a custom config file
     parent_task: ratatosk.bwa.BwaSampe
     # However this should work
-    options: -e 2 -l 40
+    options: [-e 2 -l 40]
   
 samtools:
   SamToBam:
@@ -14,10 +14,9 @@ samtools:
 picard:
   DuplicationMetrics:
     options:
-  #HsMetrics:
-    # FIXME: add test targets and baits
-    # targets:
-    # baits:
+  HsMetrics:
+    target_regions: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seqcap/chr11_targets.interval_list
+    bait_regions: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seqcap/chr11_baits.interval_list
 
 gatk:
   ref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa

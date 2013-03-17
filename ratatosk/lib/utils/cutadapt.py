@@ -65,7 +65,7 @@ class CutadaptJobRunner(DefaultShellJobRunner):
         (tmp_files, job_args) = CutadaptJobRunner._fix_paths(job)
         arglist += job_args
         cmd = ' '.join(arglist)
-        logger.info(cmd)
+        logger.info("\nJob runner '{0}';\n\trunning command '{1}'".format(self.__class__, cmd))
         (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)
         if returncode == 0:
             logger.info("Shell job completed")

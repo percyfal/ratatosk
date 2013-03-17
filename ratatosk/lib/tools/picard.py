@@ -44,7 +44,7 @@ class PicardJobRunner(DefaultShellJobRunner):
 
         arglist += job_args
         cmd = ' '.join(arglist)        
-        logger.info(cmd.replace("= ", "="))
+        logger.info("\nJob runner '{0}';\n\trunning command '{1}'".format(self.__class__, cmd.replace("= ", "=")))
         (stdout, stderr, returncode) = shell.exec_cmd(cmd.replace("= ", "="), shell=True)
 
         if returncode == 0:
@@ -80,7 +80,7 @@ class PicardJobTask(JobTask):
         return self.executable
     
     def java_opt(self):
-        return self.java_options
+        return list(self.java_options)
 
     def exe(self):
         return self.jar()
@@ -112,7 +112,12 @@ class MergeSamFiles(PicardJobTask):
 
     def args(self):
         return ["OUTPUT=", self.output()] + [item for sublist in [["INPUT=", x] for x in self.input()] for item in sublist]
-    
+
+    def requires(self):
+        cls = self.set_parent_task()
+        sources = self.organize_sample_runs(cls)
+        return [cls(target=src) for src in sources]    
+
     def organize_sample_runs(self, cls):
         # This currently relies on the folder structure sample/fc1,
         # sample/fc2 etc... This should possibly also be a
@@ -145,7 +150,6 @@ class AlignmentMetrics(PicardJobTask):
 class InsertMetrics(PicardJobTask):
     _config_subsection = "InsertMetrics"
     executable = "CollectInsertSizeMetrics.jar"
-    options = luigi.Parameter(default=None)
     target_suffix = luigi.Parameter(default=[".insert_metrics", ".insert_hist"], is_list=True)
     
     def output(self):
@@ -173,7 +177,7 @@ class HsMetrics(PicardJobTask):
     def args(self):
         if not self.bait_regions or not self.target_regions:
             raise Exception("need bait and target regions to run CalculateHsMetrics")
-        return ["INPUT=", self.input(), "OUTPUT=", self.output(), "BAIT_INTERVALS=", self.bait_regions, "TARGET_INTERVALS=", self.target_regions]
+        return ["INPUT=", self.input(), "OUTPUT=", self.output(), "BAIT_INTERVALS=", os.path.expanduser(self.bait_regions), "TARGET_INTERVALS=", os.path.expanduser(self.target_regions)]
 
 class PicardMetrics(JobWrapperTask):
     def requires(self):

@@ -80,7 +80,7 @@ class DefaultShellJobRunner(JobRunner):
         
         arglist += job_args
         cmd = ' '.join(arglist)
-        logger.info(cmd)
+        logger.info("\nJob runner '{0}';\n\trunning command '{1}'\n".format(self.__class__, cmd))
         (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)
         if returncode == 0:
             logger.info("Shell job completed")
@@ -101,7 +101,7 @@ class BaseJobTask(luigi.Task):
     restart = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="Restart pipeline from scratch.")
     restart_from = luigi.Parameter(default=None, is_global=True, description="NOT YET IMPLEMENTED: Restart pipeline from a given task.")
     print_config = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="NOT YET IMPLEMENTED: Print configuration for pipeline")
-    options = luigi.Parameter(default=[], description="Program options", is_list=True)
+    options = luigi.Parameter(default=(), description="Program options", is_list=True)
     parent_task = luigi.Parameter(default=None, description="Main parent task from which the current task receives (parts) of its input")
     num_threads = luigi.Parameter(default=1)
     # Note: output should generate one file only; in special cases we
@@ -171,7 +171,7 @@ class BaseJobTask(luigi.Task):
             # Got a command line option => override config file
             if value.default != param_values.get(key, None):
                 new_value = param_values.get(key, None)
-                logger.debug("option '{0}'; got value '{1}' from command line, overriding configuration file setting for task class '{2}'".format(key, new_value, self.__class__))
+                logger.debug("option '{0}'; got value '{1}' from command line, overriding configuration file setting default '{2}' for task class '{3}'".format(key, new_value, value.default, self.__class__))
             else:
                 if config.has_key(self._config_section, key):
                     new_value = config.get(self._config_section, key)
@@ -188,7 +188,7 @@ class BaseJobTask(luigi.Task):
                     logger.debug("Updating config, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__))
             else:
                 pass
-            logger.debug("Using default value for '{0}' for task class '{1}'".format(key, self.__class__))
+            logger.debug("Using default value '{0}' for '{1}' for task class '{2}'".format(value.default, key, self.__class__))
         return kwargs
 
     def exe(self):
@@ -206,7 +206,7 @@ class BaseJobTask(luigi.Task):
         :rtype: list
 
         """
-        return self.options
+        return list(self.options)
 
     def args(self):
         """Generic argument list. Used to generate list of required

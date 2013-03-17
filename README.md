@@ -659,11 +659,11 @@ environment.
   dynamically. Shouldn't the dependency really be on the bam file used
   as input for RealignerTargetCreator?
 
-* Make `exe()` use `self.executable` and remove `exe()` from all
-  subclasses.
-
-* Function `opts()` is inconsistent at present. Best is probably to
-  init empty list and do a join on return.
+* Add 'target_grouping' or something similar to BaseJobTask to use for
+  grouping in table output.
+  
+* Add 'start_time', 'end_time' to tasks to monitor timing. Should be
+  luigi parameter in order to get passed to web interface
 
 * Implement class validation of `parent_task`. Currently, any code can
   be used, but it would be nice if the class be validated against the
@@ -767,3 +767,10 @@ TODO: move these to github issue tracker
 
 * DONE? Fix path handling so relative paths can be used (see e.g. run method in
   [fastq](https://github.com/percyfal/ratatosk/blob/master/ratatosk/lib/files/fastq.py))
+
+* DONE: Make `exe()` use `self.executable` and remove `exe()` from all
+  subclasses.
+
+* DONE: Function `opts()` is inconsistent at present. Best is probably to
+  init empty list and do a join on return.
+
