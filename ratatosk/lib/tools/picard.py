@@ -71,7 +71,7 @@ class InputBamFile(JobTask):
 class PicardJobTask(JobTask):
     _config_section = "picard"
     java_options = "-Xmx2g"
-    parent_task = luigi.Parameter(default="ratatosk.picard.InputBamFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.InputBamFile")
     target_suffix = luigi.Parameter(default=".bam")
     source_suffix = luigi.Parameter(default=".bam")
 

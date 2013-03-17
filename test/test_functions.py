@@ -6,14 +6,14 @@ import luigi
 import time
 import logging
 from ratatosk.job import JobTask
-import ratatosk.bwa as BWA
-import ratatosk.samtools as SAM
-import ratatosk.fastq as FASTQ
-import ratatosk.picard as PICARD
-import ratatosk.gatk as GATK
-import ratatosk.cutadapt as CUTADAPT
-import ratatosk.fastqc as FASTQC
-import ratatosk.external
+import ratatosk.lib.align.bwa as BWA
+import ratatosk.lib.tools.samtools as SAM
+import ratatosk.lib.files.fastq as FASTQ
+import ratatosk.lib.tools.picard as PICARD
+import ratatosk.lib.tools.gatk as GATK
+import ratatosk.lib.utils.cutadapt as CUTADAPT
+import ratatosk.lib.tools.fastqc as FASTQC
+import ratatosk.lib.files.external
 import ngstestdata as ntd
 
 logging.basicConfig(level=logging.DEBUG)

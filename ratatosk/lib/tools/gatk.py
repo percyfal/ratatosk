@@ -93,7 +93,7 @@ class GATKJobTask(JobTask):
     source_suffix = luigi.Parameter(default=".bam")
     target_suffix = luigi.Parameter(default=".bam")
     java_options = luigi.Parameter(default="-Xmx2g")
-    parent_task = luigi.Parameter(default="ratatosk.gatk.InputBamFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
     ref = luigi.Parameter(default=None)
     # Additional commonly used options
     target_region = luigi.Parameter(default=None)
@@ -185,7 +185,7 @@ class BaseRecalibrator(GATKJobTask):
     _config_subsection = "BaseRecalibrator"
     # Setting default=[] doesn't work?!?
     knownSites = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="ratatosk.gatk.InputBamFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
     target_suffix = luigi.Parameter(default=".recal_data.grp")
 
     def main(self):
@@ -219,7 +219,7 @@ class PrintReads(GATKJobTask):
     # NB: print reads does *not* require BaseRecalibrator. Still this
     # is usually the case so supply an option
     _config_subsection = "PrintReads"
-    parent_task = luigi.Parameter(default="ratatosk.gatk.BaseRecalibrator")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.BaseRecalibrator")
     label = luigi.Parameter(default=".recal")
     recalibrate = luigi.Parameter(default=True, is_boolean=True)
     source_suffix = luigi.Parameter(default=".recal_data.grp")
@@ -264,7 +264,7 @@ class ClipReads(GATKJobTask):
     target = luigi.Parameter(default=None)
     # Tailored for HaloPlex
     options = luigi.Parameter(default="--cyclesToTrim 1-5 --clipRepresentation WRITE_NS")
-    parent_task = luigi.Parameter(default="ratatosk.gatk.InputBamFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
     label = luigi.Parameter(default=".clip")
 
     def main(self):
@@ -293,7 +293,7 @@ class VariantFiltration(GATKJobTask):
     target = luigi.Parameter(default=None)
     # Options from Halo
     options = luigi.Parameter(default='--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL > 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 1.5" --filterName "LowQD"')
-    parent_task = luigi.Parameter(default="ratatosk.gatk.InputVcfFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputVcfFile")
     label = luigi.Parameter(default=".filtered")
     target_suffix = luigi.Parameter(default=".vcf")
     source_suffix = luigi.Parameter(default=".vcf")
@@ -324,7 +324,7 @@ class VariantEval(GATKJobTask):
     _config_subsection = "VariantEval"
     options = luigi.Parameter(default="-ST Filter -l INFO --doNotUseAllStandardModules --evalModule CompOverlap --evalModule CountVariants --evalModule GenotypeConcordance --evalModule TiTvVariantEvaluator --evalModule ValidationReport --stratificationModule Filter")
     dbsnp = luigi.Parameter(default=None)
-    parent_task = luigi.Parameter(default="ratatosk.gatk.InputVcfFile")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputVcfFile")
     source_suffix = luigi.Parameter(default=".vcf")
     target_suffix = luigi.Parameter(default=".eval_metrics")
 

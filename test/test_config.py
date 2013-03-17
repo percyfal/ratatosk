@@ -7,11 +7,12 @@ import logging
 import yaml
 import ratatosk
 from ratatosk.interface import get_config
-import ratatosk.bwa
-import ratatosk.fastq
-import ratatosk.gatk
-import ratatosk.samtools
-import ratatosk.picard
+from ratatosk.yamlconfigparser import YamlConfigParser
+import ratatosk.lib.align.bwa
+import ratatosk.lib.files.fastq
+import ratatosk.lib.tools.gatk
+import ratatosk.lib.tools.samtools
+import ratatosk.lib.tools.picard
 from luigi.mock import MockFile
 
 logging.basicConfig(level=logging.DEBUG)
@@ -28,7 +29,8 @@ class TestConfigParser(unittest.TestCase):
             
     def test_get_config(self):
         local_config = get_config(configfile)
-        self.assertIsInstance(local_config, ratatosk.yamlconfigparser.YAMLParserConfigHandler)
+        #self.assertIsInstance(local_config, ratatosk.yamlconfigparser.YAMLParserConfigHandler)
+        self.assertIsInstance(local_config, ratatosk.yamlconfigparser.YamlConfigParser)
         
     def test_get_list(self):
         """Make sure list parsing ok"""
@@ -52,8 +54,8 @@ class TestConfigUpdate(unittest.TestCase):
             fp.write(yaml.safe_dump({'gatk':{'parent_task':'another.class', 'UnifiedGenotyper':{'parent_task': 'no.such.class'}}}, default_flow_style=False))
 
         # Main gatk task
-        gatkjt = ratatosk.gatk.GATKJobTask()
-        self.assertEqual(gatkjt.parent_task, "ratatosk.gatk.InputBamFile")
+        gatkjt = ratatosk.lib.tools.gatk.GATKJobTask()
+        self.assertEqual(gatkjt.parent_task, "ratatosk.lib.tools.gatk.InputBamFile")
         kwargs = gatkjt._update_config("mock.yaml")
         self.assertEqual(kwargs, {'parent_task':'another.class'})
         kwargs = gatkjt._update_config("mock.yaml", disable_parent_task_update=True)
@@ -63,8 +65,8 @@ class TestConfigUpdate(unittest.TestCase):
         #
         # Incidentally, this verifies that subsection key value 'no.such.class'
         # overrides section key 'another.class'
-        ug = ratatosk.gatk.UnifiedGenotyper()
-        self.assertEqual(ug.parent_task, "ratatosk.gatk.ClipReads")
+        ug = ratatosk.lib.tools.gatk.UnifiedGenotyper()
+        self.assertEqual(ug.parent_task, "ratatosk.lib.tools.gatk.ClipReads")
         kwargs = ug._update_config("mock.yaml")
         self.assertEqual(kwargs, {'parent_task':'no.such.class'})
         kwargs = ug._update_config("mock.yaml", disable_parent_task_update=True)

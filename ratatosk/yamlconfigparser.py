@@ -26,7 +26,6 @@ import logging
 logger = logging.getLogger('luigi-interface')
 
 from ConfigParser import NoSectionError, NoOptionError, DuplicateSectionError
-from cement.core import backend, config, handler
 
 from ratatosk.utils import update, config_to_dict
 
@@ -36,45 +35,18 @@ except ImportError:
     # fallback for setup.py which hasn't yet built _collections
     _default_dict = dict
 
-class YAMLParserConfigHandler(config.CementConfigHandler):
+class YamlConfigParser(object):
+    """Yaml configuration parser.
+
+    TODO: subclass RawConfigParser?
+
     """
 
-    This class is an implementation of the :ref:`IConfig <cement.core.config>` 
-    interface.  It handles YAML configuration file parsing.
-    
-    """
-    class Meta:
-        """Handler meta-data."""
-        
-        interface = config.IConfig
-        """The interface that this handler implements."""
-        
-        label = 'yamlconfigparser'
-        """The string identifier of this handler."""
-        
     def __init__(self, defaults=None, dict_type=_default_dict, *args, **kw):
         self._dict = dict_type
         self._sections = self._dict()
         self._defaults = self._dict()
-        super(YAMLParserConfigHandler, self).__init__(*args, **kw)
-        self.app = None
-
-    # FIX ME: not working with yaml 
-    def merge(self, dict_obj, override=True):
-        """
-        Merge a dictionary into our config.  If override is True then 
-        existing config values are overridden by those passed in.
-        
-        :param dict_obj: A dictionary of configuration keys/values to merge 
-            into our existing config (self).
-            
-        :param override:  Whether or not to override existing values in the 
-            config.
-        
-        """
-        # FIX ME: this is sneaky but works for now
-        self._sections = update(self._sections, dict_obj, override)
-
+    
     def read(self, file_path):
         """
         Read config file.

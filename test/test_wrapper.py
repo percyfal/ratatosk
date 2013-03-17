@@ -186,25 +186,25 @@ class TestLuigiParallel(unittest.TestCase):
     def test_bwa_samples(self):
         pass
 
-class SampeToSamtools(SAM.SamToBam):
+class SampeToSamtools(ratatosk.lib.tools.samtools.SamToBam):
     def requires(self):
         source = self._make_source_file_name()
-        return BWA.BwaSampe(target=source)
+        return ratatosk.lib.align.bwa.BwaSampe(target=source)
 
 class TestLuigiPipelines(unittest.TestCase):
     def test_sampe_to_samtools(self):
-        luigi.run(_luigi_args(['--sam', sam, '--config-file', localconf]), main_task_cls=SampeToSamtools)
+        luigi.run(_luigi_args(['--target', sam, '--config-file', localconf]), main_task_cls=SampeToSamtools)
 
     def test_sampe_to_samtools_sort(self):
-        luigi.run(_luigi_args(['--bam', bam, '--config-file', localconf]), main_task_cls=SAM.SortBam)
+        luigi.run(_luigi_args(['--target', bam, '--config-file', localconf]), main_task_cls=SAM.SortBam)
 
     def test_sampe_to_picard_sort(self):
-        luigi.run(_luigi_args(['--bam', bam, '--config-file', localconf]), main_task_cls=PICARD.SortSam)
+        luigi.run(_luigi_args(['--target', bam, '--config-file', localconf]), main_task_cls=PICARD.SortSam)
 
 
 # Small test of workflow
 class Task1(JobTask):
-    parent_task = luigi.Parameter("ratatosk.external.Fastqfile")
+    parent_task = luigi.Parameter("ratatosk.lib.files.external.Fastqfile")
     def requires(self):
         return ratatosk.external.Fastqfile()
 

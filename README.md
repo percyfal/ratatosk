@@ -642,13 +642,6 @@ environment.
 * Modules `server.py`, the subdirectory `static`, and the daemon are
   more or less copies from `luigi`.
 
-* There is still a dependency on `cement` that should be removed:
-  
-  - YAML configuration parser (currently in
-	[ratatosk.yamlconfigparser.py](https://github.com/percyfal/ratatosk/blob/master/ratatosk/yamlconfigparser.py)
-  - shell commands are wrapped with
-	[shell.exec_cmd](https://github.com/cement/cement/blob/master/cement/utils/shell.py#L8)
-     from the cement package
 
 * Some options in `opts()` are not really options - see e.g.
   `ratatosk.lib.tools.gatk.VariantEval`, which requires a reference. Move to
@@ -673,7 +666,10 @@ environment.
   monitored via a web page
 
 * Use pipes whereever possible. See
-  `luigi.format.InputPipeProcessWrapper` etc and `luigi.file`
+  `luigi.format.InputPipeProcessWrapper` etc and `luigi.file`.
+  Incidentally, how would using pipes over several nodes work? I guess
+  tasks connected by pipes should be gathered and run by a single
+  worker
 
 * Add task for cleaning up intermediate output (related to issue on
   pipes).
@@ -750,3 +746,11 @@ TODO: move these to github issue tracker
   In the main script then import different pre-defined pipelines so
   one could change them via the command line following luigi rules
 
+* DONE: There is still a dependency on `cement` that should be
+  removed:
+  
+  - YAML configuration parser (currently in
+	[ratatosk.yamlconfigparser.py](https://github.com/percyfal/ratatosk/blob/master/ratatosk/yamlconfigparser.py)
+  - shell commands are wrapped with
+	[shell.exec_cmd](https://github.com/cement/cement/blob/master/cement/utils/shell.py#L8)
+     from the cement package

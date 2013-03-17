@@ -33,11 +33,11 @@ def setup_interface_logging():
     setup_interface_logging.has_run = True
 
 def setup_config_handler():
-    return yamlconfigparser.YAMLParserConfigHandler
+    return yamlconfigparser.YamlConfigParser
 
 def get_config(config_file=None):
     """Copied from luigi.interface. This part needs rethinking. In
     particular, rewrite ConfigParser to subclass RawConfigParser?"""
-    config_parser = yamlconfigparser.YAMLParserConfigHandler()
+    config_parser = yamlconfigparser.YamlConfigParser()
     config_parser.parse_file(config_file)
     return config_parser
