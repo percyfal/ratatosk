@@ -21,7 +21,7 @@ import warnings
 import luigi
 from itertools import izip
 from luigi.task import flatten
-from cement.utils import shell
+import ratatosk.shell as shell
 import ratatosk
 from ratatosk import interface
 from ratatosk.utils import rreplace, update
@@ -75,7 +75,7 @@ class DefaultShellJobRunner(JobRunner):
         if job.main():
             arglist.append(self._get_main(job))
         if job.opts():
-            arglist.append(job.opts())
+            arglist += job.opts()
         (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
         
         arglist += job_args
@@ -100,8 +100,8 @@ class BaseJobTask(luigi.Task):
     dry_run = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="Generate pipeline graph/flow without running any commands")
     restart = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="Restart pipeline from scratch.")
     restart_from = luigi.Parameter(default=None, is_global=True, description="NOT YET IMPLEMENTED: Restart pipeline from a given task.")
-    print_config = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="Print configuration for pipeline")
-    options = luigi.Parameter(default=None, description="Program options")
+    print_config = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="NOT YET IMPLEMENTED: Print configuration for pipeline")
+    options = luigi.Parameter(default=[], description="Program options", is_list=True)
     parent_task = luigi.Parameter(default=None, description="Main parent task from which the current task receives (parts) of its input")
     num_threads = luigi.Parameter(default=1)
     # Note: output should generate one file only; in special cases we
@@ -112,6 +112,10 @@ class BaseJobTask(luigi.Task):
     source = None
     # Use for changing labels in graph visualization
     use_long_names = luigi.Parameter(default=False, description="Use long names (including all options) in graph vizualization", is_boolean=True, is_global=True)
+    # Name of executable to run a program
+    executable = None
+    # Name of 'sub_executable' (e.g. for GATK, bwa). 
+    sub_executable = None
     
     # Needed for merging samples; list of tuples (sample, sample_run)
     # sample_runs = luigi.Parameter(default=[], is_global=True)
@@ -188,16 +192,31 @@ class BaseJobTask(luigi.Task):
         return kwargs
 
     def exe(self):
-        """Executable"""
-        return None
+        """Executable of this task."""
+        return self.executable
 
     def main(self):
         """For commands that have subcommands"""
-        return None
+        return self.sub_executable
 
     def opts(self):
-        """Generic options placeholder"""
+        """Generic options placeholder.
+
+        :returns: the options list
+        :rtype: list
+
+        """
         return self.options
+
+    def args(self):
+        """Generic argument list. Used to generate list of required
+        inputs and outputs. Needs implementation in task subclasses.
+
+        :returns: the argument list
+        :rtype: list
+
+        """
+        pass
 
     def threads(self):
         """Get number of threads."""
@@ -221,9 +240,24 @@ class BaseJobTask(luigi.Task):
         pass
 
     def run(self):
+        """Init job runner"""
         self.init_local()
         if not self.dry_run:
             self.job_runner().run_job(self)
+
+
+    def output(self):
+        """Task output. In many cases this defaults to the target and
+        doesn't need reimplementation in the subclasses. """
+        return luigi.LocalTarget(self.target)
+
+    def requires(self):
+        """Task requirements. In many cases this is a single source
+        whose name can be generated following the code below, and
+        therefore doesn't need reimplementation in the subclasses."""
+        cls = self.set_parent_task()
+        source = self._make_source_file_name()
+        return cls(target=source)
 
     def complete(self):
         """
@@ -275,8 +309,9 @@ class BaseJobTask(luigi.Task):
             cls = getattr(mod, opt_cls)
             ret_cls = cls
         except:
-            logger.warn("No class {} found: using default class {}".format(".".join([opt_mod, opt_cls]), 
-                                                                           ".".join([default_mod, default_cls])))
+            logger.warn("No class {} found: using default class {} for task '{}'".format(".".join([opt_mod, opt_cls]), 
+                                                                                         ".".join([default_mod, default_cls]),
+                                                                                         self.__class__))
             ret_mod = __import__(default_mod, fromlist=[default_cls])
             ret_cls = getattr(ret_mod, default_cls)
         return ret_cls
@@ -384,6 +419,21 @@ class JobTask(BaseJobTask):
     def args(self):
         return []
 
+class InputJobTask(JobTask):
+    """Input job task. Should have as a parent task one of the tasks
+    in ratatosk.lib.files.external"""
+    def requires(self):
+        cls = self.set_parent_task()
+        return cls(target=self.target)
+    
+    def run(self):
+        """No run should be defined"""
+        pass
+
+class JobWrapperTask(luigi.WrapperTask):
+    """Wrapper task that adds target by default"""
+    target = luigi.Parameter(default=None, description="Output target name")    
+    
 class PrintConfig(luigi.Task):
     """Print global configuration for a task, including all parameters
     (customizations as well as defaults) and absolute path names to

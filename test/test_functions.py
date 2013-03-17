@@ -26,23 +26,22 @@ class TestGeneralFunctions(unittest.TestCase):
         # is unique and resolved for a particular task
         localconf = "../config/ratatosk.yaml"
 
-        class gatk1(ratatosk.gatk.RealignerTargetCreator):
+        class gatk1(ratatosk.lib.tools.gatk.RealignerTargetCreator):
             target = luigi.Parameter(default="dummy")
 
-        class gatk2(ratatosk.gatk.IndelRealigner):
+        class gatk2(ratatosk.lib.tools.gatk.IndelRealigner):
             target = luigi.Parameter(default="dummy")
             def requires(self):
                 return gatk1(target=self.target)
 
-        class gatk3(ratatosk.gatk.BaseRecalibrator):
+        class gatk3(ratatosk.lib.tools.gatk.BaseRecalibrator):
             target = luigi.Parameter(default="dummy")
             def requires(self):
                 return gatk2(target=self.target)
         
-        class gatk4(ratatosk.gatk.PrintReads):
+        class gatk4(ratatosk.lib.tools.gatk.PrintReads):
             target = luigi.Parameter(default="dummy")
             def requires(self):
                 return gatk3(target=self.target)
 
-        print "Parent class " + str(gatk4.parent_task)
         gatk4().name_prefix()

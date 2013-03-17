@@ -661,7 +661,10 @@ environment.
 
 * Make `exe()` use `self.executable` and remove `exe()` from all
   subclasses.
-  
+
+* Function `opts()` is inconsistent at present. Best is probably to
+  init empty list and do a join on return.
+
 * Implement class validation of `parent_task`. Currently, any code can
   be used, but it would be nice if the class be validated against the
   parent class, for instance by using interfaces

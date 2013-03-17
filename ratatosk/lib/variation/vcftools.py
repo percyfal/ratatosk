@@ -15,7 +15,7 @@ import os
 import luigi
 import logging
 import ratatosk.lib.files.external
-from ratatosk.job import JobTask, DefaultShellJobRunner
+from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner
 
 class VcfJobRunner(DefaultShellJobRunner):
     pass
