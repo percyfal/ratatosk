@@ -217,9 +217,7 @@ class BaseJobTask(luigi.Task):
         return ""
         
     def init_local(self):
-        """Setup local settings (e.g. read from config file?)
-
-        """
+        """Setup local settings"""
         pass
 
     def run(self):
@@ -263,7 +261,9 @@ class BaseJobTask(luigi.Task):
 
     def set_parent_task(self):
         """Try to import a module task class represented as string in
-        parent_task and use it as such
+        parent_task and use it as such.
+
+        TODO: handle parent task list where tasks have several requirements?
         """
         opt_mod = ".".join(self.parent_task.split(".")[0:-1])
         opt_cls = self.parent_task.split(".")[-1]
@@ -385,6 +385,17 @@ class JobTask(BaseJobTask):
         return []
 
 class PrintConfig(luigi.Task):
+    """Print global configuration for a task, including all parameters
+    (customizations as well as defaults) and absolute path names to
+    program executables (thus implicitly in many cases giving the
+    program version, although there should be another function for
+    getting program version information and inserting that info here).
+    This task (or function) should probably be called after the last
+    task so that we know the exact parameter settings and programs
+    used to run an analysis. Aim for reproducible research :)
+
+    """
+
     def run(self):
         print "Print config"
     

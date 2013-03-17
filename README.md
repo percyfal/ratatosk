@@ -616,25 +616,31 @@ environment.
 
 * Tests are not real unittests since they depend on oneanother
 
-* UPSTREAM? in `ratatosk.job.DefaultShellJobRunner._fix_paths`,
+* UPSTREAM in `ratatosk.job.DefaultShellJobRunner._fix_paths`,
   `a.move(b)` doesn't work (I modelled this after
   [luigi hadoop_jar](https://github.com/spotify/luigi/blob/master/luigi/hadoop_jar.py#L63))
 
 * Currently need to know target name. Add function that prints in
   which order labels are added to facilitate target name construction.
+  Basically we need to gather all labels between two vertices in the
+  dependency graph. See `ratatosk.job.name_prefix` function.
 
 * Check for program versions and command inconsistencies: for
-  instance, BaseRecalibrator was introduced in GATK 2.0
+  instance, BaseRecalibrator was introduced in GATK 2.0. EDIT: I'm
+  thinking it's best not to elaborate too much on this part, but leave
+  the responsibility of combining correct program versions to the end
+  user. Otherwise, this can become overly complex.
 
 * Speaking of file suffixes, currently assume all fastq files are
-  gzipped
+  gzipped. EDIT: actually, this is a good thing. If a program can't
+  take gzipped input, use pipes.
 
 * Configuration issues:
 
   - Read configuration file on startup, and not for every task as is currently the case
   - Variable expansion would be nice (e.g. $GATK_HOME) 
   - Global section for globals, such as num_threads, dbsnp, etc?
-  - Reimplement/rethink configuration parser?
+
 
 * Instead of `bwaref` etc for setting alignment references, utilise
   cloudbiolinux/tool-data
@@ -653,10 +659,8 @@ environment.
   dynamically. Shouldn't the dependency really be on the bam file used
   as input for RealignerTargetCreator?
 
-* Make `exe()` use `self.exe` and remove `exe()` from all subclasses.
-
-* DONE? Fix path handling so relative paths can be used (see e.g. run method in
-  [fastq](https://github.com/percyfal/ratatosk/blob/master/ratatosk/lib/files/fastq.py))
+* Make `exe()` use `self.executable` and remove `exe()` from all
+  subclasses.
   
 * Implement class validation of `parent_task`. Currently, any code can
   be used, but it would be nice if the class be validated against the
@@ -678,7 +682,7 @@ environment.
   scratch or from a given task. Would require calculation of target
   names between any two vertices in the dependency graph. The idea
   would be to add a condition in the `complete` function that returns
-  False until the provide task name is reached.
+  False until the provided task name is reached.
 
 * Integrate with hadoop. This may be extremely easy: set the job
   runner for the JobTasks via the config file; by default, they use
@@ -754,3 +758,9 @@ TODO: move these to github issue tracker
   - shell commands are wrapped with
 	[shell.exec_cmd](https://github.com/cement/cement/blob/master/cement/utils/shell.py#L8)
      from the cement package
+
+* DONE: configuration issues
+  - Reimplement/rethink configuration parser?
+
+* DONE? Fix path handling so relative paths can be used (see e.g. run method in
+  [fastq](https://github.com/percyfal/ratatosk/blob/master/ratatosk/lib/files/fastq.py))
