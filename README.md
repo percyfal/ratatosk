@@ -178,24 +178,12 @@ in the config file to:
     
     samtools:
       SamToBam:
-        parent_task: test.test_wrapper.SampeToSamtools
+        parent_task: ratatosk.lib.align.BwaSampe
 
 
-Note also that `input_bam_file` has been changed to depend on
+Note also that `InputBamFile` has been changed to depend on
 `ratatosk.lib.tools.samtools.SamToBam` (default value is
-`ratatosk.lib.files.external.BamFile`). In addition, the parent task to
-`ratatosk.lib.tools.samtools.SamToBam` has been changed to
-`tests.luigi.test_wrapper.SampeToSamtools`, a class defined in the
-test as
-
-```python
-class SampeToSamtools(ratatosk.lib.tools.samtools.SamToBam):
-    def requires(self):
-        source = self._make_source_file_name()
-        return ratatosk.lib.align.bwa.BwaSampe(target=source)
-```
-
-
+`ratatosk.lib.files.external.BamFile`). 
 
 ## Examples with *run_ratatosk.py* ##
 
@@ -215,11 +203,11 @@ currently available in the ratatosk modules:
 
 
 To run a specific task, you use one of the positional arguments. In
-this way, it works much like a Makefile. There is one slight
-difference though. A make command resolves dependencies based on the
-desired *target* file name, so you would do `make target` to generate
-`target`. The tasks in ratatosk need input file names to generate
-requirements, so for instance to run BwaSampe, you would do:
+this way, it works much like a Makefile. A make command resolves
+dependencies based on the desired *target* file name, so you would do
+`make target` to generate `target`. With `ratatosk`, the target is
+passed via the `--target` option. For instance, to run BwaSampe you
+would do:
 
 	run_ratatosk.py BwaSampe \
 	  --target target.bam
@@ -255,7 +243,7 @@ Here's an example of a variant calling pipeline defined for analysis of HaloPlex
 
 	run_ratatosk.py HaloPlex --project J.Doe_00_01 
 	  --projectdir ~/opt/ngs_test_data/data/projects/ 
-	  --workers 1 --custom-config ~/opt/ratatosk/config/J.Doe_00_01.yaml
+	  --workers 4 --custom-config ~/opt/ratatosk/config/J.Doe_00_01.yaml
 	
 resulting in 
 
@@ -365,6 +353,13 @@ couple of functions that are essential for general behaviour:
   or would it? This is probably more related to giving the task the
   correct file name, so this configuration option should probably
   provide a list of 2-tuples of from,to string substitutions.
+  
+* `set_target_generator_function` tries to set a function that is used
+  to generate target names for a task. It is up to the end user to
+  define an appropriate function. 
+  
+* `_make_source_file_name` generates source file name from a target,
+  based on `target_suffix`, `source_suffix`, and `label`.
 
 ### Program modules ###
 
@@ -468,7 +463,7 @@ class MyProgram(JobTask):
     _config_subsection = "myprogram_subsection"
 	# Name of executable. This is a parameter so the user can specify
 	# the version
-	myprogram = luigi.Parameter(default="myprogram")
+	executable = luigi.Parameter(default="myprogram")
 	# program options
     options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="myprogram.InputFastqFile")
@@ -480,17 +475,31 @@ class MyProgram(JobTask):
 	# file.txt -> file.label.txt)
 	label = luigi.Parameter(default="label")
 
-    def exe(self):
-        """Executable of this task"""
-        return self.myprogram
-
 	# Must be present
 	def job_runner(self):
         return MyProgramJobRunner()
 
-	# The following functions are inherited from JobTask and changing
+	# Here gather the *required* arguments to 'myprogram'. Often input
+	# redirected to output suffices
+    def args(self):
+        return [self.input(), ">", self.output()]
+
+    # For single requirements, the BaseJobTask often suffices. For
+	# more complex requirements, a reimplementation is needed. Idea is
+	# to generate the source name of the parent class that was used to
+	# generate the target
+    #def requires(self):
+    #    cls = self.set_parent_task()
+    #    source = self._make_source_file_name()
+    #    return cls(target=source)
+    
+    # The following functions are inherited from JobTask and changing
 	# their behaviour is often not necessary
-	
+
+    #def exe(self):
+    #    """Executable of this task"""
+    #    return self.executable
+
 	# Subprogram name, e.g. 'aln' in 'bwa aln'	
     #def main(self):
     #    return "subprogram"
@@ -501,23 +510,14 @@ class MyProgram(JobTask):
     #def opts(self):
     #return self.options
 
-	# Must be present: defines the requirement. Idea is to generate
-	# the source name of the parent class that was used to generate
-	# the target
-    def requires(self):
-        cls = self.set_parent_task()
-        source = self._make_source_file_name()
-        return cls(target=source)
-    
 	# Output = target
-    def output(self):
-        return luigi.LocalTarget(self.target)
+    #def output(self):
+    #    return luigi.LocalTarget(self.target)
 
-	# Here gather the *required* arguments to 'myprogram'. Often input
-	# redirected to output suffices
-    def args(self):
-        return [self.input(), ">", self.output()]
 ```
+
+Note that in many cases you only have to reimplement `job_runner` and
+`args`.
 
 To actually run the task, you need to import the module in your
 script, and `luigi` will automagically add the task `MyProgram` and
@@ -644,90 +644,18 @@ will add hybrid selection calculation on non-deduplicated bam file for sample *P
 
 ## TODO/future ideas/issues ##
 
-NB: many of the issues/ideas are relevant only to our compute
-environment.
+See
+[issue list](https://github.com/percyfal/ratatosk/issues?state=open)
+for a complete list. Some of the most pressing issues to fix include
 
-* Tests are not real unittests since they depend on oneanother
+* Calculation of target names by getting the path between two nodes
 
-* UPSTREAM in `ratatosk.job.DefaultShellJobRunner._fix_paths`,
-  `a.move(b)` doesn't work (I modelled this after
-  [luigi hadoop_jar](https://github.com/spotify/luigi/blob/master/luigi/hadoop_jar.py#L63))
+* Validation of parent tasks, possibly via Target output types.
 
-* Currently need to know target name. Add function that prints in
-  which order labels are added to facilitate target name construction.
-  Basically we need to gather all labels between two vertices in the
-  dependency graph. See `ratatosk.job.name_prefix` function.
+* Use pipes whereever possible.
 
-* Check for program versions and command inconsistencies: for
-  instance, BaseRecalibrator was introduced in GATK 2.0. EDIT: I'm
-  thinking it's best not to elaborate too much on this part, but leave
-  the responsibility of combining correct program versions to the end
-  user. Otherwise, this can become overly complex.
+* Integrate with hadoop
 
-* Configuration issues:
+* Controlling the number of threads / worker
 
-  - Read configuration file on startup, and not for every task as is currently the case
-  - Variable expansion would be nice (e.g. $GATK_HOME) 
-  - Global section for globals, such as num_threads, dbsnp, etc?
-
-* Instead of `bwaref` etc for setting alignment references, utilise
-  cloudbiolinux/tool-data
-
-* Modules `server.py`, the subdirectory `static`, and the daemon are
-  more or less copies from `luigi`.
-
-* Add 'target_grouping' or something similar to BaseJobTask to use for
-  grouping in table output.
-
-* Implement class validation of `parent_task`. Currently, any code can
-  be used, but it would be nice if the class be validated against the
-  parent class, for instance by using interfaces
-
-* Have tasks talk to a central planner so task lists can be easily
-  monitored via a web page
-
-* I have added `start_time` and `end_time` to `BaseJobTask`, but
-  currently the times don't get submitted to the graph/table
-  interface. This would allow monitoring execution times and
-  identifying pipeline bottlenecks.
-
-* Use pipes whereever possible. See
-  `luigi.format.InputPipeProcessWrapper` etc and `luigi.file`.
-  Incidentally, how would using pipes over several nodes work? I guess
-  tasks connected by pipes should be gathered and run by a single
-  worker
-
-* Add task for cleaning up intermediate output (related to issue on
-  pipes).
-  
-* Implement options `--restart` and `--restart-from` that restart from
-  scratch or from a given task. Would require calculation of target
-  names between any two vertices in the dependency graph. The idea
-  would be to add a condition in the `complete` function that returns
-  False until the provided task name is reached.
-
-* Integrate with hadoop. This may be extremely easy: set the job
-  runner for the JobTasks via the config file; by default, they use
-  DefaultShellJobRunner, but could also use a (customized and
-  subclassed?) version of `hadoop_jar.HadoopJarJobRunner`
-
-* How control the number of workers/threads in use? An example best
-  explains the issue: alignment with `bwa aln` can be done with
-  multiple threads. `bwa sampe` is single-threaded, and uses ~5.4GB
-  RAM for the human genome. Our current compute cluster has 8-core
-  24GB RAM nodes. One solution would be to run 8 samples per node,
-  running `bwa aln -t 8` sequentially, wrap them with a `WrappedTask`
-  before proceeding with `bwa sampe`, which then should only use 4
-  workers simultaneously. For small samples this is ok. For large
-  samples, one might imagine partitioning the pipeline into an
-  alignment step, in which one sample is run per node, and then
-  grouping the remaining tasks and samples in reasonably sized groups.
-  This latter approach would probably benefit from SLURM/drmaa
-  integration (see following item).
-
-* (Long-term goal?): Integrate with SLURM/drmaa along the lines of
-  [luigi.hadoop](https://github.com/spotify/luigi/blob/master/luigi/hadoop.py)
-  and
-  [luigi.hadoop_jar](https://github.com/spotify/luigi/blob/master/luigi/hadoop_jar.py).
-  Currently using the local scheduler on nodes works well enough
-
+* SLURM/drmaa integration 
