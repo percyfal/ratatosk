@@ -1,41 +1,31 @@
-# Main configuration file
+# Note: currently you need to set the reference path manually. Look
+# for folder data/genomes in your ngstestdata installation location
 bwa:
   bwaref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
 
-samtools:
-  SamToBam:
-    parent_task: ratatosk.lib.align.bwa.BwaSampe
+gatk:
+  UnifiedGenotyper:
+    ref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
 
 picard:
+  # InputBamFile "pipes" input from other modules
+  InputBamFile:
+    parent_task: ratatosk.lib.tools.samtools.SamToBam
+  SortSam:
+    parent_task: ratatosk.lib.tools.samtools.SamToBam
+  MergeSamFiles:
+    parent_task: ratatosk.lib.tools.picard.SortSam
   DuplicationMetrics:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   AlignmentMetrics:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   InsertMetrics:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
-  SortSam:
-    parent_task: ratatosk.lib.tools.samtools.SamToBam
-  MergeSamFiles:
-    parent_task: ratatosk.lib.tools.picard.SortSam
-
-gatk:
-  ref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
-  knownSites: [~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf]
-  dbsnp: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf
-
-  RealignerTargetCreator:
+  HsMetrics:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
-  IndelRealigner:
-    parent_task: ratatosk.lib.tools.gatk.RealignerTargetCreator
-  BaseRecalibrator:
-    parent_task: ratatosk.lib.tools.gatk.IndelRealigner
-  PrintReads:
-    parent_task: ratatosk.lib.tools.gatk.BaseRecalibrator
-  ClipReads:
-    parent_task: ratatosk.lib.tools.gatk.PrintReads
-  UnifiedGenotyper:
-    parent_task: ratatosk.lib.tools.gatk.ClipReads
-  VariantFiltration:
-    parent_task: ratatosk.lib.tools.gatk.UnifiedGenotyper
-  VariantEval:
-    parent_task: ratatosk.lib.tools.gatk.VariantFiltration
+    targets: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seqcap/chr11_targets.interval_list
+    baits: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seqcap/chr11_baits.interval_list
+
+samtools:
+  SamToBam:
+    parent_task: ratatosk.lib.align.bwa.BwaSampe

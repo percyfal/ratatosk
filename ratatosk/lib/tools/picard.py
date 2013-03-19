@@ -163,6 +163,11 @@ class HsMetrics(PicardJobTask):
             raise Exception("need bait and target regions to run CalculateHsMetrics")
         return ["INPUT=", self.input(), "OUTPUT=", self.output(), "BAIT_INTERVALS=", os.path.expanduser(self.bait_regions), "TARGET_INTERVALS=", os.path.expanduser(self.target_regions)]
 
+class HsMetricsNonDup(HsMetrics):
+    """Run on non-deduplicated data"""
+    _config_subsection = "HsMetricsNonDup"
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.DuplicationMetrics")
+
 class PicardMetrics(JobWrapperTask):
     def requires(self):
         return [InsertMetrics(target=self.target + str(InsertMetrics.target_suffix.default[0])),

@@ -6,6 +6,7 @@ import ratatosk.lib.tools.gatk
 import ratatosk.lib.tools.samtools
 import ratatosk.lib.tools.picard
 from ratatosk.pipeline.haloplex import HaloPlex
+from ratatosk.pipeline.align import AlignSeqcap
 from ratatosk.pipeline import config_dict
 
 if __name__ == "__main__":
@@ -16,9 +17,9 @@ if __name__ == "__main__":
     if task == "HaloPlex":
         args = sys.argv[2:] + ['--config-file', config_dict['haloplex']]
         luigi.run(args, main_task_cls=ratatosk.pipeline.haloplex.HaloPlex)
-    # Add more standard pipelines here...
-    elif task == "Exome":
-        pass
+    elif task == "AlignSeqcap":
+        args = sys.argv[2:] + ['--config-file', config_dict['seqcap']]
+        luigi.run(args, main_task_cls=ratatosk.pipeline.align.AlignSeqcap)
     # Whatever other task/config the user wants to run
     else:
         luigi.run()

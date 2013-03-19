@@ -44,4 +44,4 @@ class TestGeneralFunctions(unittest.TestCase):
             def requires(self):
                 return gatk3(target=self.target)
 
-        gatk4().name_prefix()
+        # gatk4().name_prefix()

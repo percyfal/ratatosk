@@ -33,3 +33,5 @@ gatk:
 pipeline:
   HaloPlex:
     target_generator_function: test.site_functions.target_generator
+  AlignSeqcap:
+    target_generator_function: test.site_functions.target_generator

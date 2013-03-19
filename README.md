@@ -323,6 +323,16 @@ This allows for project-specific configuration files that contain
 metadata information about the project itself, as well as allowing for
 configurations of analysis options.
 
+### Basic align seqcap pipeline ###
+
+Here is another example; a basic align seqcap pipeline.
+
+	run_ratatosk.py AlignSeqcap --project J.Doe_00_01 
+	  --indir path/to/ngs_test_data/data/projects --custom-config J.Doe_00_01.yaml
+	
+
+![AlignSeqcap](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap.png)
+
 ## Implementation ##
 
 The implementation is still under heavy development and testing so
@@ -566,17 +576,6 @@ The basic configuration setting is
     samtools:
       samtobam:
         parent_task: ratatosk.lib.tools.samtools.SampeToSamtools
-
-
-### Basic align seqcap pipeline ###
-
-In examples directory, running
-
-	python pipeline.py  --project J.Doe_00_01 --indir path/to/ngs_test_data/data/projects --config-file align_seqcap.yaml
-	
-will execute a basic analysis pipeline:
-
-![AlignSeqcap](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap.png)
 
 ### Adding adapter trimming  ###
 

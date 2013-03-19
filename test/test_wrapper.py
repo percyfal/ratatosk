@@ -1,5 +1,6 @@
 import os
 import glob
+import shutil
 import sys
 import unittest
 import luigi
@@ -55,18 +56,21 @@ def _luigi_args(args):
         return [local_scheduler] + args
     return args
 
-def _make_file_links():
-    if not os.path.lexists(os.path.join(os.curdir, os.path.basename(fastq1))):
-        os.symlink(fastq1, os.path.join(os.curdir, os.path.basename(fastq1)))
-    if not os.path.lexists(os.path.join(os.curdir, os.path.basename(fastq2))):
-        os.symlink(fastq2, os.path.join(os.curdir, os.path.basename(fastq2)))
-
 class TestSamtoolsWrappers(unittest.TestCase):
+    def tearDown(self):
+        Pfiles = glob.glob("P*")
+        [os.unlink(x) for x in Pfiles if os.path.isfile(x)]
+
     def test_samtools_view(self):
         luigi.run(_luigi_args(['--target', bam, '--config-file', localconf, '--parent-task', 'ratatosk.lib.align.bwa.BwaSampe']), main_task_cls=SAM.SamToBam)
 
 
 class TestMiscWrappers(unittest.TestCase):
+    def tearDown(self):
+        Pfiles = glob.glob("P*")
+        [os.unlink(x) for x in Pfiles if os.path.isfile(x)]
+        [shutil.rmtree(x) for x in Pfiles if os.path.isdir(x)]
+        
     def test_luigihelp(self):
         try:
             luigi.run(['-h'], main_task_cls=FASTQ.FastqFileLink)
@@ -106,6 +110,10 @@ class TestMiscWrappers(unittest.TestCase):
         os.unlink("mock.yaml")
 
 class TestBwaWrappers(unittest.TestCase):
+    def tearDown(self):
+        Pfiles = glob.glob("P*")
+        [os.unlink(x) for x in Pfiles if os.path.isfile(x)]
+
     def test_bwaaln(self):
         luigi.run(_luigi_args(['--target', sai1, '--config-file', localconf, '--use-long-names']), main_task_cls=BWA.BwaAln)
         luigi.run(_luigi_args(['--target', sai2, '--config-file', localconf, '--use-long-names']), main_task_cls=BWA.BwaAln)
@@ -117,6 +125,10 @@ class TestBwaWrappers(unittest.TestCase):
         luigi.run(_luigi_args(['--target', sortbam, '--config-file', localconf]), main_task_cls=SAM.SortBam)
 
 class TestPicardWrappers(unittest.TestCase):
+    def tearDown(self):
+        Pfiles = glob.glob("P*")
+        [os.unlink(x) for x in Pfiles if os.path.isfile(x)]
+
     def test_picard_sortbam(self):
         luigi.run(_luigi_args(['--target', sortbam, '--config-file', localconf]), main_task_cls=PICARD.SortSam)
 
@@ -136,6 +148,10 @@ class TestPicardWrappers(unittest.TestCase):
        luigi.run(_luigi_args(['--target', sortbam.replace(".bam", ""), '--config-file', localconf]), main_task_cls=PICARD.PicardMetrics)
 
 class TestGATKWrappers(unittest.TestCase):
+    def tearDown(self):
+        Pfiles = glob.glob("P*")
+        [os.unlink(x) for x in Pfiles if os.path.isfile(x)]
+
     # Depends on previous tasks (sortbam) - bam must be present
     def test_realigner_target_creator(self):
         luigi.run(_luigi_args(['--target', sortbam.replace(".bam", ".intervals"), '--config-file', localconf]), main_task_cls=GATK.RealignerTargetCreator)
@@ -154,8 +170,7 @@ class TestGATKWrappers(unittest.TestCase):
 
     # TODO: Test vcf outputs
     def test_unified_genotyper(self):
-       print clipvcf
-       #luigi.run(_luigi_args(['--target', clipvcf, '--config-file', localconf]), main_task_cls=GATK.UnifiedGenotyper)
+        luigi.run(_luigi_args(['--target', clipvcf, '--config-file', localconf]), main_task_cls=GATK.UnifiedGenotyper)
 
     def test_variant_filtration(self):
         luigi.run(_luigi_args(['--target', filteredvcf, '--config-file', localconf]), main_task_cls=GATK.VariantFiltration)
@@ -163,29 +178,3 @@ class TestGATKWrappers(unittest.TestCase):
     def test_variant_evaluation(self):
         luigi.run(_luigi_args(['--target', filteredvcf.replace(".vcf", ".eval_metrics"), '--config-file', localconf]), main_task_cls=GATK.VariantEval)
 
-class TestLuigiParallel(unittest.TestCase):
-    def test_bwa_samples(self):
-        pass
-
-class TestLuigiPipelines(unittest.TestCase):
-    # def test_sampe_to_samtools(self):
-    #     luigi.run(_luigi_args(['--target', sam, '--config-file', localconf]), main_task_cls=SampeToSamtools)
-
-    def test_sampe_to_samtools_sort(self):
-        luigi.run(_luigi_args(['--target', bam, '--config-file', localconf]), main_task_cls=SAM.SortBam)
-
-    def test_sampe_to_picard_sort(self):
-        luigi.run(_luigi_args(['--target', bam, '--config-file', localconf]), main_task_cls=PICARD.SortSam)
-
-# Small test of workflow
-class Task1(JobTask):
-    parent_task = luigi.Parameter("ratatosk.lib.files.external.Fastqfile")
-    def requires(self):
-        return ratatosk.external.Fastqfile()
-
-class TestLuigiInputOutput(unittest.TestCase):
-    def test_luigi_input_output(self):
-        #luigi.run(_luigi_args([]), main_task_cls=Task2)
-        pass
-
-    

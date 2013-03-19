@@ -1,20 +1,20 @@
 # Note: currently you need to set the reference path manually. Look
 # for folder data/genomes in your ngstestdata installation location
 bwa:
-  bwaref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
+  bwaref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
 
 gatk:
   UnifiedGenotyper:
-    ref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
+    ref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
 
 picard:
   # InputBamFile "pipes" input from other modules
   InputBamFile:
-    parent_task: ratatosk.samtools.SamToBam
+    parent_task: ratatosk.lib.tools.samtools.SamToBam
   HsMtrics:
-    parent_task: ratatosk.picard.SortSam
-    targets: ../test/targets.interval_list
-    baits: ../test/targets.interval_list
+    parent_task: ratatosk.lib.tools.picard.SortSam
+    targets: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seqcap/chr11_targets.interval_list
+    baits: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seqcap/chr11_baits.interval_list
   DuplicationMetrics:
     parent_task: ratatosk.picard.SortSam
   AlignmentMetrics:
