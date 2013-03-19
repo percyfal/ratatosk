@@ -464,6 +464,8 @@ class MyProgram(JobTask):
 	# Name of executable. This is a parameter so the user can specify
 	# the version
 	executable = luigi.Parameter(default="myprogram")
+	# Name of sub_executable. 
+	sub_executable = luigi.Parameter(default="my_subprogram")
 	# program options
     options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="myprogram.InputFastqFile")
@@ -484,25 +486,26 @@ class MyProgram(JobTask):
     def args(self):
         return [self.input(), ">", self.output()]
 
-    # For single requirements, the BaseJobTask often suffices. For
-	# more complex requirements, a reimplementation is needed. Idea is
-	# to generate the source name of the parent class that was used to
-	# generate the target
+
+    # The following functions are inherited from JobTask and changing
+	# their behaviour is often not necessary
+
+    # For single requirements, the BaseJobTask function often
+    # suffices. For more complex requirements, a reimplementation is
+    # needed. Idea is to generate the source name of the parent class
+    # that was used to generate the target
     #def requires(self):
     #    cls = self.set_parent_task()
     #    source = self._make_source_file_name()
     #    return cls(target=source)
     
-    # The following functions are inherited from JobTask and changing
-	# their behaviour is often not necessary
-
     #def exe(self):
     #    """Executable of this task"""
     #    return self.executable
 
 	# Subprogram name, e.g. 'aln' in 'bwa aln'	
     #def main(self):
-    #    return "subprogram"
+    #    return self.sub_executable
 
 	# Returns the options string. This may need a lot of tampering
 	# with, see e.g. 'ratatosk.gatk.VariantEval' (but see also comment
@@ -517,7 +520,7 @@ class MyProgram(JobTask):
 ```
 
 Note that in many cases you only have to reimplement `job_runner` and
-`args`.
+`args`, and in some cases the `requires` function.
 
 To actually run the task, you need to import the module in your
 script, and `luigi` will automagically add the task `MyProgram` and
