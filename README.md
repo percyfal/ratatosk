@@ -218,6 +218,10 @@ Here I've used a 'global' config file
 You actually don't need to pass it as in the example above as it's
 loaded by default.
 
+The following examples assume you run the command from the
+`ngs_test_data/data/projects/J.Doe_00_01` directory, and that ratatosk
+is installed at `~/opt`.
+
 ### Dry run ###
 
 The `--dry-run` option will resolve dependencies but not actually run
@@ -235,24 +239,93 @@ we get the dependencies as specified in the config file:
 The task `RawIndelRealigner` is defined in
 `ratatosk.pipeline.haloplex` and is a modified version of
 `ratatosk.lib.tools.gatk.IndelRealigner`. It is used for analysis of
-HaloPlex data (next section).
+HaloPlex data.
 
-### HaloPlex calling pipeline  ###
+### Merging samples over several runs ###
 
-Here's an example of a variant calling pipeline defined for analysis of HaloPlex data:
+Sample *P001_101_index3* has data from two separate runs that should
+be merged. The class `ratatosk.lib.tools.picard.MergeSamFiles` merges
+sample_run files and places the result in the sample directory. The
+implementation currently depends on the directory structure
+'sample/fc1', sample/fc2' etc.
 
-	run_ratatosk.py HaloPlex --project J.Doe_00_01 
-	  --projectdir ~/opt/ngs_test_data/data/projects/ 
-	  --workers 4 --custom-config ~/opt/ratatosk/config/J.Doe_00_01.yaml
+	run_ratatosk.py MergeSamFiles  --target P001_101_index3/P001_101_index3_TGACCA_L001.sort.merge.bam
+	  --config-file ~/opt/ratatosk/examples/J.Doe_00_01.yaml
+
+results in 
+
+![AlignSeqcapMerge](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap_merge.png)
+
+Note that in this implementation the merged files end up directly in
+the sample directory (i.e. *P001_101_index3*).
+
+### Adding adapter trimming  ###
+
+Changing the following configuration section (see `J.Doe_00_01_trim.yaml`):
+
+	misc:
+	  ResyncMates:
+		parent_task: ratatosk.lib.utils.cutadapt.CutadaptJobTask
+
+	bwa:
+	  aln:
+		parent_task: ratatosk.lib.utils.misc.ResyncMatesJobTask
+
+and running 
+
+	run_ratatosk.py MergeSamFiles  
+		--target P001_101_index3/P001_101_index3_TGACCA_L001.trimmed.sync.sort.merge.bam 
+		--config-file ~/opt/ratatosk/examples/J.Doe_00_01_trim.yaml
+
 	
-resulting in 
+runs the same pipeline as before, but on adapter-trimmed data.
 
-![HaloPlex](https://raw.github.com/percyfal/ratatosk/develop/doc/ratatosk_pipeline_haloplex.png)
+![AlignSeqcapMergeTrim](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap_merge_trim.png)
 
-Blue boxes mean active processes (the command was run with `--workers
-4`, which uses 4 parallel processes). Note that we need to know what
-labels are applied to the file name (see issues). In this iteration,
-for the predefined pipelines the file names have been hardcoded. 
+### Extending workflows with subclassed tasks ###
+
+It's dead simple to add tasks of a given type. Say you want to
+calculate hybrid selection on bam files that have and haven't been
+mark duplicated. By subclassing an existing task and giving the new
+class it's own configuration file location, you can configure the new
+task to depend on whatever you want. In `ratatosk.lib.tools.picard` I
+have added the following class:
+
+```python
+class HsMetricsNonDup(HsMetrics):
+	"""Run on non-deduplicated data"""
+	_config_subsection = "hs_metrics_non_dup"
+	parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.MergeSamFiles")
+```
+and a picard metrics wrapper task
+
+```python
+class PicardMetricsNonDup(JobWrapperTask):
+    """Runs hs metrics on both duplicated and de-duplicated data"""
+    def requires(self):
+        return [InsertMetrics(target=self.target + str(InsertMetrics.target_suffix.default[0])),
+                HsMetrics(target=self.target + str(HsMetrics.target_suffix.default)),
+                HsMetricsNonDup(target=rreplace(self.target, str(DuplicationMetrics.label.default), "", 1) + str(HsMetrics.target_suffix.default)),
+                AlignmentMetrics(target=self.target + str(AlignmentMetrics.target_suffix.default))]
+```
+
+The `picard` configuration section in the configuration file
+`J.Doe_00_01_nondup.yaml` now has a new subsection:
+
+```yaml
+picard:
+  PicardMetricsNonDup:
+    parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
+```
+
+Running 
+
+	run_ratatosk.py PicardMetricsNonDup  --target P001_101_index3/P001_101_index3_TGACCA_L001.sort.merge.dup
+	  --config-file ~/opt/ratatosk/examples/J.Doe_00_01_nondup.yaml
+	
+will add hybrid selection calculation on non-deduplicated bam file for sample *P001_101_index3*:
+
+![CustomDedup](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap_custom_dup.png)
 
 ## Best practice pipelines ##
 
@@ -325,13 +398,30 @@ configurations of analysis options.
 
 ### Basic align seqcap pipeline ###
 
-Here is another example; a basic align seqcap pipeline.
+Here is an example of a basic align seqcap pipeline.
 
 	run_ratatosk.py AlignSeqcap --project J.Doe_00_01 
-	  --indir path/to/ngs_test_data/data/projects --custom-config J.Doe_00_01.yaml
+	  --projectdir .. --custom-config ~/opt/ratatosk/examples/J.Doe_00_01.yaml
 	
 
 ![AlignSeqcap](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap.png)
+
+### HaloPlex calling pipeline  ###
+
+Here's an example of a variant calling pipeline defined for analysis of HaloPlex data:
+
+	run_ratatosk.py HaloPlex --project J.Doe_00_01 
+	  --projectdir ~/opt/ngs_test_data/data/projects/ 
+	  --workers 4 --custom-config ~/opt/ratatosk/config/J.Doe_00_01.yaml
+	
+resulting in 
+
+![HaloPlex](https://raw.github.com/percyfal/ratatosk/develop/doc/ratatosk_pipeline_haloplex.png)
+
+Blue boxes mean active processes (the command was run with `--workers
+4`, which uses 4 parallel processes). Note that we need to know what
+labels are applied to the file name (see issues). In this iteration,
+for the predefined pipelines the file names have been hardcoded. 
 
 ## Implementation ##
 
@@ -535,114 +625,6 @@ Note that in many cases you only have to reimplement `job_runner` and
 To actually run the task, you need to import the module in your
 script, and `luigi` will automagically add the task `MyProgram` and
 its options.
-
-## DEPRECATED: Example scripts  ##
-
-NOTE: most of these are currently broken due to recent changes in
-parameter naming, but I've kept them here for now until I've
-implemented corresponding examples with *run_ratatosk.py*.
-
-There are a couple of example scripts in
-[ratatosk.examples](https://github.com/percyfal/ratatosk/tree/master/examples)
-The following examples show how to modify behaviour with configuration
-files and custom classes. Note that currently you'll need to modify
-the reference paths in the config files manually to point to the
-*ngs_test_data* installation. The test data consists of two samples,
-one of which (P001_101) has data from two flowcell runs.
-
-The basic configuration setting is 
-
-    bwa:
-      bwaref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
-    
-    gatk:
-      unifiedgenotyper:
-        ref: ../../ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
-    
-    picard:
-      input_bam_file:
-        parent_task: ratatosk.lib.tools.samtools.SamToBam
-      hs_metrics:
-        parent_task: ratatosk.lib.tools.picard.SortSam
-        targets: ../test/targets.interval_list
-        baits: ../test/targets.interval_list
-      duplication_metrics:
-        parent_task: ratatosk.lib.tools.picard.SortSam
-      alignment_metrics:
-        parent_task: ratatosk.lib.tools.picard.SortSam
-      insert_metrics:
-        parent_task: ratatosk.lib.tools.picard.SortSam
-    
-    samtools:
-      samtobam:
-        parent_task: ratatosk.lib.tools.samtools.SampeToSamtools
-
-### Adding adapter trimming  ###
-
-Changing the following configuration section (see `align_adapter_trim_seqcap.yaml`):
-
-	bwa:
-	  aln:
-        parent_task: ratatosk.lib.utils.cutadapt.CutadaptJobTask
-
-and running 
-
-	python pipeline.py  --project J.Doe_00_01 --indir /path/to/ngs_test_data/data/projects --config-file align_adapter_trim_seqcap.yaml
-	
-runs the same pipeline as before, but on adapter-trimmed data.
-
-### Merging samples over several runs ###
-
-Sample *P001_101_index3* has data from two separate runs that should
-be merged. The class `ratatosk.lib.tools.picard.MergeSamFiles` merges
-sample_run files and places the result in the sample directory. The
-implementation currently depends on the directory structure
-'sample/fc1', sample/fc2' etc.
-
-	python pipeline_merge.py  --project J.Doe_00_01 --indir /path/to/ngs_test_data/data/projects --config-file align_seqcap_merge.yaml  --sample P001_101_index3
-
-results in 
-
-![AlignSeqcapMerge](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap_merge.png)
-
-See `align_seqcap_merge.yaml` for relevant changes. Note that in this
-implementation the merged files end up directly in the sample
-directory (i.e. *P001_101_index3*).
-
-### Extending workflows with subclassed tasks ###
-
-It's dead simple to add tasks of a given type. Say you want to
-calculate hybrid selection on bam files that have and haven't been
-mark duplicated. By subclassing an existing task and giving the new
-class it's own configuration file location, you can configure the new
-task to depend on whatever you want. In `pipeline_custom.py` I have
-added the following class:
-
-```python
-class HsMetricsNonDup(HsMetrics):
-	"""Run on non-deduplicated data"""
-	_config_subsection = "hs_metrics_non_dup"
-	parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.DuplicationMetrics")
-```
-
-The `picard` configuration section in the configuration file
-`align_seqcap_custom.yaml` now has a new subsection:
-
-```yaml
-hs_metrics_non_dup:
-	parent_task:
-	targets: ../test/targets.interval_list
-	baits: ../test/targets.interval_list
-```
-
-Running 
-
-	python pipeline_custom.py  --project J.Doe_00_01 --indir /path/to/ngs_test_data/data/projects --config-file align_seqcap.yaml --sample P001_102_index6
-	
-will add hybrid selection calculation on non-deduplicated bam file for sample *P001_102_index6*:
-
-![CustomDedup](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap_custom_dup.png)
-
 
 ## TODO/future ideas/issues ##
 

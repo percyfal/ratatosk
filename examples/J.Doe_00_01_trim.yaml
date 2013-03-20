@@ -1,10 +1,12 @@
 # Project configuration file
+misc:
+  ResyncMates:
+    parent_task: ratatosk.lib.utils.cutadapt.CutadaptJobTask
+
 bwa:
   bwaref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
   aln:
-    # NB: shouldn't work since this is a custom config file
-    # parent_task: ratatosk.lib.align.bwa.BwaSampe
-    # However this should work
+    parent_task: ratatosk.lib.utils.misc.ResyncMatesJobTask
     options: [-e 2 -l 40]
   
 samtools:

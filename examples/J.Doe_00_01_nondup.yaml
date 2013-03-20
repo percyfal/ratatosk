@@ -2,9 +2,6 @@
 bwa:
   bwaref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
   aln:
-    # NB: shouldn't work since this is a custom config file
-    # parent_task: ratatosk.lib.align.bwa.BwaSampe
-    # However this should work
     options: [-e 2 -l 40]
   
 samtools:
@@ -12,15 +9,29 @@ samtools:
     parent_task: ratatosk.lib.align.bwa.BwaSampe
 
 picard:
-  HsMetrics:
+  HsMetricsNonDup:
     target_regions: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seqcap/chr11_targets.interval_list
     bait_regions: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seqcap/chr11_baits.interval_list
+  HsMetrics:
+    parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
+    target_regions: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seqcap/chr11_targets.interval_list
+    bait_regions: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seqcap/chr11_baits.interval_list
+  InsertMetrics:
+    parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
+  AlignmentMetrics:
+    parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
   SortSam:
     parent_task: ratatosk.lib.tools.samtools.SamToBam
   MergeSamFiles:
     # How is this module found?!?
     parent_task: ratatosk.lib.tools.picard.SortSam
     target_generator_function: test.site_functions.organize_sample_runs
+  DuplicationMetrics:
+    parent_task: ratatosk.lib.tools.picard.MergeSamFiles
+  PicardMetrics:
+    parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
+  PicardMetricsNonDup:
+    parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
 
 gatk:
   ref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa

@@ -166,7 +166,7 @@ class HsMetrics(PicardJobTask):
 class HsMetricsNonDup(HsMetrics):
     """Run on non-deduplicated data"""
     _config_subsection = "HsMetricsNonDup"
-    parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.DuplicationMetrics")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.MergeSamFiles")
 
 class PicardMetrics(JobWrapperTask):
     def requires(self):
@@ -174,3 +174,12 @@ class PicardMetrics(JobWrapperTask):
                 DuplicationMetrics(target=self.target + str(DuplicationMetrics.label.default) + str(DuplicationMetrics.target_suffix.default[0])),
                 HsMetrics(target=self.target + str(HsMetrics.target_suffix.default)),
                 AlignmentMetrics(target=self.target + str(AlignmentMetrics.target_suffix.default))]
+
+class PicardMetricsNonDup(JobWrapperTask):
+    """Runs hs metrics on both duplicated and de-duplicated data"""
+    def requires(self):
+        return [InsertMetrics(target=self.target + str(InsertMetrics.target_suffix.default[0])),
+                HsMetrics(target=self.target + str(HsMetrics.target_suffix.default)),
+                HsMetricsNonDup(target=rreplace(self.target, str(DuplicationMetrics.label.default), "", 1) + str(HsMetrics.target_suffix.default)),
+                AlignmentMetrics(target=self.target + str(AlignmentMetrics.target_suffix.default))]
+
