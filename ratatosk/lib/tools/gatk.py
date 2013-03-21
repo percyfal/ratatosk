@@ -81,7 +81,7 @@ class GATKJobTask(JobTask):
     executable = luigi.Parameter(default=GATK_JAR)
     source_suffix = luigi.Parameter(default=".bam")
     target_suffix = luigi.Parameter(default=".bam")
-    java_options = luigi.Parameter(default=["-Xmx2g"], description="Java options", is_list=True)
+    java_options = luigi.Parameter(default=("-Xmx2g",), description="Java options", is_list=True)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
     ref = luigi.Parameter(default=None)
     # Additional commonly used options
@@ -116,7 +116,7 @@ class GATKIndexedJobTask(GATKJobTask):
 class RealignerTargetCreator(GATKIndexedJobTask):
     _config_subsection = "RealignerTargetCreator"
     sub_executable = "RealignerTargetCreator"
-    known = luigi.Parameter(default=[], is_list=True)
+    known = luigi.Parameter(default=(), is_list=True)
     target_suffix = luigi.Parameter(default=".intervals")
 
     def opts(self):
@@ -141,7 +141,7 @@ class RealignerTargetCreator(GATKIndexedJobTask):
 class IndelRealigner(GATKIndexedJobTask):
     _config_subsection = "IndelRealigner"
     sub_executable = "IndelRealigner"
-    known = luigi.Parameter(default=[], is_list=True)
+    known = luigi.Parameter(default=(), is_list=True)
     label = luigi.Parameter(default=".realign")
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
     source_suffix = luigi.Parameter(default=".bam")
@@ -230,7 +230,7 @@ class ClipReads(GATKJobTask):
     _config_subsection = "ClipReads"
     sub_executable = "ClipReads"
     # Tailored for HaloPlex
-    options = luigi.Parameter(default=["--cyclesToTrim 1-5 --clipRepresentation WRITE_NS"], is_list=True)
+    options = luigi.Parameter(default=("--cyclesToTrim 1-5 --clipRepresentation WRITE_NS",), is_list=True)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
     label = luigi.Parameter(default=".clip")
 
@@ -245,7 +245,7 @@ class VariantFiltration(GATKJobTask):
     _config_subsection = "VariantFiltration"
     sub_executable = "VariantFiltration"
     # Options from Halo
-    options = luigi.Parameter(default=['--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL > 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 1.5" --filterName "LowQD"'], is_list=True)
+    options = luigi.Parameter(default=('--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL > 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 1.5" --filterName "LowQD"',), is_list=True)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputVcfFile")
     label = luigi.Parameter(default=".filtered")
     target_suffix = luigi.Parameter(default=".vcf")
@@ -261,7 +261,7 @@ class VariantFiltration(GATKJobTask):
 class VariantEval(GATKJobTask):
     _config_subsection = "VariantEval"
     sub_executable = "VariantEval"
-    options = luigi.Parameter(default=["-ST Filter -l INFO --doNotUseAllStandardModules --evalModule CompOverlap --evalModule CountVariants --evalModule GenotypeConcordance --evalModule TiTvVariantEvaluator --evalModule ValidationReport --stratificationModule Filter"], is_list=True)
+    options = luigi.Parameter(default=("-ST Filter -l INFO --doNotUseAllStandardModules --evalModule CompOverlap --evalModule CountVariants --evalModule GenotypeConcordance --evalModule TiTvVariantEvaluator --evalModule ValidationReport --stratificationModule Filter",), is_list=True)
     dbsnp = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputVcfFile")
     source_suffix = luigi.Parameter(default=".vcf")
@@ -289,7 +289,7 @@ class VariantEval(GATKJobTask):
 class UnifiedGenotyper(GATKIndexedJobTask):
     _config_subsection = "UnifiedGenotyper"
     sub_executable = "UnifiedGenotyper"
-    options = luigi.Parameter(default=["-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH"], is_list=True)
+    options = luigi.Parameter(default=("-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH",), is_list=True)
     target_suffix = luigi.Parameter(default=".vcf")
     dbsnp = luigi.Parameter(default=None)
     #label = luigi.Parameter(default=".RAW")?

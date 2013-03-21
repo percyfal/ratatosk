@@ -46,10 +46,6 @@ class TestConfigUpdate(unittest.TestCase):
 
     def test_config_update(self):
         """Test updating config with and without disable_parent_task_update"""
-        # reading mock in _update_config doesn't work
-        #mock_config = File("/tmp/mock.yaml")
-        #fp = mock_config.open("w")
-        #fp.close()
         with open("mock.yaml", "w") as fp:
             fp.write(yaml.safe_dump({'gatk':{'parent_task':'another.class', 'UnifiedGenotyper':{'parent_task': 'no.such.class'}}}, default_flow_style=False))
 

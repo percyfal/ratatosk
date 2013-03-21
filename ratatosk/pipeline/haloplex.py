@@ -45,7 +45,7 @@ class HaloBwaSampe(BwaSampe):
 class RawUnifiedGenotyper(UnifiedGenotyper):
     _config_subsection = "RawUnifiedGenotyper"
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.MergeSamFiles")
-    options = luigi.Parameter(default=["-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH"], is_list=True)
+    options = luigi.Parameter(default=("-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH",), is_list=True)
     label = ".BOTH.raw"
 
 # Override RealignerTargetCreator and IndelRealigner to use

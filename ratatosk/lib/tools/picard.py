@@ -69,7 +69,7 @@ class InputBamFile(JobTask):
 
 class PicardJobTask(JobTask):
     _config_section = "picard"
-    java_options = luigi.Parameter(default=["-Xmx2g"], is_list=True)
+    java_options = luigi.Parameter(default=("-Xmx2g",), is_list=True)
     executable = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.InputBamFile")
     target_suffix = luigi.Parameter(default=".bam")
@@ -96,7 +96,7 @@ class PicardJobTask(JobTask):
 class SortSam(PicardJobTask):
     _config_subsection = "SortSam"
     executable = "SortSam.jar"
-    options = luigi.Parameter(default=["SO=coordinate MAX_RECORDS_IN_RAM=750000"], is_list=True)
+    options = luigi.Parameter(default=("SO=coordinate MAX_RECORDS_IN_RAM=750000",), is_list=True)
     label = luigi.Parameter(default=".sort")
 
     def args(self):
@@ -109,7 +109,7 @@ class MergeSamFiles(PicardJobTask):
     read1_suffix = luigi.Parameter(default="_R1_001")
     target_generator_function = luigi.Parameter(default=None)
     # FIXME: TMP_DIR should not be hard-coded
-    options = luigi.Parameter(default=["SO=coordinate TMP_DIR=./tmp"], is_list=True)
+    options = luigi.Parameter(default=("SO=coordinate TMP_DIR=./tmp",), is_list=True)
 
     def args(self):
         return ["OUTPUT=", self.output()] + [item for sublist in [["INPUT=", x] for x in self.input()] for item in sublist]
@@ -134,7 +134,7 @@ class AlignmentMetrics(PicardJobTask):
 class InsertMetrics(PicardJobTask):
     _config_subsection = "InsertMetrics"
     executable = "CollectInsertSizeMetrics.jar"
-    target_suffix = luigi.Parameter(default=[".insert_metrics", ".insert_hist"], is_list=True)
+    target_suffix = luigi.Parameter(default=(".insert_metrics", ".insert_hist"), is_list=True)
     
     def output(self):
         return [luigi.LocalTarget(self.target),
@@ -146,7 +146,7 @@ class DuplicationMetrics(PicardJobTask):
     _config_subsection = "DuplicationMetrics"
     executable = "MarkDuplicates.jar"
     label = luigi.Parameter(default=".dup")
-    target_suffix = luigi.Parameter(default=[".bam", ".dup_metrics"], is_list=True)
+    target_suffix = luigi.Parameter(default=(".bam", ".dup_metrics"), is_list=True)
 
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output(), "METRICS_FILE=", rreplace(self.output().fn, "{}{}".format(self.label, self.target_suffix[0]), self.target_suffix[1], 1)]
