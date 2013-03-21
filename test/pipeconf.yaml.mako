@@ -9,8 +9,6 @@ misc:
 
 bwa:
   bwaref: ${bwaref}
-  InputFastqFile:
-    parent_task: ratatosk.lib.files.fastq.FastqFileLink
 
 fastq:
   link:
@@ -25,7 +23,7 @@ gatk:
   RealignerTargetCreator:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   IndelRealigner:
-    parent_task: ratatosk.lib.tools.gatk.RealignerTargetCreator
+    parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   BaseRecalibrator:
     parent_task: ratatosk.lib.tools.gatk.IndelRealigner
   PrintReads:
@@ -55,6 +53,7 @@ picard:
   InsertMetrics:
     parent_task: ratatosk.lib.tools.picard.SortSam
   MergeSamFiles:
+    parent_task: ratatosk.lib.tools.picard.SortSam
     target_generator_function: test.site_functions.organize_sample_runs
 
 samtools:

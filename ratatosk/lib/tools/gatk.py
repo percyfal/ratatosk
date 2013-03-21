@@ -55,10 +55,13 @@ class GATKJobRunner(DefaultShellJobRunner):
                 logger.info("renaming {0} to {1}".format(a.path, b.path))
                 # TODO : this should be relpath?
                 a.move(os.path.join(os.curdir, b.path))
-                # Some GATK programs generate bai files on the fly...
+                # Some GATK programs generate bai or idx files on the fly...
                 if os.path.exists(a.path + ".bai"):
                     logger.info("Saw {} file".format(a.path + ".bai"))
                     os.rename(a.path + ".bai", b.path.replace(".bam", ".bai"))
+                if os.path.exists(a.path + ".idx"):
+                    logger.info("Saw {} file".format(a.path + ".idx"))
+                    os.rename(a.path + ".idx", b.path + ".idx")
         else:
             raise Exception("Job '{}' failed: \n{}".format(cmd, " ".join([stderr])))
 
