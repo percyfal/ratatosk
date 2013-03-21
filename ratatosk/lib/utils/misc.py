@@ -16,12 +16,15 @@ import luigi
 import time
 import shutil
 import logging
-from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner
+from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner, DefaultGzShellJobRunner
 from ratatosk.utils import rreplace
 
 logger = logging.getLogger('luigi-interface')
 
 class MiscJobRunner(DefaultShellJobRunner):
+        pass
+
+class ResyncMatesJobRunner(DefaultGzShellJobRunner):
         pass
 
 class InputFastqFile(InputJobTask):
@@ -40,7 +43,7 @@ class ResyncMatesJobTask(JobTask):
     read2_suffix = luigi.Parameter(default="_R2_001")
 
     def job_runner(self):
-        return MiscJobRunner()
+		return ResyncMatesJobRunner()
 
     def requires(self):
         cls = self.set_parent_task()

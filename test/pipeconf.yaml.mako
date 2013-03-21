@@ -1,5 +1,12 @@
 # section parameter values either affect the exe application or
 # correspond to global application parameters
+cutadapt:
+  parent_task: ratatosk.lib.files.fastq.FastqFileLink
+
+misc:
+  ResyncMates:
+    parent_task: ratatosk.lib.utils.cutadapt.CutadaptJobTask
+
 bwa:
   bwaref: ${bwaref}
   InputFastqFile:

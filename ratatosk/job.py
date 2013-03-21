@@ -49,8 +49,8 @@ class DefaultShellJobRunner(JobRunner):
                 if x.exists(): # input
                     args.append(x.path)
                 else: # output
-                    y = luigi.LocalTarget(x.path + \
-                                              '-luigi-tmp-%09d' % random.randrange(0, 1e10))
+                    ypath = x.path + '-luigi-tmp-%09d' % random.randrange(0, 1e10)
+                    y = luigi.LocalTarget(ypath)
                     logger.info("Using temp path: {0} for path {1}".format(y.path, x.path))
                     args.append(y.path)
                     if job.add_suffix():
@@ -77,7 +77,9 @@ class DefaultShellJobRunner(JobRunner):
             arglist.append(self._get_main(job))
         if job.opts():
             arglist += job.opts()
-        (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
+        # Need to call self.__class__ since fix_paths overridden in
+        # DefaultGzShellJobRunner
+        (tmp_files, job_args) = self.__class__._fix_paths(job)
         
         arglist += job_args
         cmd = ' '.join(arglist)
@@ -95,6 +97,46 @@ class DefaultShellJobRunner(JobRunner):
         else:
             raise Exception("Job '{}' failed: \n{}".format(' '.join(arglist), " ".join([stderr])))
                 
+
+# Aaarrgh - it doesn't get uglier than this. Some programs
+# "seamlessly" read and write gzipped files. In the job runner we work
+# with temp files that lack the .gz suffix, so the output is not
+# compressed... Took me a while to figure out. Solution for now
+#  is to add suffix 'gz' to the temp file. Obviously this won't work
+#  for uncompressed input (SIGH), but as I discuss in issues, maybe
+#  this is a good thing.
+class DefaultGzShellJobRunner(DefaultShellJobRunner):
+    """Temporary fix for programs that determine if output is zipped
+    based on the suffix of the file name. When working with tmp files
+    this will not work so an extra .gz suffix needs to be added. This
+    should be taken care of in a cleaner way."""
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def _fix_paths(job):
+        """Modelled after hadoop_jar.HadoopJarJobRunner._fix_paths.
+        """
+        tmp_files = []
+        args = []
+        for x in job.args():
+            if isinstance(x, luigi.LocalTarget): # input/output
+                if x.exists(): # input
+                    args.append(x.path)
+                else: # output
+                    ypath = x.path + '-luigi-tmp-%09d' % random.randrange(0, 1e10) + '.gz'
+                    y = luigi.LocalTarget(ypath)
+                    logger.info("Using temp path: {0} for path {1}".format(y.path, x.path))
+                    args.append(y.path)
+                    if job.add_suffix():
+                        x = luigi.LocalTarget(x.path + job.add_suffix())
+                        y = luigi.LocalTarget(y.path + job.add_suffix())
+                    tmp_files.append((y, x))
+            else:
+                args.append(str(x))
+        return (tmp_files, args)
+
+
 class BaseJobTask(luigi.Task):
     config_file = luigi.Parameter(is_global=True, default=os.path.join(os.path.join(ratatosk.__path__[0], os.pardir, "config", "ratatosk.yaml")), description="Main configuration file.")
     custom_config = luigi.Parameter(is_global=True, default=None, description="Custom configuration file for tuning options in predefined pipelines in which workflow may not be altered.")
