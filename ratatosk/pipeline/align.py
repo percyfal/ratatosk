@@ -18,6 +18,7 @@ import logging
 from ratatosk.job import PipelineTask, JobTask, JobWrapperTask
 from ratatosk.lib.tools.picard import PicardMetrics, SortSam
 from ratatosk.lib.files.fastq import FastqFileLink
+from ratatosk.utils import make_fastq_links
 
 logger = logging.getLogger('luigi-interface')
 
@@ -29,7 +30,7 @@ class AlignSeqcap(PipelineTask):
     lane = luigi.Parameter(default=[], description="Lanes to process.", is_list=True)
     indir = luigi.Parameter(description="Where raw data lives", default=None)
     outdir = luigi.Parameter(description="Where analysis takes place", default=None)
-    final_target_suffix = ".sort.merge.bam"
+    final_target_suffix = ".sort.merge.dup.bam"
 
     def requires(self):
         if not self.indir:
@@ -39,8 +40,11 @@ class AlignSeqcap(PipelineTask):
         tgt_fun = self.set_target_generator_function()
         if not tgt_fun:
             return []
-        targets = tgt_fun(self)
-        picard_metrics_targets = ["{}.{}".format(x[1], "sort.merge") for x in targets]
+        targets = tgt_fun(self.indir, sample=self.sample, flowcell=self.flowcell, lane=self.lane)
+        if self.outdir != self.indir:
+            targets = make_fastq_links(targets, self.indir, self.outdir)
+
+        picard_metrics_targets = ["{}.{}".format(x[1], "sort.merge.dup") for x in targets]
         return [PicardMetrics(target=tgt) for tgt in picard_metrics_targets]
 
 

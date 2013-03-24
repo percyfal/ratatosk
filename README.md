@@ -400,8 +400,8 @@ configurations of analysis options.
 
 Here is an example of a basic align seqcap pipeline.
 
-	ratatosk_run.py AlignSeqcap --project J.Doe_00_01 
-	  --projectdir .. --custom-config ~/opt/ratatosk/examples/J.Doe_00_01.yaml
+	ratatosk_run.py AlignSeqcap --indir ../J.Doe_00_01 
+		--custom-config ~/opt/ratatosk/examples/J.Doe_00_01.yaml
 	
 
 ![AlignSeqcap](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap.png)
@@ -410,8 +410,7 @@ Here is an example of a basic align seqcap pipeline.
 
 Here's an example of a variant calling pipeline defined for analysis of HaloPlex data:
 
-	ratatosk_run.py HaloPlex --project J.Doe_00_01 
-	  --projectdir ~/opt/ngs_test_data/data/projects/ 
+	ratatosk_run.py HaloPlex --indir ~/opt/ngs_test_data/data/projects/J.Doe_00_01
 	  --workers 4 --custom-config ~/opt/ratatosk/examples/J.Doe_00_01.yaml
 	
 resulting in 
@@ -419,9 +418,9 @@ resulting in
 ![HaloPlex](https://raw.github.com/percyfal/ratatosk/develop/doc/ratatosk_pipeline_haloplex.png)
 
 Blue boxes mean active processes (the command was run with `--workers
-4`, which uses 4 parallel processes). Note that we need to know what
-labels are applied to the file name (see issues). In this iteration,
-for the predefined pipelines the file names have been hardcoded. 
+4`). Note that we need to know what labels are applied to the file
+name (see issues). In this iteration, for the predefined pipelines the
+file names have been hardcoded.
 
 ## Implementation ##
 

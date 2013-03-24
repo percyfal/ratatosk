@@ -3,7 +3,7 @@ bwa:
   bwaref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
   aln:
     # NB: shouldn't work since this is a custom config file
-    # parent_task: ratatosk.lib.align.bwa.BwaSampe
+    parent_task: ratatosk.lib.align.bwa.BwaSampe
     # However this should work
     options: [-e 2 -l 40]
   
@@ -20,7 +20,7 @@ picard:
   MergeSamFiles:
     # How is this module found?!?
     parent_task: ratatosk.lib.tools.picard.SortSam
-    target_generator_function: test.site_functions.organize_sample_runs
+    target_generator_function: test.site_functions.collect_sample_runs
 
 gatk:
   ref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa

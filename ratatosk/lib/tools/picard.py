@@ -171,7 +171,7 @@ class HsMetricsNonDup(HsMetrics):
 class PicardMetrics(JobWrapperTask):
     def requires(self):
         return [InsertMetrics(target=self.target + str(InsertMetrics.target_suffix.default[0])),
-                DuplicationMetrics(target=self.target + str(DuplicationMetrics.label.default) + str(DuplicationMetrics.target_suffix.default[0])),
+                #DuplicationMetrics(target=self.target + str(DuplicationMetrics.label.default) + str(DuplicationMetrics.target_suffix.default[0])),
                 HsMetrics(target=self.target + str(HsMetrics.target_suffix.default)),
                 AlignmentMetrics(target=self.target + str(AlignmentMetrics.target_suffix.default))]
 
