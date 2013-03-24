@@ -26,19 +26,21 @@ class AlignSeqcap(PipelineTask):
     _config_subsection = "AlignSeqcap"
     sample = luigi.Parameter(default=[], is_list=True, description="Samples to process")
     flowcell = luigi.Parameter(default=[], is_list=True, description = "flowcells to process")
-    project = luigi.Parameter(description="Project name", default=None)
-    projectdir = luigi.Parameter(description="Where projects live", default=os.curdir)
+    lane = luigi.Parameter(default=[], description="Lanes to process.", is_list=True)
+    indir = luigi.Parameter(description="Where raw data lives", default=None)
+    outdir = luigi.Parameter(description="Where analysis takes place", default=None)
     final_target_suffix = ".sort.merge.bam"
 
     def requires(self):
-        if not self.project:
+        if not self.indir:
             return
+        if self.outdir is None:
+            self.outdir = self.indir
         tgt_fun = self.set_target_generator_function()
         if not tgt_fun:
             return []
-        target_list = tgt_fun(self)
-        print target_list
-        picard_metrics_target_list = ["{}.{}".format(x, "sort.merge") for x in target_list]
-        return [PicardMetrics(target=tgt) for tgt in picard_metrics_target_list]
+        targets = tgt_fun(self)
+        picard_metrics_targets = ["{}.{}".format(x[1], "sort.merge") for x in targets]
+        return [PicardMetrics(target=tgt) for tgt in picard_metrics_targets]
 
 

@@ -185,13 +185,13 @@ Note also that `InputBamFile` has been changed to depend on
 `ratatosk.lib.tools.samtools.SamToBam` (default value is
 `ratatosk.lib.files.external.BamFile`). 
 
-## Examples with *run_ratatosk.py* ##
+## Examples with *ratatosk_run.py* ##
 
 The installation procedure will install an executable script,
-`run_ratatosk.py`, in your search path. The script collects all tasks
+`ratatosk_run.py`, in your search path. The script collects all tasks
 currently available in the ratatosk modules:
 
-    usage: run_ratatosk.py [-h] [--config-file CONFIG_FILE] [--dry-run] [--lock]
+    usage: ratatosk_run.py [-h] [--config-file CONFIG_FILE] [--dry-run] [--lock]
                            [--workers WORKERS] [--lock-pid-dir LOCK_PID_DIR]
                            [--scheduler-host SCHEDULER_HOST]
                            [--restart-from RESTART_FROM]
@@ -209,7 +209,7 @@ dependencies based on the desired *target* file name, so you would do
 passed via the `--target` option. For instance, to run BwaSampe you
 would do:
 
-	run_ratatosk.py BwaSampe \
+	ratatosk_run.py BwaSampe \
 	  --target target.bam
 	  --config-file config/ratatosk.yaml
 	  
@@ -228,7 +228,7 @@ The `--dry-run` option will resolve dependencies but not actually run
 anything. In addition, it will print the tasks that will be called.
 By passing a target
 	
-	run_ratatosk.py RawIndelRealigner 
+	ratatosk_run.py RawIndelRealigner 
 	  --target P001_101_index3/P001_101_index3_TGACCA_L001.trimmed.sync.sort.merge.realign.bam
 	  --custom-config ~/opt/ratatosk/examples/J.Doe_00_01.yaml --dry-run
 
@@ -249,7 +249,7 @@ sample_run files and places the result in the sample directory. The
 implementation currently depends on the directory structure
 'sample/fc1', sample/fc2' etc.
 
-	run_ratatosk.py MergeSamFiles  --target P001_101_index3/P001_101_index3_TGACCA_L001.sort.merge.bam
+	ratatosk_run.py MergeSamFiles  --target P001_101_index3/P001_101_index3_TGACCA_L001.sort.merge.bam
 	  --config-file ~/opt/ratatosk/examples/J.Doe_00_01.yaml
 
 results in 
@@ -273,7 +273,7 @@ Changing the following configuration section (see `J.Doe_00_01_trim.yaml`):
 
 and running 
 
-	run_ratatosk.py MergeSamFiles  
+	ratatosk_run.py MergeSamFiles  
 		--target P001_101_index3/P001_101_index3_TGACCA_L001.trimmed.sync.sort.merge.bam 
 		--config-file ~/opt/ratatosk/examples/J.Doe_00_01_trim.yaml
 
@@ -320,7 +320,7 @@ picard:
 
 Running 
 
-	run_ratatosk.py PicardMetricsNonDup  --target P001_101_index3/P001_101_index3_TGACCA_L001.sort.merge.dup
+	ratatosk_run.py PicardMetricsNonDup  --target P001_101_index3/P001_101_index3_TGACCA_L001.sort.merge.dup
 	  --config-file ~/opt/ratatosk/examples/J.Doe_00_01_nondup.yaml
 	
 will add hybrid selection calculation on non-deduplicated bam file for sample *P001_101_index3*:
@@ -334,7 +334,7 @@ The user can modify execution order of tasks by customising the
 thereby representing "standard" or "best-practice" pipelines. This is
 currently achieved by treating some tasks differently. For instance,
 when the task `HaloPlex` is called, the following code is executed in
-`run_ratatosk.py`:
+`ratatosk_run.py`:
 
 ```python
 if task == "HaloPlex":
@@ -400,7 +400,7 @@ configurations of analysis options.
 
 Here is an example of a basic align seqcap pipeline.
 
-	run_ratatosk.py AlignSeqcap --project J.Doe_00_01 
+	ratatosk_run.py AlignSeqcap --project J.Doe_00_01 
 	  --projectdir .. --custom-config ~/opt/ratatosk/examples/J.Doe_00_01.yaml
 	
 
@@ -410,7 +410,7 @@ Here is an example of a basic align seqcap pipeline.
 
 Here's an example of a variant calling pipeline defined for analysis of HaloPlex data:
 
-	run_ratatosk.py HaloPlex --project J.Doe_00_01 
+	ratatosk_run.py HaloPlex --project J.Doe_00_01 
 	  --projectdir ~/opt/ngs_test_data/data/projects/ 
 	  --workers 4 --custom-config ~/opt/ratatosk/examples/J.Doe_00_01.yaml
 	
