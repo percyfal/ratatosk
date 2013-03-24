@@ -1,6 +1,7 @@
 import os
 import glob
 import sys
+import shutil
 import unittest
 import luigi
 import time
@@ -45,3 +46,18 @@ class TestGeneralFunctions(unittest.TestCase):
                 return gatk3(target=self.target)
 
         # gatk4().name_prefix()
+
+
+@unittest.skipIf(not has_data, ngsloadmsg)
+class TestFunctions(unittest.TestCase):
+    def tearDown(self):
+        if os.path.exists("tmp"):
+            shutil.rmtree("tmp")
+
+    def test_make_fastq_links(self):
+        """Test making fastq links"""
+        tl = target_generator(indir=self.project)
+        fql = make_fastq_links(tl, indir=self.project, outdir="tmp")
+        self.assertTrue(os.path.lexists(os.path.join("tmp", os.path.relpath(tl[0][2], self.project) + "_R1_001.fastq.gz")))
+        self.assertTrue(os.path.lexists(os.path.join("tmp", os.path.dirname(os.path.relpath(tl[0][2], self.project)),
+                                                     "SampleSheet.csv")))

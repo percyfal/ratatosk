@@ -18,7 +18,7 @@ import csv
 import logging
 import ratatosk
 from ratatosk.job import PipelineTask, JobTask, JobWrapperTask
-from ratatosk.utils import rreplace, fullclassname
+from ratatosk.utils import rreplace, fullclassname, make_fastq_links
 from ratatosk.lib.align.bwa import BwaSampe, BwaAln
 from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, RealignerTargetCreator, IndelRealigner
 from ratatosk.lib.tools.picard import PicardMetrics, MergeSamFiles
@@ -91,31 +91,40 @@ class RawIndelRealigner(IndelRealigner):
         return retval
 
 class HaloPlex(PipelineTask):
-    # TODO: remove project, projectdir and just use indir?
     _config_section = "pipeline"
     _config_subsection = "HaloPlex"
     # Weird: after subclassing job.PipelineTask, not having a default
     # here throws an incomprehensible error
-    project = luigi.Parameter(description="Project name (equals directory name", default=None)
-    projectdir = luigi.Parameter(description="Where projects live", default=os.curdir)
-    sample = luigi.Parameter(default=None, description="Sample directory.")
+    indir = luigi.Parameter(description="Where raw data lives", default=None)
+    outdir = luigi.Parameter(description="Where analysis takes place", default=None)
+    sample = luigi.Parameter(default=[], description="Samples to process.", is_list=True)
+    flowcell = luigi.Parameter(default=[], description="Flowcells to process.", is_list=True)
+    lane = luigi.Parameter(default=[], description="Lanes to process.", is_list=True)
     # Hard-code this for now - would like to calculate on the fly so that
     # implicit naming is unnecessary
     final_target_suffix = "trimmed.sync.sort.merge.realign.recal.clip.filtered.eval_metrics"
 
     def requires(self):
         # List requirements for completion, consisting of classes above
-        if self.project is None:
+        if self.indir is None:
             return []
+        if self.outdir is None:
+            self.outdir = self.indir
         tgt_fun = self.set_target_generator_function()
         if not tgt_fun:
             return []
-        target_list = tgt_fun(self)
+        # How validate this? Now require that tgt_fun return a list of
+        # tuples, where each tuple is (sample, merge_target_prefix,
+        # sample_run_prefix)
+        targets = tgt_fun(self.indir, sample=self.sample, flowcell=self.flowcell, lane=self.lane)
+        if self.outdir != self.indir:
+            targets = make_fastq_links(targets, self.indir, self.outdir)
+                    
         # Hardcode read suffixes here for now
         # TODO: this is also a local modification so should be moved out of here. 
-        reads = ["{}_R1_001.fastq.gz".format(x) for x in target_list] +  ["{}_R2_001.fastq.gz".format(x) for x in target_list]
-        variant_target_list = ["{}.{}".format(x, self.final_target_suffix) for x in target_list]
-        picard_metrics_target_list = ["{}.{}".format(x, "trimmed.sync.sort.merge") for x in target_list]
-        return [VariantEval(target=tgt) for tgt in variant_target_list] + [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_target_list]# + [FastQCJobTask(target=tgt) for tgt in reads]
+        reads = ["{}_R1_001.fastq.gz".format(x[2]) for x in targets] +  ["{}_R2_001.fastq.gz".format(x[2]) for x in targets]
+        variant_targets = ["{}.{}".format(x[1], self.final_target_suffix) for x in targets]
+        picard_metrics_targets = ["{}.{}".format(x[1], "trimmed.sync.sort.merge") for x in targets]
+        return [VariantEval(target=tgt) for tgt in variant_targets] + [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_targets]# + [FastQCJobTask(target=tgt) for tgt in reads]
 
 

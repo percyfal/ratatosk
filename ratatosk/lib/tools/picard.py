@@ -118,7 +118,7 @@ class MergeSamFiles(PicardJobTask):
         cls = self.set_parent_task()
         tgt_fun = self.set_target_generator_function()
         if tgt_fun:
-            sources = tgt_fun(self, cls)
+            sources = tgt_fun(self)
             return [cls(target=src) for src in sources]    
         else:
             return []

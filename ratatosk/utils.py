@@ -11,10 +11,15 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
+import os
 import collections
 from datetime import datetime
 import time
 import luigi
+import glob
+import logging
+
+logger = logging.getLogger('luigi-interface')
 
 # http://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
 # FIX ME: make override work
@@ -97,3 +102,40 @@ def fullclassname(o):
 def utc_time():
     """Make an utc_time with appended 'Z'"""
     return str(datetime.utcnow()) + 'Z'
+
+def make_fastq_links(targets, indir, outdir, fastq_suffix="001.fastq.gz", ssheet="SampleSheet.csv"):
+    """Given a set of targets and an output directory, create links
+    from targets (source raw data) to an output directory.
+
+    :param targets: list of tuples consisting of (sample, sample target prefix, sample run prefix)
+    :param outdir: (top) output directory
+    :param fastq_suffix: fastq suffix
+    :param ssheet: sample sheet name
+
+    :returns: new targets list with updated output directory
+    """
+    newtargets = []
+    for tgt in targets:
+        fastq = glob.glob("{}*{}".format(tgt[2], fastq_suffix))
+        if len(fastq) == 0:
+            logger.warn("No fastq files for prefix {} in {}".format(tgt[2], "make_fastq_links"))
+        for f in fastq:
+            newpath = os.path.join(outdir, os.path.relpath(f, indir))
+            if not os.path.exists(os.path.dirname(newpath)):
+                logger.info("Making directories to {}".format(os.path.dirname(newpath)))
+                os.makedirs(os.path.dirname(newpath))
+                if not os.path.exists(os.path.join(os.path.dirname(newpath), ssheet)):
+                    try:
+                        os.symlink(os.path.abspath(os.path.join(os.path.dirname(f), ssheet)), 
+                                   os.path.join(os.path.dirname(newpath), ssheet))
+                    except:
+                        logger.warn("No sample sheet found for {}".format())
+                        
+            if not os.path.exists(newpath):
+                logger.info("Linking {} -> {}".format(newpath, os.path.abspath(f)))
+                os.symlink(os.path.abspath(f), newpath)
+        newtargets.append((tgt[0], 
+                           os.path.join(outdir, os.path.relpath(tgt[1], indir)),
+                           os.path.join(outdir, os.path.relpath(tgt[2], indir))))
+    return newtargets
+        

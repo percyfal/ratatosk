@@ -379,8 +379,8 @@ class BestPractice(PipelineTask):
 	def requires(self):
 		tgt_fun = self.set_target_generator_function()
 		# Need to pass the class to tgt_fun
-		target_list = tgt_fun(self)
-		target_list = ["...".format(x, self.final_target_suffix) for x in target_list]
+		targets = tgt_fun(self.indir, ...)
+		targets = ["...".format(x[2], self.final_target_suffix) for x in target_list]
 		return [FinalTarget(target=tgt) for tgt in target_list, ...]
 			
 ```
@@ -456,7 +456,11 @@ couple of functions that are essential for general behaviour:
   
 * `set_target_generator_function` tries to set a function that is used
   to generate target names for a task. It is up to the end user to
-  define an appropriate function. 
+  define an appropriate function. Currently the target generator
+  function should return a 3-tuple consisting of *sample name*,
+  *sample merge target prefix*, and *sample run target prefix* for
+  each sample run unit (sequence data indexed by flowcell, barcode,
+  and lane).
   
 * `_make_source_file_name` generates source file name from a target,
   based on `target_suffix`, `source_suffix`, and `label`.
