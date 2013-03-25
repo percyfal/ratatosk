@@ -285,6 +285,58 @@ class VariantEval(GATKJobTask):
         retval += [" -R {}".format(self.ref)]
         return retval
 
+class VariantAnnotator(GATKJobTask):
+    _config_subsection = "VariantAnnotator"
+    sub_executable = "VariantAnnotator"
+    options = luigi.Parameter(default=("",), is_list=True)
+    dbsnp = luigi.Parameter(default=None)
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputVcfFile")
+    source_suffix = luigi.Parameter(default=".vcf")
+    target_suffix = luigi.Parameter(default=".txt")
+    snpeff = luigi.Parameter(default=None)
+
+    def opts(self):
+        retval = list(self.options)
+        if self.target_region:
+            retval += ["-L {}".format(self.target_region)]
+        return retval
+    
+    def args(self):
+        retval = ["--variant", self.input(), "--out", self.output()]
+        if not self.ref:
+            raise Exception("need reference for VariantAnnotator")
+        retval += [" -R {}".format(self.ref)]
+        return retval
+
+class VariantSnpEffAnnotator(GATKJobTask):
+    _config_subsection = "VariantSnpEffAnnotator"
+    sub_executable = "VariantSnpEffAnnotator"
+    options = luigi.Parameter(default=("",), is_list=True)
+    dbsnp = luigi.Parameter(default=None)
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputVcfFile")
+    source_suffix = luigi.Parameter(default=".vcf")
+    target_suffix = luigi.Parameter(default=".txt")
+    snpeff = luigi.Parameter(default=None)
+
+    def requires(self):
+        cls = self.set_parent_task()
+        source = self._make_source_file_name()
+        return [cls(target=source), ratatosk.lib.annotation.snpeff.snpEff(target=source)]
+
+    def opts(self):
+        retval = list(self.options)
+        retval += [' -A SnpEff']
+        if self.target_region:
+            retval += ["-L {}".format(self.target_region)]
+        return retval
+    
+    def args(self):
+        retval = ["--variant", self.input(), "--out", self.output()[0], "--snpEffFile", self.output()[1]]
+        if not self.ref:
+            raise Exception("need reference for VariantSnpEffAnnotator")
+        retval += [" -R {}".format(self.ref)]
+        return retval
+
         
 class UnifiedGenotyper(GATKIndexedJobTask):
     _config_subsection = "UnifiedGenotyper"

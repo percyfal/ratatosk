@@ -60,3 +60,6 @@ samtools:
   SamToBam:
     parent_task: ratatosk.lib.align.bwa.BwaSampe
 
+snpeff:
+  InputVcfFile:
+    parent_task: ratatosk.lib.tools.gatk.UnifiedGenotyper
