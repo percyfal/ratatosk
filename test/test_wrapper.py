@@ -329,7 +329,7 @@ class TestAnnotationWrapper(unittest.TestCase):
 
     def tearDown(self):
         Pfiles = glob.glob("P*")
-        [os.unlink(x) for x in Pfiles if os.path.isfile(x)]
+        #[os.unlink(x) for x in Pfiles if os.path.isfile(x)]
 
     def test_snpeff(self):
         luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-effects.vcf"), '--config-file', localconf]), main_task_cls=ratatosk.lib.annotation.snpeff.snpEff)
@@ -343,5 +343,16 @@ class TestAnnotationWrapper(unittest.TestCase):
             lines = [x.strip() for x in fh.readlines()]
         self.assertTrue(lines[0].startswith("# SnpEff version"))
         self.assertTrue(lines[2].startswith("# Chromo"))
+
+    def test_GATK_variant_annotator(self):
+        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-gatkann.vcf"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.tools.gatk.VariantAnnotator)
+        with open(self.bam.replace(".bam", "-gatkann.vcf")) as fh:
+            lines = [x.strip() for x in fh.readlines()]
+        self.assertTrue(any([x.startswith('##INFO=<ID=MQRankSum') for x in lines]))
         
 
+    def test_GATK_snpeff_variant_annotator(self):
+        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-annotated.vcf"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.tools.gatk.VariantSnpEffAnnotator)
+        with open(self.bam.replace(".bam", "-annotated.vcf")) as fh:
+            lines = [x.strip() for x in fh.readlines()]
+        self.assertTrue(any([x.startswith('##OriginalSnpEffVersion="2.0.5') for x in lines]))
