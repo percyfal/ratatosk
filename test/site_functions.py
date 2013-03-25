@@ -68,7 +68,7 @@ def target_generator(indir, sample=None, flowcell=None, lane=None):
     targets = []
     if not os.path.exists(indir):
         logging.warn("No such input directory '{}'".format(indir))
-        return target_list
+        return targets
     samples = os.listdir(indir)
     # Only run this sample if provided at command line.
     if sample:

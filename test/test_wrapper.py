@@ -102,8 +102,8 @@ class TestMiscWrappers(unittest.TestCase):
         self.assertTrue(os.path.exists(fastq1))
         with gzip.open(fastq1) as fp:
             h2 = fp.readlines()[0:2]
-            self.assertEqual(h2, ['@SRR362778.2383730/1\n', 'GCATTACCCTGATACCAAAACCAGAGAAGGACACTATAATAAAAATAAATTGCAGACCAATACTCCTGATGAACTT\n'])
- 
+            self.assertEqual(h2, ['@SRR359498.2255156/1\n', 'AAAGAAACATAAAGCCATATCATGTTTAACGAGAAGGGCTTATTGTATCATTTATGAGATCTTCTTGTAAATCACT\n'])
+
     def test_cutadapt(self):
         luigi.run(_luigi_args(['--target', os.path.basename(fastq1.replace(".fastq.gz", ".trimmed.fastq.gz")), '--config-file', localconf, '--parent-task', 'ratatosk.lib.files.fastq.FastqFileLink']), main_task_cls=ratatosk.lib.utils.cutadapt.CutadaptJobTask)
         luigi.run(_luigi_args(['--target', os.path.basename(fastq2.replace(".fastq.gz", ".trimmed.fastq.gz")), '--config-file', localconf, '--parent-task', 'ratatosk.lib.files.fastq.FastqFileLink']), main_task_cls=ratatosk.lib.utils.cutadapt.CutadaptJobTask)
@@ -220,7 +220,6 @@ class TestPicardWrappers(unittest.TestCase):
         luigi.run(_luigi_args(['--target', sortbam.replace(".bam", ""), '--config-file', localconf]), main_task_cls=ratatosk.lib.tools.picard.PicardMetrics)
         self.assertTrue(os.path.exists(sortbam.replace(".bam", ".insert_metrics")))
         self.assertTrue(os.path.exists(sortbam.replace(".bam", ".insert_hist")))
-        self.assertTrue(os.path.exists(sortbam.replace(".bam", ".dup_metrics")))
         self.assertTrue(os.path.exists(sortbam.replace(".bam", ".align_metrics")))
         self.assertTrue(os.path.exists(sortbam.replace(".bam", ".hs_metrics")))
 

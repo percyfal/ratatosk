@@ -400,7 +400,7 @@ configurations of analysis options.
 
 Here is an example of a basic align seqcap pipeline.
 
-	ratatosk_run.py AlignSeqcap --indir ../J.Doe_00_01 
+	ratatosk_run.py AlignSeqcap --indir ~/opt/ngs_test_data/data/projects/J.Doe_00_01 
 		--custom-config ~/opt/ratatosk/examples/J.Doe_00_01.yaml
 	
 

@@ -15,7 +15,9 @@ import ratatosk.lib.tools.gatk as GATK
 import ratatosk.lib.utils.cutadapt as CUTADAPT
 import ratatosk.lib.tools.fastqc as FASTQC
 import ratatosk.lib.files.external
+from ratatosk.utils import make_fastq_links
 import ngstestdata as ntd
+from site_functions import target_generator
 
 logging.basicConfig(level=logging.DEBUG)
 sample = "P001_101_index3_TGACCA_L001"
@@ -48,14 +50,17 @@ class TestGeneralFunctions(unittest.TestCase):
         # gatk4().name_prefix()
 
 
-@unittest.skipIf(not has_data, ngsloadmsg)
 class TestFunctions(unittest.TestCase):
+    def setUp(self):
+        self.project = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "projects", "J.Doe_00_01"))
+
     def tearDown(self):
         if os.path.exists("tmp"):
             shutil.rmtree("tmp")
 
     def test_make_fastq_links(self):
         """Test making fastq links"""
+        # Assume Illumina/SciLife data structure
         tl = target_generator(indir=self.project)
         fql = make_fastq_links(tl, indir=self.project, outdir="tmp")
         self.assertTrue(os.path.lexists(os.path.join("tmp", os.path.relpath(tl[0][2], self.project) + "_R1_001.fastq.gz")))
