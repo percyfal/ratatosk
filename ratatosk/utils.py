@@ -23,13 +23,15 @@ logger = logging.getLogger('luigi-interface')
 
 # http://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
 # FIX ME: make override work
-def update(d, u, override=True):
+def update(d, u, override=True, expandvars=True):
     """Update values of a nested dictionary of varying depth"""
     for k, v in u.iteritems():
         if isinstance(v, collections.Mapping):
             r = update(d.get(k, {}), v)
             d[k] = r
         else:
+            if expandvars and isinstance(v, str):
+                u[k] = os.path.expandvars(v)
             d[k] = u[k]
     return d
 

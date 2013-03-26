@@ -305,8 +305,9 @@ class RatatoskCustomConfigParser(RatatoskConfigParser):
         cls._instance._sections = cls._cls_dict
         cls._instance.reload()
 
-    def reload(self):
-        return self._instance.read(self._custom_config_paths)
+    @classmethod
+    def reload(cls):
+        return cls._instance.read(cls._custom_config_paths)
 
 
 def setup_interface_logging():

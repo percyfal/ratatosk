@@ -21,11 +21,6 @@ from ratatosk.utils import rreplace
 from ratatosk.job import InputJobTask, JobWrapperTask, JobTask, DefaultShellJobRunner
 import ratatosk.shell as shell
 
-# TODO: make these configurable 
-JAVA="java"
-JAVA_OPTS="-Xmx2g"
-PICARD_HOME=os.getenv("PICARD_HOME")
-
 logger = logging.getLogger('luigi-interface')
 
 class PicardJobRunner(DefaultShellJobRunner):
@@ -34,7 +29,7 @@ class PicardJobRunner(DefaultShellJobRunner):
             logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),
                                                                      os.path.abspath(job.jar())))
             raise Exception("job jar does not exist")
-        arglist = [JAVA] + job.java_opt() + ['-jar', os.path.join(job.path(), job.jar())]
+        arglist = [job.java()] + job.java_opt() + ['-jar', os.path.join(job.path(), job.jar())]
         if job.main():
             arglist.append(job.main())
         if job.opts():
@@ -68,8 +63,9 @@ class InputBamFile(JobTask):
 
 class PicardJobTask(JobTask):
     _config_section = "picard"
+    java_exe = "java"
     java_options = luigi.Parameter(default=("-Xmx2g",), is_list=True)
-    exe_path = luigi.Parameter(default=PICARD_HOME)
+    exe_path = luigi.Parameter(default=os.getenv("PICARD_HOME") if os.getenv("PICARD_HOME") else os.curdir)
     executable = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.InputBamFile")
     target_suffix = luigi.Parameter(default=".bam")

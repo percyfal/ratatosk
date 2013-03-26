@@ -30,9 +30,18 @@ class TestConfigParser(unittest.TestCase):
     def setUp(self):
         self.config = get_config()
         self.assertEqual([], self.config._config_paths)
+        os.environ["GATK_HOME_MOCK"] = os.path.abspath(os.curdir)
+        os.environ["PICARD_HOME_MOCK"] = os.path.abspath(os.curdir)
+        with open("mock.yaml", "w") as fp:
+            fp.write(yaml.safe_dump({'gatk':{'java':'java', 'path': '$GATK_HOME_MOCK'},
+                                     'picard':{'java':'java', 'path': '$PICARD_HOME_MOCK/test'}}, default_flow_style=False))
 
     def tearDown(self):
+        if os.path.exists("mock.yaml"):
+            os.unlink("mock.yaml")
         self.config._config_paths = []
+        del os.environ["GATK_HOME_MOCK"]
+        del os.environ["PICARD_HOME_MOCK"]
 
     def test_get_config(self):
         """Test getting config instance"""
@@ -63,6 +72,11 @@ class TestConfigParser(unittest.TestCase):
         cnf.del_config_path(configfile)
         self.assertEqual([], cnf._config_paths)
         
+    def test_expand_vars(self):
+        cnf = get_config()
+        cnf.add_config_path("mock.yaml")
+        self.assertEqual(os.getenv("GATK_HOME_MOCK"), cnf._sections['gatk']['path'])
+        self.assertEqual(os.path.join(os.getenv("PICARD_HOME_MOCK"), "test"), cnf._sections['picard']['path'])
 
 class TestConfigUpdate(unittest.TestCase):
     def setUp(self):
