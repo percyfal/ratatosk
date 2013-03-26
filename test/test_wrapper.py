@@ -350,9 +350,11 @@ class TestAnnotationWrapper(unittest.TestCase):
             lines = [x.strip() for x in fh.readlines()]
         self.assertTrue(any([x.startswith('##INFO=<ID=MQRankSum') for x in lines]))
         
-
     def test_GATK_snpeff_variant_annotator(self):
         luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-annotated.vcf"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.tools.gatk.VariantSnpEffAnnotator)
         with open(self.bam.replace(".bam", "-annotated.vcf")) as fh:
             lines = [x.strip() for x in fh.readlines()]
         self.assertTrue(any([x.startswith('##OriginalSnpEffVersion="2.0.5') for x in lines]))
+
+    def test_summarize_annovar(self):
+        pass
