@@ -632,8 +632,10 @@ its options.
 ## TODO/future ideas/issues ##
 
 See
-[issue list](https://github.com/percyfal/ratatosk/issues?state=open)
-for a complete list. Some of the most pressing issues to fix include
+[issue list](https://github.com/SciLifeLab/ratatosk/issues?state=open)
+([original issue list](https://github.com/percyfal/ratatosk/issues?state=open),
+these will eventually be transferred to the SciLifeLab repo) for a
+complete list. Some of the most pressing issues to fix include
 
 * Calculation of target names by getting the path between two nodes
 
