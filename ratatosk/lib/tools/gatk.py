@@ -21,11 +21,6 @@ import ratatosk.shell as shell
 
 logger = logging.getLogger('luigi-interface')
 
-JAVA="java"
-JAVA_OPTS="-Xmx2g"
-GATK_HOME=os.getenv("GATK_HOME")
-GATK_JAR="GenomeAnalysisTK.jar"
-
 class GATKJobRunner(DefaultShellJobRunner):
     @staticmethod
     def _get_main(job):
@@ -36,7 +31,7 @@ class GATKJobRunner(DefaultShellJobRunner):
             logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),
                                                                      os.path.abspath(job.jar())))
             raise Exception("job jar does not exist")
-        arglist = [JAVA] + job.java_opt() + ['-jar', os.path.join(job.path(), job.jar())]
+        arglist = [job.java()] + job.java_opt() + ['-jar', os.path.join(job.path(), job.jar())]
         if job.main():
             arglist.append(self._get_main(job))
         if job.opts():
@@ -75,10 +70,11 @@ class InputVcfFile(InputJobTask):
     
 class GATKJobTask(JobTask):
     _config_section = "gatk"
-    exe_path = luigi.Parameter(default=GATK_HOME)
-    executable = luigi.Parameter(default=GATK_JAR)
+    exe_path = luigi.Parameter(default=os.getenv("GATK_HOME") if os.getenv("GATK_HOME") else os.curdir)
+    executable = luigi.Parameter(default="GenomeAnalysisTK.jar")
     source_suffix = luigi.Parameter(default=".bam")
     target_suffix = luigi.Parameter(default=".bam")
+    java_exe = luigi.Parameter(default="java")
     java_options = luigi.Parameter(default=("-Xmx2g",), description="Java options", is_list=True)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
     ref = luigi.Parameter(default=None)
@@ -93,6 +89,9 @@ class GATKJobTask(JobTask):
 
     def java_opt(self):
         return list(self.java_options)
+
+    def java(self):
+        return self.java_exe
 
     def job_runner(self):
         return GATKJobRunner()
