@@ -27,19 +27,16 @@ GATK_HOME=os.getenv("GATK_HOME")
 GATK_JAR="GenomeAnalysisTK.jar"
 
 class GATKJobRunner(DefaultShellJobRunner):
-    # How configure this best way?
-    path = GATK_HOME
-
     @staticmethod
     def _get_main(job):
         return "-T {}".format(job.main())
 
     def run_job(self, job):
-        if not job.jar() or not os.path.exists(os.path.join(self.path,job.jar())):
+        if not job.jar() or not os.path.exists(os.path.join(job.path(),job.jar())):
             logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),
                                                                      os.path.abspath(job.jar())))
             raise Exception("job jar does not exist")
-        arglist = [JAVA] + job.java_opt() + ['-jar', os.path.join(self.path, job.jar())]
+        arglist = [JAVA] + job.java_opt() + ['-jar', os.path.join(job.path(), job.jar())]
         if job.main():
             arglist.append(self._get_main(job))
         if job.opts():
@@ -78,6 +75,7 @@ class InputVcfFile(InputJobTask):
     
 class GATKJobTask(JobTask):
     _config_section = "gatk"
+    exe_path = luigi.Parameter(default=GATK_HOME)
     executable = luigi.Parameter(default=GATK_JAR)
     source_suffix = luigi.Parameter(default=".bam")
     target_suffix = luigi.Parameter(default=".bam")

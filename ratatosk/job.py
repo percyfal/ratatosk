@@ -68,11 +68,15 @@ class DefaultShellJobRunner(JobRunner):
         return job.main()
 
     def run_job(self, job):
-        if not job.exe():# or not os.path.exists(job.exe()):
-            logger.error("Can't find executable: {0}, full path {1}".format(job.exe(),
-                                                                            os.path.abspath(job.exe())))
+        if job.path():
+            exe = os.path.join(job.path(), job.exe())
+        else:
+            exe = job.exe()
+        if not exe:# or not os.path.exists(exe):
+            logger.error("Can't find executable: {0}, full path {1}".format(exe,
+                                                                            os.path.abspath(exe)))
             raise Exception("executable does not exist")
-        arglist = [job.exe()]
+        arglist = [exe]
         if job.main():
             arglist.append(self._get_main(job))
         if job.opts():
@@ -161,6 +165,9 @@ class BaseJobTask(luigi.Task):
     source = None
     # Use for changing labels in graph visualization
     use_long_names = luigi.Parameter(default=False, description="Use long names (including all options) in graph vizualization", is_boolean=True, is_global=True)
+
+    # Path to main program; used by job runner
+    exe_path = luigi.Parameter(default=None)
     # Name of executable to run a program
     executable = None
     # Name of 'sub_executable' (e.g. for GATK, bwa). 
@@ -177,6 +184,7 @@ class BaseJobTask(luigi.Task):
     max_memory_gb = 3
     # Not all tasks are allowed to "label" their output
     label = luigi.Parameter(default=None)
+    # Is this even used?
     suffix = luigi.Parameter(default=None)
     # Global configuration - this must be a class variable
     global_config = dict()
@@ -188,10 +196,17 @@ class BaseJobTask(luigi.Task):
         for key, value in param_values:
             if key == "config_file":
                 config_file = value
-                kwargs = self._update_config(config_file, *args, **kwargs)
+                config = interface.get_config()
+                config.add_config_path(config_file)
+                kwargs = self._update_config(config, *args, **kwargs)
         for key, value in param_values:
             if key == "custom_config":
-                custom_config = value
+                if not value:
+                    continue
+                custom_config_file = value
+                # This must be a separate instance
+                custom_config = interface.get_custom_config()
+                custom_config.add_config_path(custom_config_file)
                 kwargs = self._update_config(custom_config, disable_parent_task_update=True, *args, **kwargs)
         super(BaseJobTask, self).__init__(*args, **kwargs)
         if self.dry_run:
@@ -200,11 +215,20 @@ class BaseJobTask(luigi.Task):
     def __repr__(self):
         return self.task_id
 
-    def _update_config(self, config_file, disable_parent_task_update=False, *args, **kwargs):
-        """Update configuration for this task"""
-        config = interface.get_config(config_file)
-        #Update global configuration here for printing everything in PrintConfig task
-        BaseJobTask.global_config = update(BaseJobTask.global_config, vars(config)["_sections"])
+    def _update_config(self, config, disable_parent_task_update=False, *args, **kwargs):
+        """Update configuration for this task. All task options should
+        have a default. Order of preference:
+
+        1. if command line option encountered, override config file settings
+        2. if configuration file has a setting, override default value for task.
+
+        :param config: configuration instance
+        :param disable_parent_task_update: disable parent task update for custom configurations (best practice pipeline execution order should stay fixed)
+
+        :returns: an updated parameter list for the task.
+        """
+        # Update global configuration here for printing everything in PrintConfig task
+        interface.global_config = update(interface.global_config, vars(config)["_sections"])
         if not config:
             return kwargs
         if not config.has_section(self._config_section):
@@ -215,7 +239,7 @@ class BaseJobTask(luigi.Task):
             d = {self._config_section:param_values}
         else:
             d = {self._config_section:{self._config_subsection:param_values}}
-        BaseJobTask.global_config = update(BaseJobTask.global_config, d)
+        interface.global_config = update(interface.global_config, d)
         for key, value in self.get_params():
             new_value = None
             # Got a command line option => override config file
@@ -240,6 +264,10 @@ class BaseJobTask(luigi.Task):
                 pass
             logger.debug("Using default value '{0}' for '{1}' for task class '{2}'".format(value.default, key, self.__class__))
         return kwargs
+
+    def path(self):
+        """Main path of this executable"""
+        return self.exe_path
 
     def exe(self):
         """Executable of this task."""
@@ -551,9 +579,8 @@ class PrintConfig(JobTask):
         return []
 
     def output(self):
-        import yamlconfigparser
-        ycp = yamlconfigparser.YamlConfigParser()
-        ycp.save(config_to_dict(self.__class__.global_config), "config.yaml")
+        cp = interface.RatatoskConfigParser()
+        cp.save(config_to_dict(interface.global_config), "config.yaml")
         return luigi.LocalTarget("config.yaml")
 
     def run(self):
