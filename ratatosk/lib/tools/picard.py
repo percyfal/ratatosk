@@ -29,13 +29,12 @@ PICARD_HOME=os.getenv("PICARD_HOME")
 logger = logging.getLogger('luigi-interface')
 
 class PicardJobRunner(DefaultShellJobRunner):
-    path = PICARD_HOME
     def run_job(self, job):
-        if not job.jar() or not os.path.exists(os.path.join(self.path,job.jar())):
+        if not job.jar() or not os.path.exists(os.path.join(job.path(),job.jar())):
             logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),
                                                                      os.path.abspath(job.jar())))
             raise Exception("job jar does not exist")
-        arglist = [JAVA] + job.java_opt() + ['-jar', os.path.join(self.path, job.jar())]
+        arglist = [JAVA] + job.java_opt() + ['-jar', os.path.join(job.path(), job.jar())]
         if job.main():
             arglist.append(job.main())
         if job.opts():
@@ -70,6 +69,7 @@ class InputBamFile(JobTask):
 class PicardJobTask(JobTask):
     _config_section = "picard"
     java_options = luigi.Parameter(default=("-Xmx2g",), is_list=True)
+    exe_path = luigi.Parameter(default=PICARD_HOME)
     executable = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.InputBamFile")
     target_suffix = luigi.Parameter(default=".bam")

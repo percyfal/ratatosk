@@ -33,8 +33,8 @@ def update(d, u, override=True):
             d[k] = u[k]
     return d
 
-# FIXME: this is obsolete!
-from cement.core import config
+# FIXME: implement replacement for cement.ConfigHandler check
+# Would allow passing d["_sections"] or d
 def config_to_dict(d):
     """Convert config handler or OrderedDict entries to dict for yaml
     output.
@@ -43,9 +43,7 @@ def config_to_dict(d):
     """
     if d is None:
         return {}
-    if isinstance(d, config.CementConfigHandler):
-        d = d._sections
-    elif isinstance(d, dict):
+    if isinstance(d, dict):
         pass
     else:
         raise TypeError("unsupported type <{}>".format(type(d)))

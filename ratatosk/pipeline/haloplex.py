@@ -17,7 +17,7 @@ import glob
 import csv
 import logging
 import ratatosk
-from ratatosk.job import PipelineTask, JobTask, JobWrapperTask
+from ratatosk.job import PipelineTask, JobTask, JobWrapperTask, PrintConfig
 from ratatosk.utils import rreplace, fullclassname, make_fastq_links
 from ratatosk.lib.align.bwa import BwaSampe, BwaAln
 from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, RealignerTargetCreator, IndelRealigner
@@ -125,6 +125,6 @@ class HaloPlex(PipelineTask):
         reads = ["{}_R1_001.fastq.gz".format(x[2]) for x in targets] +  ["{}_R2_001.fastq.gz".format(x[2]) for x in targets]
         variant_targets = ["{}.{}".format(x[1], self.final_target_suffix) for x in targets]
         picard_metrics_targets = ["{}.{}".format(x[1], "trimmed.sync.sort.merge") for x in targets]
-        return [VariantEval(target=tgt) for tgt in variant_targets] + [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_targets]# + [FastQCJobTask(target=tgt) for tgt in reads]
+        return [VariantEval(target=tgt) for tgt in variant_targets] + [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_targets] + [PrintConfig()]# + [FastQCJobTask(target=tgt) for tgt in reads]
 
 
