@@ -84,6 +84,9 @@ class PicardJobTask(JobTask):
     def job_runner(self):
         return PicardJobRunner()
 
+    def java(self):
+        return self.java_exe
+
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()

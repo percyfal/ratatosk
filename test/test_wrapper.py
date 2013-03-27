@@ -18,6 +18,8 @@ import ratatosk.lib.tools.gatk
 import ratatosk.lib.tools.fastqc
 import ratatosk.lib.utils.cutadapt
 import ratatosk.lib.utils.misc
+import ratatosk.lib.annotation.snpeff
+import ratatosk.lib.annotation.annovar
 import ngstestdata as ntd
 
 logging.basicConfig(level=logging.DEBUG)
@@ -314,3 +316,56 @@ class TestGATKWrappers(unittest.TestCase):
 
         luigi.run(_luigi_args(['--target', self.mergebam.replace(".bam", ".realign.recal.clip.filtered.eval_metrics"), '--config-file', localconf]), main_task_cls=ratatosk.lib.tools.gatk.VariantEval)
         self.assertTrue(os.path.exists(self.mergebam.replace(".bam", ".realign.recal.clip.filtered.eval_metrics")))
+
+class TestAnnotationWrapper(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        """Setup bwa wrappers by linking fastq files from ngs_test_data"""
+        for f in [fastq1, fastq2]:
+            if not os.path.exists(f):
+                os.symlink(os.path.join(indir, os.path.basename(f)), f)
+        luigi.run(_luigi_args(['--target', sortbam, '--config-file', localconf]), main_task_cls=ratatosk.lib.tools.samtools.SortBam)
+        self.bam = sortbam
+        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", ".vcf")]), main_task_cls=ratatosk.lib.tools.gatk.UnifiedGenotyper)
+
+    def tearDown(self):
+        Pfiles = glob.glob("P*")
+        #[os.unlink(x) for x in Pfiles if os.path.isfile(x)]
+
+    def test_snpeff(self):
+        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-effects.vcf"), '--config-file', localconf]), main_task_cls=ratatosk.lib.annotation.snpeff.snpEff)
+        with open(self.bam.replace(".bam", "-effects.vcf")) as fh:
+            lines = [x.strip() for x in fh.readlines()]
+        self.assertTrue(lines[0].startswith("##fileformat=VCF"))
+
+    def test_snpeff_txt(self):
+        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-effects.txt"), '--target-suffix', '.txt', '--config-file', localconf]), main_task_cls=ratatosk.lib.annotation.snpeff.snpEff)
+        with open(self.bam.replace(".bam", "-effects.txt")) as fh:
+            lines = [x.strip() for x in fh.readlines()]
+        self.assertTrue(lines[0].startswith("# SnpEff version"))
+        self.assertTrue(lines[2].startswith("# Chromo"))
+
+    def test_GATK_variant_annotator(self):
+        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-gatkann.vcf"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.tools.gatk.VariantAnnotator)
+        with open(self.bam.replace(".bam", "-gatkann.vcf")) as fh:
+            lines = [x.strip() for x in fh.readlines()]
+        self.assertTrue(any([x.startswith('##INFO=<ID=MQRankSum') for x in lines]))
+        
+    def test_GATK_snpeff_variant_annotator(self):
+        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-annotated.vcf"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.tools.gatk.VariantSnpEffAnnotator)
+        with open(self.bam.replace(".bam", "-annotated.vcf")) as fh:
+            lines = [x.strip() for x in fh.readlines()]
+        self.assertTrue(any([x.startswith('##OriginalSnpEffVersion="2.0.5') for x in lines]))
+
+    def test_convert_annovar(self):
+        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-avinput.txt"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.annotation.annovar.Convert2Annovar)
+        self.assertTrue(os.path.exists(self.bam.replace(".bam", "-avinput.txt")))
+        with open(self.bam.replace(".bam", "-avinput.txt")) as fh:
+            data = fh.readlines()
+        self.assertEqual("chr11", data[0].split()[0])
+
+
+    def test_summarize_annovar(self):
+        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-avinput.txt.log"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.annotation.annovar.SummarizeAnnovar)
+        self.assertTrue(os.path.exists(self.bam.replace(".bam", "-avinput.txt.exome_summary.csv")))
+        self.assertTrue(os.path.exists(self.bam.replace(".bam", "-avinput.txt.genome_summary.csv")))

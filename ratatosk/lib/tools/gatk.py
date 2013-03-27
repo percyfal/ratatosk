@@ -282,6 +282,61 @@ class VariantEval(GATKJobTask):
         retval += [" -R {}".format(self.ref)]
         return retval
 
+class VariantAnnotator(GATKJobTask):
+    _config_subsection = "VariantAnnotator"
+    sub_executable = "VariantAnnotator"
+    options = luigi.Parameter(default=("",), is_list=True)
+    dbsnp = luigi.Parameter(default=None)
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputVcfFile")
+    source_suffix = luigi.Parameter(default=".vcf")
+    target_suffix = luigi.Parameter(default=".txt")
+    snpeff = luigi.Parameter(default=None)
+    label = luigi.Parameter(default="-gatkann")
+
+    annotations = ["BaseQualityRankSumTest", "DepthOfCoverage", "FisherStrand",
+                   "GCContent", "HaplotypeScore", "HomopolymerRun",
+                   "MappingQualityRankSumTest", "MappingQualityZero",
+                   "QualByDepth", "ReadPosRankSumTest", "RMSMappingQuality"]
+
+    def opts(self):
+        retval = list(self.options)
+        if self.target_region:
+            retval += ["-L {}".format(self.target_region)]
+        return retval
+    
+    def args(self):
+        retval = ["--variant", self.input(), "--out", self.output()]
+        if not self.ref:
+            raise Exception("need reference for VariantAnnotator")
+        retval += [" -R {}".format(self.ref)]
+        for x in self.annotations:
+            retval += ["-A", x]
+        return retval
+
+# NB: GATK requires snpEff version 2.0.5, nothing else. Therefore, it
+# would be convenient to "lock" this version for this task, meaning
+# ratatosk.lib.annotation.snpeff.snpEff must be version 2.0.5
+class VariantSnpEffAnnotator(VariantAnnotator):
+    _config_subsection = "VariantSnpEffAnnotator"
+    label = luigi.Parameter(default="-annotated")
+
+    def requires(self):
+        cls = self.set_parent_task()
+        source = self._make_source_file_name()
+        return [cls(target=source), 
+                # Once again, this shows the necessity of multiple
+                # parent_tasks. Here, we have to use the default value
+                # for snpEff label.
+                ratatosk.lib.annotation.snpeff.snpEff(target=rreplace(source, "{}".format(self.source_suffix), "{}{}".format(ratatosk.lib.annotation.snpeff.snpEff.label.default, self.source_suffix), 1))]
+
+    def args(self):
+        retval = ["--variant", self.input()[0], "--out", self.output(), "--snpEffFile", self.input()[1]]
+        if not self.ref:
+            raise Exception("need reference for VariantAnnotator")
+        retval += [" -R {}".format(self.ref)]
+        retval += ["-A", "SnpEff"]
+        return retval
+
         
 class UnifiedGenotyper(GATKIndexedJobTask):
     _config_subsection = "UnifiedGenotyper"
