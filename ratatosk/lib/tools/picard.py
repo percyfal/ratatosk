@@ -126,7 +126,13 @@ class AlignmentMetrics(PicardJobTask):
     _config_subsection = "AlignmentMetrics"
     executable = "CollectAlignmentSummaryMetrics.jar"
     target_suffix = luigi.Parameter(default=".align_metrics")
-    
+
+    def opts(self):
+        retval = list(self.options)
+        if self.ref:
+            retval += [" REFERENCE_SEQUENCE={}".format(self.ref)]
+        return retval
+
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()]
 
@@ -134,6 +140,12 @@ class InsertMetrics(PicardJobTask):
     _config_subsection = "InsertMetrics"
     executable = "CollectInsertSizeMetrics.jar"
     target_suffix = luigi.Parameter(default=(".insert_metrics", ".insert_hist"), is_list=True)
+
+    def opts(self):
+        retval = list(self.options)
+        if self.ref:
+            retval += [" REFERENCE_SEQUENCE={}".format(self.ref)]
+        return retval
     
     def output(self):
         return [luigi.LocalTarget(self.target),
@@ -157,6 +169,12 @@ class HsMetrics(PicardJobTask):
     target_regions = luigi.Parameter(default=None)
     target_suffix = luigi.Parameter(default=".hs_metrics")
     
+    def opts(self):
+        retval = list(self.options)
+        if self.ref:
+            retval += [" REFERENCE_SEQUENCE={}".format(self.ref)]
+        return retval
+
     def args(self):
         if not self.bait_regions or not self.target_regions:
             raise Exception("need bait and target regions to run CalculateHsMetrics")

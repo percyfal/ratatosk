@@ -115,9 +115,11 @@ class RealignerTargetCreator(GATKIndexedJobTask):
     sub_executable = "RealignerTargetCreator"
     known = luigi.Parameter(default=(), is_list=True)
     target_suffix = luigi.Parameter(default=".intervals")
+    can_multi_thread = True
 
     def opts(self):
         retval = list(self.options)
+        retval += ["-nt " + str(self.num_threads)]
         if self.target_region:
             retval.append("-L {}".format(self.target_region))
         retval.append(" ".join(["-known {}".format(x) for x in self.known]))
@@ -345,9 +347,11 @@ class UnifiedGenotyper(GATKIndexedJobTask):
     target_suffix = luigi.Parameter(default=".vcf")
     dbsnp = luigi.Parameter(default=None)
     #label = luigi.Parameter(default=".RAW")?
+    can_multi_thread = True
 
     def opts(self):
         retval = list(self.options)
+        retval += ["-nt " + str(self.num_threads)]
         if self.target_region:
             retval += ["-L {}".format(self.target_region)]
         if self.dbsnp:
