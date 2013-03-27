@@ -70,6 +70,7 @@ class PicardJobTask(JobTask):
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.InputBamFile")
     target_suffix = luigi.Parameter(default=".bam")
     source_suffix = luigi.Parameter(default=".bam")
+    ref = luigi.Parameter(default=None)
 
     def jar(self):
         """Path to the jar for this Picard job"""
