@@ -14,7 +14,8 @@
 import random
 import sys
 import os
-import datetime
+import yaml
+from datetime import datetime
 import subprocess
 import logging
 import warnings
@@ -574,14 +575,23 @@ class PrintConfig(JobTask):
     task so that we know the exact parameter settings and programs
     used to run an analysis. Aim for reproducible research :)
     """
+    header = """# Created by {program} on {date}
+#
+# The ratatosk configuration file collects all configuration settings
+# for a run. In principle you could use this file as input to rerun
+# the analysis preserving exactly the same settings.
+#
+""".format(program="ratatosk", date=datetime.today().strftime("at %H:%M on %A %d, %B %Y"))
 
     def requires(self):
         return []
 
     def output(self):
-        cp = interface.RatatoskConfigParser()
-        cp.save(config_to_dict(interface.global_config), "config.yaml")
-        return luigi.LocalTarget("config.yaml")
+        filename = "ratatosk_config_{}.yaml".format(datetime.today().strftime("%Y_%m_%d_%H_%M"))
+        with open(filename, "w") as fh:
+            fh.write(self.header)
+            fh.write(yaml.safe_dump(config_to_dict(interface.global_config), default_flow_style=False, allow_unicode=True, width=1000))
+        return luigi.LocalTarget(filename)
 
     def run(self):
         return NotImplemented
