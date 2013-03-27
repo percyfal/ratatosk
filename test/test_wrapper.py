@@ -19,6 +19,7 @@ import ratatosk.lib.tools.fastqc
 import ratatosk.lib.utils.cutadapt
 import ratatosk.lib.utils.misc
 import ratatosk.lib.annotation.snpeff
+import ratatosk.lib.annotation.annovar
 import ngstestdata as ntd
 
 logging.basicConfig(level=logging.DEBUG)
@@ -357,4 +358,4 @@ class TestAnnotationWrapper(unittest.TestCase):
         self.assertTrue(any([x.startswith('##OriginalSnpEffVersion="2.0.5') for x in lines]))
 
     def test_summarize_annovar(self):
-        pass
+        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-annovar"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.annotation.annovar.SummarizeAnnovar)

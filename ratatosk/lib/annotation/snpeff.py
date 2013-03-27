@@ -21,20 +21,13 @@ import ratatosk.shell as shell
 
 logger = logging.getLogger('luigi-interface')
 
-JAVA="java"
-JAVA_OPTS="-Xmx2g"
-SNPEFF_HOME=os.getenv("SNPEFF_HOME") if os.getenv("SNPEFF_HOME") else os.curdir
-SNPEFF_JAR="snpEff.jar"
-
 class snpEffJobRunner(DefaultShellJobRunner):
-    path = SNPEFF_HOME
-
     def run_job(self, job):
-        if not job.jar() or not os.path.exists(os.path.join(self.path,job.jar())):
+        if not job.jar() or not os.path.exists(os.path.join(job.path(),job.jar())):
             logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),
                                                                      os.path.abspath(job.jar())))
             raise Exception("job jar does not exist")
-        arglist = [JAVA] + job.java_opt() + ['-jar', os.path.join(self.path, job.jar())]
+        arglist = [job.java()] + job.java_opt() + ['-jar', os.path.join(self.path, job.jar())]
         if job.main():
             arglist.append(self._get_main(job))
         if job.opts():
@@ -69,7 +62,9 @@ class InputVcfFile(InputJobTask):
 
 class snpEffJobTask(JobTask):
     _config_section = "snpeff"
-    executable = luigi.Parameter(default=SNPEFF_JAR)
+    exe_path = luigi.Parameter(default=os.getenv("SNPEFF_HOME") if os.getenv("SNPEFF_HOME") else os.curdir)
+    executable = luigi.Parameter(default="snpEff.jar")
+    java_exe = luigi.Parameter(default="java")
     source_suffix = luigi.Parameter(default=".vcf")
     target_suffix = luigi.Parameter(default=".vcf")
     config = luigi.Parameter(default=os.path.join(SNPEFF_HOME, "snpEff.config"))
@@ -93,7 +88,6 @@ class snpEffJobTask(JobTask):
 # exist
 class snpEffDownload(snpEffJobTask):
     pass
-
     
 class snpEff(snpEffJobTask):
     _config_subsection = "eff"

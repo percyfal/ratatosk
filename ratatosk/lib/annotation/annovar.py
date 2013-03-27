@@ -32,18 +32,36 @@ class InputVcfFile(InputJobTask):
 
 class AnnovarJobTask(JobTask):
     _config_section = "annovar"
+    exe_path = luigi.Parameter(default=os.getenv("ANNOVAR_HOME") if os.getenv("ANNOVAR_HOME") else os.curdir)
     genome = luigi.Parameter(default="hg19")
     dbsnp = luigi.Parameter(default=130)
 
     def exe(self):
-        # Annovar has no main executable
-        return ""
+        # Annovar has no main executable so return the sub_executable instead
+        return self.sub_executable
+
+    def main(self):
+        return None
     
 # FIXME: setup databases task should be requirement for downstream
 # calls
 class AnnovarDownDb(AnnovarJobTask):
-    pass
+    _config_subsection = "downdb"
 
-class AnnovarSummarizeAnnovar(AnnovarJobTask):
-    _config_subsection = "summarize_annovar"
+class Convert2Annovar(AnnovarJobTask):
+    _config_subsection = "convert2annovar"
+    label = luigi.Parameter(default=".avinput")
+    target_suffix = luigi.Parameter(default=".bam")
+    source_suffix = luigi.Parameter(default=".vcf")
+    # ~/local/bioinfo/annovar/convert2annovar.pl P001_101_index3_TGACCA_L001.sort.vcf -format vcf4 --outfile tabort.txt    
     
+class SummarizeAnnovar(AnnovarJobTask):
+    _config_subsection = "summarize_annovar"
+    db_requires = luigi.Parameter(default=("dbsnp",), is_list=True)
+    label = luigi.Parameter(default="-annovar")
+    parent_task = luigi.Parameter(default="ratatosk.lib.annotation.annovar.InputVcfFile")
+
+    def requires(self):
+        """Requires at least """
+        
+        return [AnnovarDownDb()]
