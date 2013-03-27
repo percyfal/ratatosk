@@ -357,5 +357,8 @@ class TestAnnotationWrapper(unittest.TestCase):
             lines = [x.strip() for x in fh.readlines()]
         self.assertTrue(any([x.startswith('##OriginalSnpEffVersion="2.0.5') for x in lines]))
 
+    def test_convert_annovar(self):
+        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-avinput.txt"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.annotation.annovar.Convert2Annovar)
+
     def test_summarize_annovar(self):
-        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-annovar"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.annotation.annovar.SummarizeAnnovar)
+        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-avinput.txt.log"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.annotation.annovar.SummarizeAnnovar)

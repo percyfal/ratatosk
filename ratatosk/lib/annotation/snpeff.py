@@ -27,7 +27,7 @@ class snpEffJobRunner(DefaultShellJobRunner):
             logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),
                                                                      os.path.abspath(job.jar())))
             raise Exception("job jar does not exist")
-        arglist = [job.java()] + job.java_opt() + ['-jar', os.path.join(self.path, job.jar())]
+        arglist = [job.java()] + job.java_opt() + ['-jar', os.path.join(job.path(), job.jar())]
         if job.main():
             arglist.append(self._get_main(job))
         if job.opts():
@@ -62,12 +62,13 @@ class InputVcfFile(InputJobTask):
 
 class snpEffJobTask(JobTask):
     _config_section = "snpeff"
-    exe_path = luigi.Parameter(default=os.getenv("SNPEFF_HOME") if os.getenv("SNPEFF_HOME") else os.curdir)
+    _snpeff_default_home = os.getenv("SNPEFF_HOME") if os.getenv("SNPEFF_HOME") else os.curdir
+    exe_path = luigi.Parameter(default=_snpeff_default_home)
     executable = luigi.Parameter(default="snpEff.jar")
     java_exe = luigi.Parameter(default="java")
     source_suffix = luigi.Parameter(default=".vcf")
     target_suffix = luigi.Parameter(default=".vcf")
-    config = luigi.Parameter(default=os.path.join(SNPEFF_HOME, "snpEff.config"))
+    config = luigi.Parameter(default=os.path.join(_snpeff_default_home, "snpEff.config"))
     genome = luigi.Parameter(default="GRCh37.64")
     java_options = luigi.Parameter(default=("-Xmx2g",), description="Java options", is_list=True)
 
@@ -76,6 +77,9 @@ class snpEffJobTask(JobTask):
 
     def exe(self):
         return self.jar()
+
+    def java(self):
+        return self.java_exe
 
     def java_opt(self):
         return list(self.java_options)

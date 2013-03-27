@@ -42,26 +42,78 @@ class AnnovarJobTask(JobTask):
 
     def main(self):
         return None
+
+    def job_runner(self):
+        return AnnovarJobRunner()
     
 # FIXME: setup databases task should be requirement for downstream
 # calls
-class AnnovarDownDb(AnnovarJobTask):
-    _config_subsection = "downdb"
+#
+# NOTE: Leaving this for now. Problem is we don't know the target
+# names, so it's up to the user to install the necessary databases.
+# 
+# One way to do this would be to make a dictionary of databases:
+
+# grep hgdownload annotate_variation.pl 
+#                 push @urlin, "http://hgdownload.cse.ucsc.edu/goldenPath/$buildver/database/refGene.txt.gz";
+#                 push @urlin, "http://hgdownload.cse.ucsc.edu/goldenPath/$buildver/database/refLink.txt.gz";
+#                 push @urlin, "http://hgdownload.cse.ucsc.edu/goldenPath/$buildver/database/knownGene.txt.gz";
+#                 push @urlin, "http://hgdownload.cse.ucsc.edu/goldenPath/$buildver/database/kgXref.txt.gz";
+#                 push @urlin, "http://hgdownload.cse.ucsc.edu/goldenPath/$buildver/database/ensGene.txt.gz";
+#                 push @urlin, "http://hgdownload.cse.ucsc.edu/goldenPath/$buildver/bigZips/chromFa.zip";         #example: hg18, hg19
+#                 push @urlin, "http://hgdownload.cse.ucsc.edu/goldenPath/$buildver/bigZips/chromFa.tar.gz";      #example: panTro2
+#                 push @urlin, "http://hgdownload.cse.ucsc.edu/goldenPath/$buildver/bigZips/$buildver.fa.gz";     #example: bosTau4
+#                 push @urlin, "ftp://hgdownload.cse.ucsc.edu/goldenPath/$buildver/database/phastConsElements$1.txt.gz";
+#
+# 
+# Needed databases for summarize annovar:
+#
+# $ANNOVAR_HOME/annotate_variation.pl -buildver hg19 -downdb refGene $ANNOVAR_HOME/humandb
+# $ANNOVAR_HOME/annotate_variation.pl -buildver hg19 -downdb snp130 $ANNOVAR_HOME/humandb
+#
+# class AnnovarDownDb(AnnovarJobTask):
+#     _config_subsection = "downdb"
+#     sub_executable = luigi.Parameter(default="annotate_variation.pl")
+#     dbdest = luigi.Parameter(default="humandb/", description="Database destination directory.")
+#     dbpath = luigi.Parameter(default=None, description="Database root path. Defaults to annovar path.")
 
 class Convert2Annovar(AnnovarJobTask):
     _config_subsection = "convert2annovar"
-    label = luigi.Parameter(default=".avinput")
-    target_suffix = luigi.Parameter(default=".bam")
+    sub_executable = luigi.Parameter(default="convert2annovar.pl")
+    label = luigi.Parameter(default="-avinput")
+    target_suffix = luigi.Parameter(default=".txt")
     source_suffix = luigi.Parameter(default=".vcf")
-    # ~/local/bioinfo/annovar/convert2annovar.pl P001_101_index3_TGACCA_L001.sort.vcf -format vcf4 --outfile tabort.txt    
+    # Should be coupled to source_suffix somehow
+    options = luigi.Parameter(default=("-format vcf4", ))
+    parent_task = luigi.Parameter(default="ratatosk.lib.annotation.annovar.InputVcfFile")
     
+    def args(self):
+        return [self.input(), "--outfile", self.output()]
+
+
+# Needed databases
+# humandb/hg19_ALL.sites.2011_05.txt
+# humandb/hg19_MT_GRCh37_ensGene.txt
+# humandb/hg19_avsift.txt
+# humandb/hg19_esp5400_all.txt
+# humandb/hg19_genomicSuperDups.txt
+# humandb/hg19_ljb_all.txt
+# humandb/hg19_phastConsElements46way.txt
+# humandb/hg19_refGene.txt
+# humandb/hg19_refLink.txt
+# humandb/hg19_snp132.txt
 class SummarizeAnnovar(AnnovarJobTask):
     _config_subsection = "summarize_annovar"
-    db_requires = luigi.Parameter(default=("dbsnp",), is_list=True)
-    label = luigi.Parameter(default="-annovar")
-    parent_task = luigi.Parameter(default="ratatosk.lib.annotation.annovar.InputVcfFile")
+    sub_executable = luigi.Parameter(default="summarize_annovar.pl")
+    # This variable would be used with AnnovarDownDb requirement
+    # db_requires = luigi.Parameter(default=("dbsnp",), is_list=True)
+    parent_task = luigi.Parameter(default="ratatosk.lib.annotation.annovar.Convert2Annovar")
+    target_suffix = luigi.Parameter(default=".log")
+    source_suffix = luigi.Parameter(default="")
+    options = luigi.Parameter(default=("-buildver hg19", "-verdbsnp 132", "-ver1000g 1000g2011may"))
+    db = luigi.Parameter(default="humandb")
+    dbpath = luigi.Parameter(default=None, description="Database search path. Annovar search path is used if no information provided.")
 
-    def requires(self):
-        """Requires at least """
-        
-        return [AnnovarDownDb()]
+    def args(self):
+        annovardb = os.path.join(self.dbpath if self.dbpath else self.path(), self.db)
+        return [self.input(), annovardb]
