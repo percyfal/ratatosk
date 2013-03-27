@@ -359,6 +359,13 @@ class TestAnnotationWrapper(unittest.TestCase):
 
     def test_convert_annovar(self):
         luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-avinput.txt"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.annotation.annovar.Convert2Annovar)
+        self.assertTrue(os.path.exists(self.bam.replace(".bam", "-avinput.txt")))
+        with open(self.bam.replace(".bam", "-avinput.txt")) as fh:
+            data = fh.readlines()
+        self.assertEqual("chr11", data[0].split()[0])
+
 
     def test_summarize_annovar(self):
         luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-avinput.txt.log"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.annotation.annovar.SummarizeAnnovar)
+        self.assertTrue(os.path.exists(self.bam.replace(".bam", "-avinput.txt.exome_summary.csv")))
+        self.assertTrue(os.path.exists(self.bam.replace(".bam", "-avinput.txt.genome_summary.csv")))
