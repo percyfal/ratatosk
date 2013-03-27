@@ -119,7 +119,7 @@ class RealignerTargetCreator(GATKIndexedJobTask):
 
     def opts(self):
         retval = list(self.options)
-        retval += ["-nt " + str(self.num_threads)]
+        retval += ["-nt {}".format(self.num_threads)]
         if self.target_region:
             retval.append("-L {}".format(self.target_region))
         retval.append(" ".join(["-known {}".format(x) for x in self.known]))
@@ -351,7 +351,7 @@ class UnifiedGenotyper(GATKIndexedJobTask):
 
     def opts(self):
         retval = list(self.options)
-        retval += ["-nt " + str(self.num_threads)]
+        retval += ["-nt {}".format(self.num_threads)]
         if self.target_region:
             retval += ["-L {}".format(self.target_region)]
         if self.dbsnp:
