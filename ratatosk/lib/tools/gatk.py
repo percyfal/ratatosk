@@ -119,11 +119,11 @@ class RealignerTargetCreator(GATKIndexedJobTask):
 
     def opts(self):
         retval = list(self.options)
-        retval += ["-nt {}".format(self.num_threads)]
+        retval.append("-nt {}".format(self.num_threads))
         if self.target_region:
             retval.append("-L {}".format(self.target_region))
         retval.append(" ".join(["-known {}".format(x) for x in self.known]))
-        return " ".join(retval)
+        return retval
 
     def requires(self):
         cls = self.set_parent_task()
@@ -156,7 +156,7 @@ class IndelRealigner(GATKIndexedJobTask):
     def opts(self):
         retval = list(self.options)
         retval += ["{}".format(" ".join(["-known {}".format(x) for x in self.known]))]
-        return " ".join(retval)
+        return retval
 
     def args(self):
         retval = ["-I", self.input()[0], "-o", self.output(), "--targetIntervals", self.input()[2]]
