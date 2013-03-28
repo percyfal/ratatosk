@@ -366,6 +366,6 @@ class TestAnnotationWrapper(unittest.TestCase):
 
 
     def test_summarize_annovar(self):
-        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-avinput.txt.log"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.annotation.annovar.SummarizeAnnovar)
+        luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-avinput.txt.log"), '--config-file', localconf]), main_task_cls=ratatosk.lib.annotation.annovar.SummarizeAnnovar)
         self.assertTrue(os.path.exists(self.bam.replace(".bam", "-avinput.txt.exome_summary.csv")))
         self.assertTrue(os.path.exists(self.bam.replace(".bam", "-avinput.txt.genome_summary.csv")))

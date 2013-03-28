@@ -86,7 +86,7 @@ class Convert2Annovar(AnnovarJobTask):
     # Should be coupled to source_suffix somehow
     options = luigi.Parameter(default=("-format vcf4", ))
     parent_task = luigi.Parameter(default="ratatosk.lib.annotation.annovar.InputVcfFile")
-    
+
     def args(self):
         return [self.input(), "--outfile", self.output()]
 
@@ -110,7 +110,7 @@ class SummarizeAnnovar(AnnovarJobTask):
     parent_task = luigi.Parameter(default="ratatosk.lib.annotation.annovar.Convert2Annovar")
     target_suffix = luigi.Parameter(default=".log")
     source_suffix = luigi.Parameter(default="")
-    options = luigi.Parameter(default=("-buildver hg19", "-verdbsnp 132", "-ver1000g 1000g2011may"))
+    options = luigi.Parameter(default=("-buildver hg19", "-verdbsnp 132", "-ver1000g 1000g2011may", "-remove"))
     db = luigi.Parameter(default="humandb")
     dbpath = luigi.Parameter(default=None, description="Database search path. Annovar search path is used if no information provided.")
 

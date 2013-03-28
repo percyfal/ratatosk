@@ -461,10 +461,10 @@ class BaseJobTask(luigi.Task):
         """
         source = self.target
         if isinstance(self.target_suffix, tuple):
-            if self.target_suffix[0] and self.source_suffix:
+            if self.target_suffix[0] and not self.source_suffix is None:
                 source = rreplace(source, self.target_suffix[0], self.source_suffix, 1)
         else:
-            if self.target_suffix and self.source_suffix:
+            if self.target_suffix and not self.source_suffix is None:
                 source = rreplace(source, self.target_suffix, self.source_suffix, 1)
         if not self.label:
             return source
