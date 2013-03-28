@@ -134,6 +134,8 @@ def make_fastq_links(targets, indir, outdir, fastq_suffix="001.fastq.gz", ssheet
             if not os.path.exists(newpath):
                 logger.info("Linking {} -> {}".format(newpath, os.path.abspath(f)))
                 os.symlink(os.path.abspath(f), newpath)
+            if not os.path.lexists(os.path.join(os.path.dirname(newpath), ssheet)) and os.path.exists(os.path.abspath(os.path.join(os.path.dirname(f), ssheet))):
+                os.symlink(os.path.abspath(os.path.join(os.path.dirname(f), ssheet)), os.path.join(os.path.dirname(newpath), ssheet))
         newtargets.append((tgt[0], 
                            os.path.join(outdir, os.path.relpath(tgt[1], indir)),
                            os.path.join(outdir, os.path.relpath(tgt[2], indir))))
