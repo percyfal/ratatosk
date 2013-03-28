@@ -23,7 +23,7 @@ setup(name = "ratatosk",
       author_email = "per.unneberg@scilifelab.se",
       description = "Project/pipeline manager",
       license = "Apache",
-      scripts = glob.glob('scripts/*.py'),
+      scripts = glob.glob('scripts/*.py') + ['bin/ratatoskd'],
       install_requires = [
         "drmaa >= 0.5",
         "mock",
