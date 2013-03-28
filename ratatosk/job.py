@@ -537,7 +537,20 @@ class JobWrapperTask(JobTask):
 
     def run(self):
         pass
-        
+
+class GenericWrapper(JobWrapperTask):
+    """Generic task wrapper"""
+    generic_wrapper_target = luigi.Parameter(default=(), is_list=True)
+    task = luigi.Parameter(default=None)
+
+    def requires(self):
+        from luigi.task import Register
+        if not self.task in Register.get_reg().keys():
+            logger.warn("No such task {} in registry; skipping".format(self.task))
+            return []
+        else:
+            cls = Register.get_reg()[self.task]
+            return [cls(target=x) for x in self.generic_wrapper_target]
 
 class PipelineTask(JobWrapperTask):
     """Wrapper task for predefined pipelines. Adds option
@@ -576,6 +589,8 @@ class PrintConfig(JobTask):
     used to run an analysis. Aim for reproducible research :)
     """
     header = """# Created by {program} on {date}
+#
+# Command: TODO: insert command here 
 #
 # The ratatosk configuration file collects all configuration settings
 # for a run. In principle you could use this file as input to rerun

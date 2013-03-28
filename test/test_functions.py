@@ -49,7 +49,6 @@ class TestGeneralFunctions(unittest.TestCase):
 
         # gatk4().name_prefix()
 
-
 class TestFunctions(unittest.TestCase):
     def setUp(self):
         self.project = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "projects", "J.Doe_00_01"))
