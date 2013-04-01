@@ -229,8 +229,8 @@ anything. In addition, it will print the tasks that will be called.
 By passing a target
 	
 	ratatosk_run.py RawIndelRealigner 
-	  --target P001_101_index3/P001_101_index3_TGACCA_L001.trimmed.sync.sort.merge.realign.bam
-	  --custom-config ~/opt/ratatosk/examples/J.Doe_00_01.yaml --dry-run
+	  --target P001_101_index3/P001_101_index3.merge.realign.bam
+      --custom-config ~/opt/ratatosk/examples/J.Doe_00_01.yaml --dry-run
 
 we get the dependencies as specified in the config file:
 
@@ -249,7 +249,7 @@ sample_run files and places the result in the sample directory. The
 implementation currently depends on the directory structure
 'sample/fc1', sample/fc2' etc.
 
-	ratatosk_run.py MergeSamFiles  --target P001_101_index3/P001_101_index3_TGACCA_L001.sort.merge.bam
+	ratatosk_run.py MergeSamFiles  --target P001_101_index3/P001_101_index3.sort.merge.bam
 	  --config-file ~/opt/ratatosk/examples/J.Doe_00_01.yaml
 
 results in 
@@ -274,7 +274,7 @@ Changing the following configuration section (see `J.Doe_00_01_trim.yaml`):
 and running 
 
 	ratatosk_run.py MergeSamFiles  
-		--target P001_101_index3/P001_101_index3_TGACCA_L001.trimmed.sync.sort.merge.bam 
+		--target P001_101_index3/P001_101_index3.trimmed.sync.sort.merge.bam 
 		--config-file ~/opt/ratatosk/examples/J.Doe_00_01_trim.yaml
 
 	
@@ -320,7 +320,7 @@ picard:
 
 Running 
 
-	ratatosk_run.py PicardMetricsNonDup  --target P001_101_index3/P001_101_index3_TGACCA_L001.sort.merge.dup
+	ratatosk_run.py PicardMetricsNonDup  --target P001_101_index3/P001_101_index3.sort.merge.dup
 	  --config-file ~/opt/ratatosk/examples/J.Doe_00_01_nondup.yaml
 	
 will add hybrid selection calculation on non-deduplicated bam file for sample *P001_101_index3*:

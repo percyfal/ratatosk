@@ -25,7 +25,7 @@ picard:
   MergeSamFiles:
     # How is this module found?!?
     parent_task: ratatosk.lib.tools.picard.SortSam
-    target_generator_function: test.site_functions.organize_sample_runs
+    target_generator_function: test.site_functions.collect_sample_runs
   DuplicationMetrics:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   PicardMetrics:
