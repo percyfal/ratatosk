@@ -21,4 +21,4 @@ def _luigi_args(args):
 class TestWrapper(unittest.TestCase):
     def test_generic_wrapper_luigi(self):
         """Test Generic wrapper called from luigi"""
-        luigi.run(_luigi_args(['--targets', "test.txt", '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.IndelRealigner']), main_task_cls=ratatosk.job.GenericWrapper)
+        luigi.run(_luigi_args(['--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.IndelRealigner']), main_task_cls=ratatosk.job.GenericWrapper)

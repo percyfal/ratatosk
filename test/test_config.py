@@ -84,6 +84,7 @@ class TestConfigUpdate(unittest.TestCase):
         File = MockFile
         MockFile._file_contents.clear()
         self.cnf = get_config()
+        self.cnf.del_config_path("mock.yaml")
         with open("mock.yaml", "w") as fp:
             fp.write(yaml.safe_dump({'gatk':{'parent_task':'another.class', 'UnifiedGenotyper':{'parent_task': 'no.such.class'}}}, default_flow_style=False))
 
