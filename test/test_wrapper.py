@@ -103,8 +103,9 @@ class TestMiscWrappers(unittest.TestCase):
         luigi.run(_luigi_args(['--target', fastq1, '--config-file', localconf, '--use-long-names']), main_task_cls=ratatosk.lib.files.fastq.FastqFileLink)
         self.assertTrue(os.path.exists(fastq1))
         with gzip.open(fastq1) as fp:
-            h2 = fp.readlines()[0:2]
-            self.assertEqual(h2, ['@SRR359498.2255156/1\n', 'AAAGAAACATAAAGCCATATCATGTTTAACGAGAAGGGCTTATTGTATCATTTATGAGATCTTCTTGTAAATCACT\n'])
+            h2 = fp.readlines()[0:3]
+            self.assertTrue(h2[0].startswith("@SRR"))
+            self.assertEqual(h2[2].rstrip(), "+")
 
     def test_cutadapt(self):
         luigi.run(_luigi_args(['--target', os.path.basename(fastq1.replace(".fastq.gz", ".trimmed.fastq.gz")), '--config-file', localconf, '--parent-task', 'ratatosk.lib.files.fastq.FastqFileLink']), main_task_cls=ratatosk.lib.utils.cutadapt.CutadaptJobTask)
@@ -317,6 +318,8 @@ class TestGATKWrappers(unittest.TestCase):
         luigi.run(_luigi_args(['--target', self.mergebam.replace(".bam", ".realign.recal.clip.filtered.eval_metrics"), '--config-file', localconf]), main_task_cls=ratatosk.lib.tools.gatk.VariantEval)
         self.assertTrue(os.path.exists(self.mergebam.replace(".bam", ".realign.recal.clip.filtered.eval_metrics")))
 
+
+has_annovar = not (os.getenv("ANNOVAR_HOME") is None or os.getenv("ANNOVAR_HOME") == "")
 class TestAnnotationWrapper(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -357,6 +360,7 @@ class TestAnnotationWrapper(unittest.TestCase):
             lines = [x.strip() for x in fh.readlines()]
         self.assertTrue(any([x.startswith('##OriginalSnpEffVersion="2.0.5') for x in lines]))
 
+    @unittest.skipIf(not has_annovar, "No ANNOVAR_HOME set; skipping")
     def test_convert_annovar(self):
         luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-avinput.txt"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.annotation.annovar.Convert2Annovar)
         self.assertTrue(os.path.exists(self.bam.replace(".bam", "-avinput.txt")))
@@ -364,7 +368,7 @@ class TestAnnotationWrapper(unittest.TestCase):
             data = fh.readlines()
         self.assertEqual("chr11", data[0].split()[0])
 
-
+    @unittest.skipIf(not has_annovar, "No ANNOVAR_HOME set; skipping")
     def test_summarize_annovar(self):
         luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-avinput.txt.log"), '--config-file', localconf]), main_task_cls=ratatosk.lib.annotation.annovar.SummarizeAnnovar)
         self.assertTrue(os.path.exists(self.bam.replace(".bam", "-avinput.txt.exome_summary.csv")))

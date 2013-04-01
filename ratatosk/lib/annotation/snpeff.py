@@ -68,7 +68,7 @@ class snpEffJobTask(JobTask):
     java_exe = luigi.Parameter(default="java")
     source_suffix = luigi.Parameter(default=".vcf")
     target_suffix = luigi.Parameter(default=".vcf")
-    config = luigi.Parameter(default=os.path.join(_snpeff_default_home, "snpEff.config"))
+    snpeff_config = luigi.Parameter(default=os.path.join(_snpeff_default_home, "snpEff.config"))
     genome = luigi.Parameter(default="GRCh37.64")
     java_options = luigi.Parameter(default=("-Xmx2g",), description="Java options", is_list=True)
 
@@ -101,9 +101,10 @@ class snpEff(snpEffJobTask):
     parent_task = luigi.Parameter(default="ratatosk.lib.annotation.snpeff.InputVcfFile")
         
     def args(self):
+        print dir(self)
         retval = ["-i", self.source_suffix.strip("."),
                   "-o", self.target_suffix.strip("."),
-                  "-c", self.config,
+                  "-c", self.snpeff_config,
                   self.genome,
                   self.input(),
                   ">", self.output()

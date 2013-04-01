@@ -60,3 +60,21 @@ class VcfFile(luigi.ExternalTask):
         if not self.target:
             return None
         return luigi.LocalTarget(os.path.abspath(self.target))
+
+class TxtFile(luigi.ExternalTask):
+    target = luigi.Parameter(default=None)
+    label = luigi.Parameter(default=None)
+
+    def output(self):
+        if not self.target:
+            return None
+        return luigi.LocalTarget(os.path.abspath(self.target))
+
+class Path(luigi.ExternalTask):
+    target = luigi.Parameter(default=None)
+    label = luigi.Parameter(default=None)
+
+    def output(self):
+        if not self.target:
+            return None
+        return luigi.LocalTarget(os.path.abspath(self.target))

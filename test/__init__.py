@@ -18,14 +18,13 @@ import unittest
 from mako.template import Template
 
 logging.basicConfig(level=logging.INFO)
-msg = "Not all required environment variables have been set; at least GATK_HOME, PICARD_HOME, ANNOVAR_HOME, SNPEFF_HOME need to be set"
+msg = "Not all required environment variables have been set; at least GATK_HOME, PICARD_HOME, SNPEFF_HOME need to be set"
 def has_environment_variables():
     # Currently need to check for GATK_HOME and PICARD_HOME
     has_gatk = not (os.getenv("GATK_HOME") is None or os.getenv("GATK_HOME") == "")
     has_picard = not (os.getenv("PICARD_HOME") is None or os.getenv("PICARD_HOME") == "")
-    has_annovar = not (os.getenv("ANNOVAR_HOME") is None or os.getenv("ANNOVAR_HOME") == "")
     has_snpeff = not (os.getenv("SNPEFF_HOME") is None or os.getenv("SNPEFF_HOME") == "")
-    return all([has_gatk, has_picard, has_annovar, has_snpeff])
+    return all([has_gatk, has_picard, has_snpeff])
 
 ngsloadmsg = "No ngstestdata module; skipping test. Do a 'git clone https://github.com/percyfal/ngs.test.data' followed by 'python setup.py develop'"
 has_data = False
