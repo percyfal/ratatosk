@@ -37,10 +37,7 @@ class AlignSeqcap(PipelineTask):
             return
         if self.outdir is None:
             self.outdir = self.indir
-        tgt_fun = self.set_target_generator_function()
-        if not tgt_fun:
-            return []
-        targets = tgt_fun(self.indir, sample=self.sample, flowcell=self.flowcell, lane=self.lane)
+        targets = [tgt for tgt in self.target_iterator()]
         if self.outdir != self.indir:
             targets = make_fastq_links(targets, self.indir, self.outdir)
 

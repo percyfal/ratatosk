@@ -252,7 +252,7 @@ class TestGATKWrappers(unittest.TestCase):
             if os.path.exists(os.path.join(os.path.dirname(fq), "SampleSheet.csv")):
                 if not os.path.lexists(os.path.join(outdir, "SampleSheet.csv")):
                     os.symlink(os.path.join(os.path.relpath(os.path.dirname(fq), os.path.dirname(fqlink)), "SampleSheet.csv"), os.path.join(outdir, "SampleSheet.csv"))
-        self.mergebam = os.path.join(os.curdir, samplename, "{}.sort.merge.bam".format(sample))
+        self.mergebam = os.path.join(os.curdir, samplename, "{}.sort.merge.bam".format(samplename))
 
     def tearDown(self):
         Pfiles = glob.glob("P*")

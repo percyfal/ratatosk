@@ -17,6 +17,7 @@ from datetime import datetime
 import time
 import luigi
 import glob
+import itertools
 import logging
 
 logger = logging.getLogger('luigi-interface')
@@ -150,3 +151,31 @@ def which(name, flags=os.X_OK):
     #             if os.access(pext, flags):
 	#                 result.append(pext)
     return result
+
+def opt_to_dict(opts):
+    """Transform option list to a dictionary.
+
+    :param opts: option list
+    
+    :returns: option dictionary
+    """
+    if isinstance(opts, dict):
+        return
+    if isinstance(opts, str):
+        opts = opts.split(" ")
+    args = list(itertools.chain.from_iterable([x.split("=") for x in opts]))
+    opt_d = {k: True if v.startswith('-') else v
+             for k,v in zip(args, args[1:]+["--"]) if k.startswith('-')}
+    return opt_d
+
+
+def dict_to_opt(opt_dict):
+    """Transform option dict to an option list.
+
+    :param opt_dict: option dict
+    
+    :returns: option list
+    """
+    args = list(itertools.chain.from_iterable([(k,v) for k,v in opt_dict.iteritems()]))
+    ret_args = [x for x in args if not isinstance(x, bool)]
+    return ret_args

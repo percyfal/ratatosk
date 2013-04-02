@@ -15,6 +15,7 @@ import os
 import yaml
 import logging
 from ConfigParser import NoSectionError, NoOptionError, DuplicateSectionError
+from ratatosk import backend
 from ratatosk.utils import update, config_to_dict
 
 logger = logging.getLogger('luigi-interface')
@@ -336,15 +337,16 @@ def get_custom_config():
     parent_task setting will override config file settings"""
     return RatatoskCustomConfigParser.instance()
 
-
-def setup_config(config_file, custom_config_file=None):
+def setup_config(config_file=None, custom_config_file=None, **kwargs):
     """Helper function to setup config at startup"""
-    config = get_config()
-    config.add_config_path(config_file)
-    backend.__global_config__ = update(backend.__global_config__, vars(config)["_sections"])
+    if config_file:
+        config = get_config()
+        config.add_config_path(config_file)
+        backend.__global_config__ = update(backend.__global_config__, vars(config)["_sections"])
     if custom_config_file:
         custom_config = get_custom_config()
         custom_config.add_config_path(custom_config_file)
         backend.__global_config__ = update(backend.__global_config__, vars(custom_config)["_sections"])
+
 
 

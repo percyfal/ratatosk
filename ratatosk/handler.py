@@ -181,7 +181,7 @@ def target_generator_validator(fn):
         raise ValueError, "target generator function must return a 3-tuple consisting of sample, sample target prefix, sample run prefix"
     return True
 
-def setup_global_handlers(hlist=["target_generator_function"]):
+def setup_global_handlers(hlist=["target_generator_handler"]):
     """Helper function to setup global handlers defined in 'settings'
     section. 
     
@@ -190,4 +190,5 @@ def setup_global_handlers(hlist=["target_generator_function"]):
         return
     for key in hlist:
         if key in backend.__global_config__["settings"]:
-            register(backend.__global_config__["settings"][key])
+            h = RatatoskHandler(label=key, mod=backend.__global_config__["settings"][key])
+            register(h)

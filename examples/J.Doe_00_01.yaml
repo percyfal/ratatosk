@@ -1,4 +1,7 @@
 # Project configuration file
+settings:
+  target_generator_handler: test.site_functions.target_generator
+
 bwa:
   bwaref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
   aln:
