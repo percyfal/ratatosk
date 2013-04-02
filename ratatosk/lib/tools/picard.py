@@ -19,6 +19,8 @@ import glob
 import ratatosk.lib.files.external
 from ratatosk.utils import rreplace
 from ratatosk.job import InputJobTask, JobWrapperTask, JobTask, DefaultShellJobRunner
+from ratatosk.handler import RatatoskHandler, register, register_task_handler
+from ratatosk import backend
 import ratatosk.shell as shell
 
 logger = logging.getLogger('luigi-interface')
@@ -116,12 +118,15 @@ class MergeSamFiles(PicardJobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        tgt_fun = self.set_target_generator_function()
-        if tgt_fun:
-            sources = tgt_fun(self)
-            return [cls(target=src) for src in sources]    
-        else:
+        sources = []
+        if self.target_generator_function and self.target_generator_function not in self.__handlers__.keys():
+            tgf = RatatoskHandler(label="target_generator_handler", mod=self.target_generator_function)
+            register_task_handler(self, tgf)
+        if not "target_generator_handler" in self.__handlers__.keys():
+            logging.warn("MergeSamFiles requires a target generator hanler; no defaults are as of yet implemented")
             return []
+        sources = self.__handlers__["target_generator_handler"](self)
+        return [cls(target=src) for src in sources]    
     
 class AlignmentMetrics(PicardJobTask):
     _config_subsection = "AlignmentMetrics"

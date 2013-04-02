@@ -18,28 +18,7 @@ from ratatosk.utils import rreplace
 
 logging.basicConfig(level=logging.DEBUG)
 
-def organize_sample_runs(task):
-    # This currently relies on the folder structure sample/fc1,
-    # sample/fc2 etc... This should possibly also be a
-    # configurable function?
-    # NB: this is such a pain to get right I'm adding lots of debug right now
-    logging.debug("Organizing samples for {}".format(task.target))
-    targetdir = os.path.dirname(task.target)
-    flowcells = os.listdir(targetdir)
-    bam_list = []
-    for fc in flowcells:
-        fc_dir = os.path.join(targetdir, fc)
-        if not os.path.isdir(fc_dir):
-            continue
-        if not fc_dir.endswith("XX"):
-            continue
-        logging.debug("Looking in directory {}".format(fc))
-        # This assumes only one sample run per flowcell
-        bam_list.append(os.path.join(fc_dir, os.path.basename(rreplace(task.target, "{}{}".format(task.label, task.target_suffix), task.source_suffix, 1))))
-    logging.debug("Generated target bamfile list {}".format(bam_list))
-    return bam_list
-
-def collect_sample_runs(task):
+def collect_sample_runs(task=None, *args, **kwargs):
     """Collect sample runs for a sample. Since it is to be used with
     MergeSamFiles it should return a list of targets.
 
@@ -48,9 +27,10 @@ def collect_sample_runs(task):
     :return: list of bam files for each sample run in a flowcell directory
     """
     logging.debug("Collecting sample runs for {}".format(task.target))
-    sample_runs = target_generator(os.path.dirname(os.path.dirname(os.path.abspath(task.target))), 
+    sample_runs = target_generator(indir=os.path.dirname(os.path.dirname(os.path.abspath(task.target))), 
                                    sample=[os.path.basename(os.path.dirname(task.target))])
-    bam_list = [x[2] + os.path.basename(rreplace(task.target.replace(x[0], ""), "{}{}".format(task.label, task.target_suffix), task.source_suffix, 1)) for x in sample_runs]
+    # Hacky way to get at suffix of target
+    bam_list = [x[2] + rreplace(task.target.split(os.path.basename(x[2]))[-1], "{}{}".format(task.label, task.target_suffix), task.source_suffix, 1) for x in sample_runs]
     logging.debug("Generated target bamfile list {}".format(bam_list))
     return bam_list
 
@@ -73,6 +53,56 @@ def target_generator(indir, sample=None, flowcell=None, lane=None):
     # Only run this sample if provided at command line.
     if sample:
         samples = sample
+    for s in samples:
+        sampledir = os.path.join(indir, s)
+        if not os.path.isdir(sampledir):
+            continue
+        flowcells = [fc for fc in os.listdir(sampledir) if fc.endswith("XX")]
+        for fc in flowcells:
+            if flowcell and not fc in flowcell:
+                continue
+            fc_dir = os.path.join(sampledir, fc)
+            # Yes folks, we also need to know the barcode and the lane...
+            # Parse the flowcell config
+            if os.path.exists(os.path.join(fc_dir, "SampleSheet.csv")):
+                fh = file(os.path.join(fc_dir, "SampleSheet.csv"))
+                ssheet = csv.DictReader([x for x in fh if x[0] != "#"])
+            else:
+                logging.warn("No sample sheet for sample '{}' in flowcell '{}';  trying bcbio format".format(s, fc))
+                runinfo = glob.glob(os.path.join(fc_dir, "{}*-bcbb-config.yaml".format(s)))
+                if not os.path.exists(runinfo[0]):
+                    logging.warn("No sample information for sample '{}' in flowcell '{}';  skipping".format(s, fc))
+                    continue
+                else:
+                    ssheet = bcbio_config_to_sample_sheet(runinfo[0])
+            for line in ssheet:
+                logging.info("Adding sample '{0}' from flowcell '{1}' (barcode '{2}') to analysis".format(s, fc, line['Index']))
+                targets.append((s, os.path.join(sampledir, s), 
+                                os.path.join(fc_dir, "{}_{}_L00{}".format(s, line['Index'], line['Lane'] ))))
+    return targets
+
+
+
+def old_target_generator(indir=None, sample=None, flowcell=None, lane=None, *args, **kwargs):
+    """Make all desired target output names based on the final target
+    suffix. 
+
+    :param indir: input directory
+    :param sample: list of sample names to include
+    :param flowcell: list of flowcells to include
+    :param lane: list of lanes to include
+
+    :return: list of tuples consisting of sample, sample target prefix (merge target), sample run prefix (read pair prefix)
+    """
+    targets = []
+    if not os.path.exists(indir):
+        logging.warn("No such input directory '{}'".format(indir))
+        return targets
+    # Only run this sample if provided at command line.
+    if sample:
+        samples = sample
+    else:
+        samples = os.listdir(indir)
     for s in samples:
         sampledir = os.path.join(indir, s)
         if not os.path.isdir(sampledir):

@@ -237,6 +237,7 @@ class TestGATKWrappers(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         fastqfiles = []
+        ssheetfiles = []
         for root, dirs, files in os.walk(projectdir):
             fastq = [os.path.join(root, x) for x in files if x.endswith(".fastq.gz")]
             if fastq:
@@ -246,9 +247,11 @@ class TestGATKWrappers(unittest.TestCase):
             if not os.path.exists(outdir):
                 os.makedirs(outdir)
             fqlink = os.path.join(outdir, os.path.basename(fq))
-            if not os.path.exists(fqlink):
+            if not os.path.lexists(fqlink):
                 os.symlink(os.path.join(os.path.relpath(os.path.dirname(fq), os.path.dirname(fqlink)), os.path.basename(fq)), fqlink)
-
+            if os.path.exists(os.path.join(os.path.dirname(fq), "SampleSheet.csv")):
+                if not os.path.lexists(os.path.join(outdir, "SampleSheet.csv")):
+                    os.symlink(os.path.join(os.path.relpath(os.path.dirname(fq), os.path.dirname(fqlink)), "SampleSheet.csv"), os.path.join(outdir, "SampleSheet.csv"))
         self.mergebam = os.path.join(os.curdir, samplename, "{}.sort.merge.bam".format(sample))
 
     def tearDown(self):
@@ -320,6 +323,7 @@ class TestGATKWrappers(unittest.TestCase):
 
 
 has_annovar = not (os.getenv("ANNOVAR_HOME") is None or os.getenv("ANNOVAR_HOME") == "")
+has_snpeff = not (os.getenv("SNPEFF_HOME") is None or os.getenv("SNPEFF_HOME") == "")
 class TestAnnotationWrapper(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -333,14 +337,16 @@ class TestAnnotationWrapper(unittest.TestCase):
 
     def tearDown(self):
         Pfiles = glob.glob("P*")
-        #[os.unlink(x) for x in Pfiles if os.path.isfile(x)]
+        [os.unlink(x) for x in Pfiles if os.path.isfile(x)]
 
+    @unittest.skipIf(not has_snpeff, "No SNPEFF_HOME set; skipping")   
     def test_snpeff(self):
         luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-effects.vcf"), '--config-file', localconf]), main_task_cls=ratatosk.lib.annotation.snpeff.snpEff)
         with open(self.bam.replace(".bam", "-effects.vcf")) as fh:
             lines = [x.strip() for x in fh.readlines()]
         self.assertTrue(lines[0].startswith("##fileformat=VCF"))
 
+    @unittest.skipIf(not has_snpeff, "No SNPEFF_HOME set; skipping")  
     def test_snpeff_txt(self):
         luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-effects.txt"), '--target-suffix', '.txt', '--config-file', localconf]), main_task_cls=ratatosk.lib.annotation.snpeff.snpEff)
         with open(self.bam.replace(".bam", "-effects.txt")) as fh:
@@ -354,6 +360,7 @@ class TestAnnotationWrapper(unittest.TestCase):
             lines = [x.strip() for x in fh.readlines()]
         self.assertTrue(any([x.startswith('##INFO=<ID=MQRankSum') for x in lines]))
         
+    @unittest.skipIf(not has_snpeff, "No SNPEFF_HOME set; skipping")  
     def test_GATK_snpeff_variant_annotator(self):
         luigi.run(_luigi_args(['--target', self.bam.replace(".bam", "-annotated.vcf"), '--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.UnifiedGenotyper']), main_task_cls=ratatosk.lib.tools.gatk.VariantSnpEffAnnotator)
         with open(self.bam.replace(".bam", "-annotated.vcf")) as fh:

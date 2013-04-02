@@ -6,8 +6,8 @@ import luigi
 import logging
 import yaml
 import ratatosk
-from ratatosk.interface import get_config, get_custom_config, RatatoskConfigParser
-from ratatosk import interface
+from ratatosk.config import get_config, get_custom_config, RatatoskConfigParser
+from ratatosk import interface, backend
 import ratatosk.lib.align.bwa
 import ratatosk.lib.files.fastq
 import ratatosk.lib.tools.gatk
@@ -47,7 +47,7 @@ class TestConfigParser(unittest.TestCase):
         """Test getting config instance"""
         cnf = get_config()
         cnf.add_config_path(configfile)
-        self.assertIsInstance(cnf, ratatosk.interface.RatatoskConfigParser)
+        self.assertIsInstance(cnf, ratatosk.config.RatatoskConfigParser)
         cnf.del_config_path(configfile)
         
     def test_get_list(self):
@@ -84,9 +84,9 @@ class TestConfigUpdate(unittest.TestCase):
         File = MockFile
         MockFile._file_contents.clear()
         self.cnf = get_config()
-        self.cnf.del_config_path("mock.yaml")
         with open("mock.yaml", "w") as fp:
             fp.write(yaml.safe_dump({'gatk':{'parent_task':'another.class', 'UnifiedGenotyper':{'parent_task': 'no.such.class'}}}, default_flow_style=False))
+        self.cnf.del_config_path("mock.yaml")
 
     def tearDown(self):
         if os.path.exists("mock.yaml"):
@@ -132,12 +132,12 @@ class TestGlobalConfig(unittest.TestCase):
         self.cnf._config_paths = []
 
     def test_global_config(self):
-        """Test that interface.global_config is updated correctly when instantiating a task"""
+        """Test that backend.__global_config__ is updated correctly when instantiating a task"""
         # Is updated by other tests, so can't be sure it's empty
         # self.assertEqual(interface.global_config, {})
-        interface.global_config = {}
+        backend.__global_config__ = {}
         ug = ratatosk.lib.tools.gatk.UnifiedGenotyper()
         ug._update_config(self.cnf)
-        self.assertEqual(interface.global_config['picard'], self.ratatosk['picard'])
-        self.assertEqual(interface.global_config['gatk'].get('UnifiedGenotyper').get('options'),
+        self.assertEqual(backend.__global_config__['picard'], self.ratatosk['picard'])
+        self.assertEqual(backend.__global_config__['gatk'].get('UnifiedGenotyper').get('options'),
                          ('-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH',))

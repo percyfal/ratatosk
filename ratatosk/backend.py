@@ -12,9 +12,9 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-class Interface(object):
-    """
-    An interface definition class
-    """
-    def __init__(self):
-        raise Exception("Interfaces cannot be used directly")
+# global config dict
+__global_config__ = {}
+
+# global handlers dict
+# Currently key corresponds to handler name and value is the handler
+__handlers__ = {}
