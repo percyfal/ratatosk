@@ -67,8 +67,10 @@ def target_generator(indir=None, sample=None, flowcell=None, lane=None, *args, *
 
     :return: list of tuples consisting of sample, sample target prefix (merge target), sample run prefix (read pair prefix)
     """
-    # Take care of MergeSamFiles case
+    # UGLY FIX: Take care of MergeSamFiles case
     if not indir:
+        sample = [os.path.basename(os.path.dirname(kwargs.get("target")))]
+        indir = os.path.dirname(os.path.abspath(os.path.dirname(kwargs.get("target"))))
     targets = []
     if not os.path.exists(indir):
         logging.warn("No such input directory '{}'".format(indir))

@@ -118,17 +118,17 @@ class MergeSamFiles(PicardJobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        print dir(self)
-        print vars(self)
-        for t in self.target_iterator():
-            print t
-            print "Common prefix " + os.path.commonprefix([t[2], os.path.dirname(self.target)])
-            #sources = [x[1] in target_list if ]
-        # if tgt_fun:
-        #     sources = tgt_fun(self)
-        #     return [cls(target=src) for src in sources]    
-        # else:
-        #     return []
+        # FIX ME: ok this is getting problematic. This is waaay too
+        # specific to go here. MergeSamFiles basically needs to know
+        # what processing unit (i.e. sample in most cases) it belongs
+        # to. Moreover, calculating target and source names is
+        # complicated by the fact that the output directory in most
+        # cases will be different to the source directory(ies)
+        sources = [x[2] + os.path.basename(rreplace(self.target.replace(x[0], ""), "{}{}".format(self.label, self.target_suffix), self.source_suffix, 1)) for x in self.target_iterator()]
+        if sources:
+            return [cls(target=src) for src in sources]    
+        else:
+            return []
     
 class AlignmentMetrics(PicardJobTask):
     _config_subsection = "AlignmentMetrics"

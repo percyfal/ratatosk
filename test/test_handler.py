@@ -9,7 +9,7 @@ import logging
 import ngstestdata as ntd
 from ratatosk import interface, backend
 from ratatosk.lib.tools.picard import MergeSamFiles
-from ratatosk.utils import fullclassname
+from ratatosk.utils import fullclassname, rreplace
 from types import GeneratorType
 from ratatosk.handler import register, RatatoskHandler, target_generator_validator as tgv
 
@@ -56,10 +56,14 @@ class TestHandler(unittest.TestCase):
         obj = MergeSamFiles()
         target_handler = RatatoskHandler(label="target_generator_handler", mod="test.site_functions.target_generator")
         register(target_handler)
-        obj.target="/Users/peru/opt/ngs_test_data/data/projects/J.Doe_00_01/P001_101_index3/P001_101_index3.trimmed.sync.sort"
-        for tgt in obj.target_iterator():
-            print tgt
-        luigi.build([MergeSamFiles(target=obj.target)])
+        obj.target="/Users/peru/opt/ngs_test_data/data/projects/J.Doe_00_01/P001_101_index3/P001_101_index3.sort.merge.bam"
+        for t in obj.target_iterator():
+            print t
+        sources = [x[2] + os.path.basename(rreplace(obj.target.replace(x[0], ""), "{}{}".format(obj.label, obj.target_suffix), obj.source_suffix, 1)) for x in obj.target_iterator()]
+        print sources
+        print obj.target
+        print os.path.basename(rreplace(obj.target.replace(x[0], ""), "{}{}".format(obj.label, obj.target_suffix), obj.source_suffix, 1))
+        print dir(obj._make_source_files)
 
     def test_ratatosk_handler(self):
         h = RatatoskHandler(label="labeldef", mod="Mod")
