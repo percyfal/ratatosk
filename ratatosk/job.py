@@ -25,7 +25,8 @@ from itertools import izip
 from luigi.task import flatten
 import ratatosk.shell as shell
 import ratatosk
-from ratatosk import interface
+from ratatosk import backend
+from ratatosk.config import get_config, get_custom_config
 from ratatosk.utils import rreplace, update, config_to_dict
 
 # Use luigi-interface for now
@@ -174,8 +175,6 @@ class BaseJobTask(luigi.Task):
     max_memory_gb = 3
     # Not all tasks are allowed to "label" their output
     label = luigi.Parameter(default=None)
-    # Global configuration - this must be a class variable
-    global_config = dict()
 
     def __init__(self, *args, **kwargs):
         params = self.get_params()
@@ -184,7 +183,7 @@ class BaseJobTask(luigi.Task):
         for key, value in param_values:
             if key == "config_file":
                 config_file = value
-                config = interface.get_config()
+                config = get_config()
                 config.add_config_path(config_file)
                 kwargs = self._update_config(config, *args, **kwargs)
         for key, value in param_values:
@@ -193,7 +192,7 @@ class BaseJobTask(luigi.Task):
                     continue
                 custom_config_file = value
                 # This must be a separate instance
-                custom_config = interface.get_custom_config()
+                custom_config = get_custom_config()
                 custom_config.add_config_path(custom_config_file)
                 kwargs = self._update_config(custom_config, disable_parent_task_update=True, *args, **kwargs)
         super(BaseJobTask, self).__init__(*args, **kwargs)
@@ -213,7 +212,7 @@ class BaseJobTask(luigi.Task):
         :returns: an updated parameter list for the task.
         """
         # Update global configuration here for printing everything in PrintConfig task
-        interface.global_config = update(interface.global_config, vars(config)["_sections"])
+        backend.__global_config__ = update(backend.__global_config__, vars(config)["_sections"])
         if not config:
             return kwargs
         if not config.has_section(self._config_section):
@@ -224,7 +223,7 @@ class BaseJobTask(luigi.Task):
             d = {self._config_section:param_values}
         else:
             d = {self._config_section:{self._config_subsection:param_values}}
-        interface.global_config = update(interface.global_config, d)
+        backend.__global_config__ = update(backend.__global_config__, d)
         for key, value in self.get_params():
             new_value = None
             # Got a command line option => override config file
@@ -355,23 +354,24 @@ class BaseJobTask(luigi.Task):
                 return value.default
         return None
 
-    def set_target_generator_function(self):
-        """Try to import a module function represented as string in
-        target_generator_function and use it as such.
+    def target_iterator(self):
+        """Iterator for targets. 
 
+        FIX ME: make standalone function? No real reason for it to be attached to a task.
         """
-        opt_mod = ".".join(self.target_generator_function.split(".")[0:-1])
-        opt_fn = self.target_generator_function.split(".")[-1]
-        if not self.target_generator_function:
-            return None
-        try:
-            m = __import__(opt_mod, fromlist=[opt_fn])
-            fn = getattr(sys.modules[m.__name__], opt_fn)
-            return fn
-        except:
-            logger.warn("No function '{}' found: need to define a generator function for task '{}'".format(".".join([opt_mod, opt_fn]), 
-                                                                                                           self.__class__))
-            return None
+        tgt_fun = backend.__handlers__.get("target_generator_handler")
+        kwargs = vars(self)
+        if tgt_fun:
+            target_list = tgt_fun(**kwargs)
+        else:
+            return
+        if not target_list:
+            return
+        for tgt in target_list:
+            if len(tgt) != 3:
+                raise ValueError, "target generator handler must return 3-tuple"
+            sample, sample_merge, sample_run = tgt
+            yield sample, sample_merge, sample_run
 
     def set_parent_task(self):
         """Try to import a module task class represented as string in
@@ -453,9 +453,7 @@ class BaseJobTask(luigi.Task):
         elif source.count(self.label) == 0:
             logger.warn("label '{}' not found in target '{}'; are you sure your target is correctly formatted?".format(self.label, source))
         return rreplace(source, self.label, "", 1)
-
             
-                        
 class JobTask(BaseJobTask):
     def job_runner(self):
         return DefaultShellJobRunner()
@@ -549,7 +547,7 @@ class PrintConfig(JobTask):
         filename = "ratatosk_config_{}.yaml".format(datetime.today().strftime("%Y_%m_%d_%H_%M"))
         with open(filename, "w") as fh:
             fh.write(self.header)
-            fh.write(yaml.safe_dump(config_to_dict(interface.global_config), default_flow_style=False, allow_unicode=True, width=1000))
+            fh.write(yaml.safe_dump(config_to_dict(backend.__global_config__), default_flow_style=False, allow_unicode=True, width=1000))
         return luigi.LocalTarget(filename)
 
     def run(self):

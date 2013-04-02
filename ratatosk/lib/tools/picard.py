@@ -19,6 +19,8 @@ import glob
 import ratatosk.lib.files.external
 from ratatosk.utils import rreplace
 from ratatosk.job import InputJobTask, JobWrapperTask, JobTask, DefaultShellJobRunner
+from ratatosk.handler import RatatoskHandler, register
+from ratatosk import backend
 import ratatosk.shell as shell
 
 logger = logging.getLogger('luigi-interface')
@@ -116,12 +118,17 @@ class MergeSamFiles(PicardJobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        tgt_fun = self.set_target_generator_function()
-        if tgt_fun:
-            sources = tgt_fun(self)
-            return [cls(target=src) for src in sources]    
-        else:
-            return []
+        print dir(self)
+        print vars(self)
+        for t in self.target_iterator():
+            print t
+            print "Common prefix " + os.path.commonprefix([t[2], os.path.dirname(self.target)])
+            #sources = [x[1] in target_list if ]
+        # if tgt_fun:
+        #     sources = tgt_fun(self)
+        #     return [cls(target=src) for src in sources]    
+        # else:
+        #     return []
     
 class AlignmentMetrics(PicardJobTask):
     _config_subsection = "AlignmentMetrics"

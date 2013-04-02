@@ -39,7 +39,7 @@ def organize_sample_runs(task):
     logging.debug("Generated target bamfile list {}".format(bam_list))
     return bam_list
 
-def collect_sample_runs(task):
+def collect_sample_runs(task=None, *args, **kwargs):
     """Collect sample runs for a sample. Since it is to be used with
     MergeSamFiles it should return a list of targets.
 
@@ -50,11 +50,13 @@ def collect_sample_runs(task):
     logging.debug("Collecting sample runs for {}".format(task.target))
     sample_runs = target_generator(os.path.dirname(os.path.dirname(os.path.abspath(task.target))), 
                                    sample=[os.path.basename(os.path.dirname(task.target))])
+    print "Got sample runs"
+    print sample_runs
     bam_list = [x[2] + os.path.basename(rreplace(task.target.replace(x[0], ""), "{}{}".format(task.label, task.target_suffix), task.source_suffix, 1)) for x in sample_runs]
     logging.debug("Generated target bamfile list {}".format(bam_list))
     return bam_list
 
-def target_generator(indir, sample=None, flowcell=None, lane=None):
+def target_generator(indir=None, sample=None, flowcell=None, lane=None, *args, **kwargs):
     """Make all desired target output names based on the final target
     suffix. 
 
@@ -65,14 +67,17 @@ def target_generator(indir, sample=None, flowcell=None, lane=None):
 
     :return: list of tuples consisting of sample, sample target prefix (merge target), sample run prefix (read pair prefix)
     """
+    # Take care of MergeSamFiles case
+    if not indir:
     targets = []
     if not os.path.exists(indir):
         logging.warn("No such input directory '{}'".format(indir))
         return targets
-    samples = os.listdir(indir)
     # Only run this sample if provided at command line.
     if sample:
         samples = sample
+    else:
+        samples = os.listdir(indir)
     for s in samples:
         sampledir = os.path.join(indir, s)
         if not os.path.isdir(sampledir):
