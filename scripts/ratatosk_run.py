@@ -1,6 +1,7 @@
 import luigi
 import os
 import sys
+from ratatosk.config import setup_config
 import ratatosk.lib.align.bwa
 import ratatosk.lib.tools.gatk
 import ratatosk.lib.tools.samtools
