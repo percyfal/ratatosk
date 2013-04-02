@@ -11,7 +11,7 @@ from ratatosk import interface, backend
 from ratatosk.lib.tools.picard import MergeSamFiles
 from ratatosk.utils import fullclassname, rreplace
 from types import GeneratorType
-from ratatosk.handler import register, RatatoskHandler, target_generator_validator as tgv
+from ratatosk.handler import register, register_task_handler, RatatoskHandler, target_generator_validator as tgv
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -47,23 +47,25 @@ def target_generator_3():
 
 class TestHandler(unittest.TestCase):
     def test_register_handler(self):
-        target_handler = RatatoskHandler(label="target_generator_handler", mod="test.site_functions.collect_sample_runs")
+        target_handler = RatatoskHandler(label="target_generator_handler", mod="test.site_functions.target_generator")
         self.assertEqual(backend.__handlers__, {})
         register(target_handler)
-        self.assertEqual(fullclassname(backend.__handlers__['target_generator_handler']), "test.site_functions.collect_sample_runs")
+        self.assertEqual(fullclassname(backend.__handlers__['target_generator_handler']), "test.site_functions.target_generator")
+
+    def test_register_task_handler(self):
+        obj = MergeSamFiles()
+        target_handler = RatatoskHandler(label="target_generator_handler", mod="test.site_functions.collect_sample_runs")
+        self.assertEqual(obj.__handlers__, {})
+        register_task_handler(obj, target_handler)
+        self.assertEqual(fullclassname(obj.__handlers__['target_generator_handler']), "test.site_functions.collect_sample_runs")
 
     def test_iterate_targets(self):
         obj = MergeSamFiles()
         target_handler = RatatoskHandler(label="target_generator_handler", mod="test.site_functions.target_generator")
         register(target_handler)
         obj.target="/Users/peru/opt/ngs_test_data/data/projects/J.Doe_00_01/P001_101_index3/P001_101_index3.sort.merge.bam"
-        for t in obj.target_iterator():
-            print t
-        sources = [x[2] + os.path.basename(rreplace(obj.target.replace(x[0], ""), "{}{}".format(obj.label, obj.target_suffix), obj.source_suffix, 1)) for x in obj.target_iterator()]
-        print sources
-        print obj.target
-        print os.path.basename(rreplace(obj.target.replace(x[0], ""), "{}{}".format(obj.label, obj.target_suffix), obj.source_suffix, 1))
-        print dir(obj._make_source_files)
+        # FIX ME: how pass config to luigi.build?
+        #luigi.build([MergeSamFiles(target=obj.target, target_generator_function="test.site_functions.collect_sample_runs")])
 
     def test_ratatosk_handler(self):
         h = RatatoskHandler(label="labeldef", mod="Mod")

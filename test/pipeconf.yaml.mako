@@ -54,7 +54,7 @@ picard:
     parent_task: ratatosk.lib.tools.picard.SortSam
   MergeSamFiles:
     parent_task: ratatosk.lib.tools.picard.SortSam
-    target_generator_function: test.site_functions.organize_sample_runs
+    target_generator_function: test.site_functions.collect_sample_runs
 
 samtools:
   SamToBam:

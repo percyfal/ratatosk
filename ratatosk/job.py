@@ -176,6 +176,9 @@ class BaseJobTask(luigi.Task):
     # Not all tasks are allowed to "label" their output
     label = luigi.Parameter(default=None)
 
+    # Handlers attached to a task
+    __handlers__ = {}
+
     def __init__(self, *args, **kwargs):
         params = self.get_params()
         param_values = self.get_param_values(params, args, kwargs)
