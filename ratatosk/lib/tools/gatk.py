@@ -26,7 +26,7 @@ class GATKJobRunner(DefaultShellJobRunner):
     def _get_main(job):
         return "-T {}".format(job.main())
 
-    def run_job(self, job):
+    def _make_arglist(self, job):
         if not job.jar() or not os.path.exists(os.path.join(job.path(),job.jar())):
             logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),
                                                                      os.path.abspath(job.jar())))
@@ -38,6 +38,10 @@ class GATKJobRunner(DefaultShellJobRunner):
             arglist += job.opts()
         (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
         arglist += job_args
+        return arglist
+
+    def run_job(self, job):
+        arglist = self._make_arglist(job)
         cmd = ' '.join(arglist)        
         logger.info("\nJob runner '{0}';\n\trunning command '{1}'".format(self.__class__, cmd))
         (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)

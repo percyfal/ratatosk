@@ -23,7 +23,7 @@ import ratatosk.shell as shell
 class FastQCJobRunner(DefaultShellJobRunner):
     """This job runner must take into account that there is no default
     output file but rather an output directory"""
-    def run_job(self, job):
+    def _make_arglist(self, job):
         arglist = [job.exe()]
         if job.opts():
             arglist += job.opts()
@@ -31,6 +31,10 @@ class FastQCJobRunner(DefaultShellJobRunner):
         (tmpdir, outdir) = tmp_files[0]
         arglist += ['-o', tmpdir.fn]
         arglist += [job_args[0]]
+        return arglist
+
+    def run_job(self, job):
+        arglist = self._make_arglist(job)
         os.makedirs(os.path.join(os.curdir, tmpdir.fn))
         # Need to send output to temporary *directory*, not file
         cmd = ' '.join(arglist)        

@@ -111,7 +111,7 @@ class BwaSampe(BwaJobTask):
     read_group = luigi.Parameter(default=None)
     platform = luigi.Parameter(default="Illumina")
     can_multi_thread = False
-    max_memory_gb = 5 # bwa documentation says ~5.4 for human genome
+    max_memory_gb = 6 # bwa documentation says ~5.4 for human genome
 
     def requires(self):
         # From target name, generate sai1, sai2, fastq1, fastq2

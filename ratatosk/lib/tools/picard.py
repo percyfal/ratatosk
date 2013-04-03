@@ -26,7 +26,7 @@ import ratatosk.shell as shell
 logger = logging.getLogger('luigi-interface')
 
 class PicardJobRunner(DefaultShellJobRunner):
-    def run_job(self, job):
+    def _make_arglist(self, job):
         if not job.jar() or not os.path.exists(os.path.join(job.path(),job.jar())):
             logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),
                                                                      os.path.abspath(job.jar())))
@@ -39,17 +39,7 @@ class PicardJobRunner(DefaultShellJobRunner):
         (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
 
         arglist += job_args
-        cmd = ' '.join(arglist)        
-        logger.info("\nJob runner '{0}';\n\trunning command '{1}'".format(self.__class__, cmd.replace("= ", "=")))
-        (stdout, stderr, returncode) = shell.exec_cmd(cmd.replace("= ", "="), shell=True)
-
-        if returncode == 0:
-            logger.info("Shell job completed")
-            for a, b in tmp_files:
-                logger.info("renaming {0} to {1}".format(a.path, b.path))
-                a.move(os.path.join(os.curdir, b.path))
-        else:
-            raise Exception("Job '{}' failed: \n{}".format(cmd.replace("= ", "="), " ".join([stderr])))
+        return arglist
 
 class InputBamFile(JobTask):
     _config_section = "picard"

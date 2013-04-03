@@ -73,11 +73,17 @@ class TestSamtoolsWrappers(unittest.TestCase):
         [os.unlink(x) for x in Pfiles if os.path.isfile(x)]
 
     def test_samtools_view(self):
-        luigi.run(_luigi_args(['--target', bam, '--config-file', localconf, '--parent-task', 'ratatosk.lib.align.bwa.BwaSampe']), main_task_cls=ratatosk.lib.tools.samtools.SamToBam)
-        self.assertTrue(os.path.exists(bam))
-        with open(sam) as fp:
-            h2 = fp.readlines()[0:2]
-            self.assertEqual(h2, ['@SQ\tSN:chr11\tLN:2000000\n', '@RG\tID:P001_101_index3_TGACCA_L001_R1_001\tSM:P001_101_index3_TGACCA_L001_R1_001\tPL:Illumina\n'])
+        stb = ratatosk.lib.tools.samtools.SamToBam(target=bam)
+        #jr =  ratatosk.lib.tools.samtools.SamtoolsJobRunner()
+        jr = stb.job_runner()
+        print jr
+        print jr._make_arglist(stb)
+        #print jr
+        #luigi.run(_luigi_args(['--target', bam, '--config-file', localconf, '--parent-task', 'ratatosk.lib.align.bwa.BwaSampe', '--dry-run']), main_task_cls=ratatosk.lib.tools.samtools.SamToBam)
+        #self.assertTrue(os.path.exists(bam))
+        # with open(sam) as fp:
+        #     h2 = fp.readlines()[0:2]
+        #     self.assertEqual(h2, ['@SQ\tSN:chr11\tLN:2000000\n', '@RG\tID:P001_101_index3_TGACCA_L001_R1_001\tSM:P001_101_index3_TGACCA_L001_R1_001\tPL:Illumina\n'])
             
 class TestMiscWrappers(unittest.TestCase):
     def setUp(self):

@@ -69,7 +69,8 @@ class DefaultShellJobRunner(JobRunner):
         where main is given as a parameter, e.g. for GATK"""
         return job.main()
 
-    def run_job(self, job):
+    def _make_arglist(self, job):
+        """Make and return the arglist"""
         if job.path():
             exe = os.path.join(job.path(), job.exe())
         else:
@@ -88,6 +89,10 @@ class DefaultShellJobRunner(JobRunner):
         (tmp_files, job_args) = self.__class__._fix_paths(job)
         
         arglist += job_args
+        return arglist
+        
+    def run_job(self, job):
+        arglist = self._make_arglist(job)
         cmd = ' '.join(arglist)
         logger.info("\nJob runner '{0}';\n\trunning command '{1}'\n".format(self.__class__, cmd))
         (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)
@@ -308,8 +313,8 @@ class BaseJobTask(luigi.Task):
         """Init job runner.
         """
         self.init_local()
-        if not self.dry_run:
-            self.job_runner().run_job(self)
+        #if not self.dry_run:
+        self.job_runner().run_job(self)
 
     def output(self):
         """Task output. In many cases this defaults to the target and
