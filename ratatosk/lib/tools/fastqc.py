@@ -34,7 +34,8 @@ class FastQCJobRunner(DefaultShellJobRunner):
         return (arglist, tmp_files)
 
     def run_job(self, job):
-        arglist = self._make_arglist(job)
+        (arglist, tmp_files) = self._make_arglist(job)
+        (tmpdir, outdir) = tmp_files[0]
         os.makedirs(os.path.join(os.curdir, tmpdir.fn))
         # Need to send output to temporary *directory*, not file
         cmd = ' '.join(arglist)        
