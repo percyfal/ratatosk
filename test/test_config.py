@@ -20,6 +20,11 @@ logging.basicConfig(level=logging.DEBUG)
 configfile = os.path.join(os.path.dirname(__file__), "pipeconf.yaml")
 ratatosk_file = os.path.join(os.pardir, "config", "ratatosk.yaml")
 
+def setUpModule():
+    global cnf
+    cnf = get_config()
+
+# FIX ME: 
 class TestConfigParser(unittest.TestCase):
     yaml_config = None
     @classmethod
@@ -28,8 +33,9 @@ class TestConfigParser(unittest.TestCase):
             cls.yaml_config = yaml.load(fh)
 
     def setUp(self):
-        self.config = get_config()
-        self.assertEqual([], self.config._config_paths)
+        cnf._config_paths = []
+        cnf.reload()
+        self.assertEqual([], cnf._instance._config_paths)
         os.environ["GATK_HOME_MOCK"] = os.path.abspath(os.curdir)
         os.environ["PICARD_HOME_MOCK"] = os.path.abspath(os.curdir)
         with open("mock.yaml", "w") as fp:
@@ -39,38 +45,36 @@ class TestConfigParser(unittest.TestCase):
     def tearDown(self):
         if os.path.exists("mock.yaml"):
             os.unlink("mock.yaml")
-        self.config._config_paths = []
+        cnf._instance._config_paths = []
+        cnf.reload()
         del os.environ["GATK_HOME_MOCK"]
         del os.environ["PICARD_HOME_MOCK"]
 
     def test_get_config(self):
         """Test getting config instance"""
-        cnf = get_config()
         cnf.add_config_path(configfile)
         self.assertIsInstance(cnf, ratatosk.config.RatatoskConfigParser)
         cnf.del_config_path(configfile)
         
     def test_get_list(self):
         """Make sure list parsing ok"""
-        cnf = get_config()
         cnf.add_config_path(configfile)
         self.assertIsInstance(cnf.get(section="gatk", option="knownSites"), list)
         self.assertListEqual(sorted(os.path.basename(x) for x in cnf.get(section="gatk", option="knownSites")), 
-                             ['1000G_omni2.5.vcf', 'dbsnp132_chr11.vcf'])
+                             ['knownSites1.vcf', 'knownSites2.vcf'])
         cnf.del_config_path(configfile)
 
     def test_add_config_path(self):
         """Test adding same config again"""
-        cnf = get_config()
         cnf.add_config_path(configfile)
-        self.assertEqual(1, len(cnf._config_paths))
+        self.assertEqual(1, len(cnf._instance._config_paths))
         cnf.del_config_path(configfile)
 
     def test_del_config_path(self):
         """Test deleting config path"""
-        cnf = get_config()
+        cnf.add_config_path(configfile)
         cnf.del_config_path(configfile)
-        self.assertEqual([], cnf._config_paths)
+        self.assertEqual([], cnf._instance._config_paths)
         
     def test_expand_vars(self):
         cnf = get_config()
@@ -83,27 +87,26 @@ class TestConfigUpdate(unittest.TestCase):
         global File
         File = MockFile
         MockFile._file_contents.clear()
-        self.cnf = get_config()
         with open("mock.yaml", "w") as fp:
             fp.write(yaml.safe_dump({'gatk':{'parent_task':'another.class', 'UnifiedGenotyper':{'parent_task': 'no.such.class'}}}, default_flow_style=False))
-        self.cnf.del_config_path("mock.yaml")
+        cnf.del_config_path("mock.yaml")
 
     def tearDown(self):
         if os.path.exists("mock.yaml"):
             os.unlink("mock.yaml")
-        self.cnf._config_paths = []
+        cnf._instance._config_paths = []
 
     def test_config_update(self):
         """Test updating config with and without disable_parent_task_update"""
         # Main gatk task
         gatkjt = ratatosk.lib.tools.gatk.GATKJobTask()
         self.assertEqual(gatkjt.parent_task, "ratatosk.lib.tools.gatk.InputBamFile")
-        self.cnf.add_config_path("mock.yaml")
-        kwargs = gatkjt._update_config(self.cnf)
+        cnf.add_config_path("mock.yaml")
+        kwargs = gatkjt._update_config(cnf)
         self.assertEqual(kwargs['parent_task'], 'another.class')
-        kwargs = gatkjt._update_config(self.cnf, disable_parent_task_update=True)
+        kwargs = gatkjt._update_config(cnf, disable_parent_task_update=True)
         self.assertIsNone(kwargs.get('parent_task'))
-        self.cnf.del_config_path("mock.yaml")
+        cnf.del_config_path("mock.yaml")
 
     def test_config_update_main(self):
         """Test updating main subsection"""
@@ -113,31 +116,28 @@ class TestConfigUpdate(unittest.TestCase):
         # overrides section key 'another.class'
         ug = ratatosk.lib.tools.gatk.UnifiedGenotyper()
         self.assertEqual(ug.parent_task, "ratatosk.lib.tools.gatk.ClipReads")
-        self.cnf.del_config_path(ratatosk_file)
-        self.cnf.add_config_path("mock.yaml")
-        kwargs = ug._update_config(self.cnf)
+        cnf.del_config_path(ratatosk_file)
+        cnf.add_config_path("mock.yaml")
+        kwargs = ug._update_config(cnf)
         self.assertEqual(kwargs.get('parent_task'), 'no.such.class')
-        kwargs = ug._update_config(self.cnf, disable_parent_task_update=True)
+        kwargs = ug._update_config(cnf, disable_parent_task_update=True)
         self.assertIsNone(kwargs.get('parent_task'))
-        self.cnf.del_config_path("mock.yaml")
+        cnf.del_config_path("mock.yaml")
 
 class TestGlobalConfig(unittest.TestCase):
     def setUp(self):
-        self.cnf = get_config()
         with open(ratatosk_file) as fp:
             self.ratatosk = yaml.load(fp)
-        self.cnf.del_config_path(ratatosk_file)
 
-    def tearDown(self):
-        self.cnf._config_paths = []
 
     def test_global_config(self):
         """Test that backend.__global_config__ is updated correctly when instantiating a task"""
-        # Is updated by other tests, so can't be sure it's empty
-        # self.assertEqual(interface.global_config, {})
         backend.__global_config__ = {}
+        cnf.clear()
+        self.assertEqual(backend.__global_config__, {})
+        cnf.add_config_path(ratatosk_file)
         ug = ratatosk.lib.tools.gatk.UnifiedGenotyper()
-        ug._update_config(self.cnf)
+        ug._update_config(cnf)
         self.assertEqual(backend.__global_config__['picard'], self.ratatosk['picard'])
         self.assertEqual(backend.__global_config__['gatk'].get('UnifiedGenotyper').get('options'),
                          ('-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH',))

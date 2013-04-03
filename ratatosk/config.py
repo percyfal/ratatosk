@@ -14,6 +14,7 @@
 import os
 import yaml
 import logging
+import collections
 from ConfigParser import NoSectionError, NoOptionError, DuplicateSectionError
 from ratatosk import backend
 from ratatosk.utils import update, config_to_dict
@@ -32,30 +33,30 @@ class RatatoskConfigParser(object):
     NO_DEFAULT = object()
     _instance = None
     _config_paths = []
-    _cls_dict = {}
+    _cls_dict = collections.OrderedDict
 
     @classmethod
     def add_config_path(cls, path):
-        if path and not any(os.path.samefile(path, x) for x in cls._config_paths):
+        if path and not any(os.path.samefile(path, x) for x in cls._instance._config_paths):
             logger.debug("adding config path {}".format(path))
-            cls._config_paths.append(path)
+            cls._instance._config_paths.append(path)
         else:
             return
         cls._instance.reload()
 
     @classmethod
     def del_config_path(cls, path):
-        if path and any(os.path.samefile(path, x) for x in cls._config_paths):
+        if path and any(os.path.samefile(path, x) for x in cls._instance._config_paths):
             logger.debug("removing config path {}".format(path))
             try:
-                i = [os.path.samefile(path, x) for x in cls._config_paths].index(True)
-                del cls._config_paths[i]
+                i = [os.path.samefile(path, x) for x in cls._instance._config_paths].index(True)
+                del cls._instance._config_paths[i]
             except ValueError:
                 logger.warn("No such path {} in _config_paths".format(path))
         else:
             return
         # Need to clear sections before reloading
-        cls._instance._sections = cls._cls_dict
+        cls._instance._sections = cls._cls_dict()
         cls._instance.reload()
 
     @classmethod
@@ -67,16 +68,19 @@ class RatatoskConfigParser(object):
             logger.info("Loaded %r" % loaded)
         return cls._instance
 
-    # This does not work if not classmethod. Something aloof here
     @classmethod
-    def reload(cls):
-        return cls._instance.read(cls._config_paths)
+    def clear(cls):
+        cls._instance._config_paths = []
+        cls._instance._sections = cls._cls_dict()
+
+    def reload(self):
+        return self._instance.read(self._instance._config_paths)
 
     def __init__(self, defaults=None, dict_type=_default_dict, *args, **kw):
         self._dict = dict_type
         self._sections = self._dict()
         self._defaults = self._dict()
-        _cls_dict = self._dict()
+        _cls_dict = self._dict
     
     def read(self, file_paths):
         """
@@ -283,20 +287,20 @@ class RatatoskCustomConfigParser(RatatoskConfigParser):
 
     @classmethod
     def add_config_path(cls, path):
-        if path and path not in cls._custom_config_paths:
+        if path and path not in cls._instance._custom_config_paths:
             logger.debug("adding config path {}".format(path))
-            cls._custom_config_paths.append(path)
+            cls._instance._custom_config_paths.append(path)
         else:
             return
         cls._instance.reload()
 
     @classmethod
     def del_config_path(cls, path):
-        if path and path in cls._custom_config_paths:
+        if path and path in cls._instance._custom_config_paths:
             logger.debug("removing config path {}".format(path))
             try:
-                i = cls._custom_config_paths.index(path)
-                del cls._custom_config_paths[i]
+                i = cls._instance._custom_config_paths.index(path)
+                del cls._instance._custom_config_paths[i]
             except ValueError:
                 logger.warn("No such path {} in _custom_config_paths".format(path))
                 
@@ -306,9 +310,8 @@ class RatatoskCustomConfigParser(RatatoskConfigParser):
         cls._instance._sections = cls._cls_dict
         cls._instance.reload()
 
-    @classmethod
-    def reload(cls):
-        return cls._instance.read(cls._custom_config_paths)
+    def reload(self):
+        return self._instance.read(self._instance._custom_config_paths)
 
 
 def setup_interface_logging():
