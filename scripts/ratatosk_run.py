@@ -20,16 +20,11 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         task = sys.argv[1]
         opt_dict = opt_to_dict(sys.argv[1:])
+        if task in config_dict.keys():
+            opt_dict['--config-file'] = config_dict[task]['config']
+            task_cls = config_dict[task]['cls']
     else:
         task = None
-
-    # Set task_cls and the corresponding config file
-    if task == "HaloPlex":
-        opt_dict['--config-file'] = config_dict['haloplex']
-        task_cls = ratatosk.pipeline.haloplex.HaloPlex
-    elif task == "AlignSeqcap":
-        opt_dict['--config-file'] = config_dict['seqcap']
-        task_cls = ratatosk.pipeline.align.AlignSeqcap
 
     setup_config(config_file=opt_dict.get("--config-file"), custom_config_file=opt_dict.get("--custom-config"))
     setup_global_handlers()
@@ -40,6 +35,4 @@ if __name__ == "__main__":
     else:
         # Whatever other task/config the user wants to run
         luigi.run(args)
-
-    # Finally print global configuration
     
