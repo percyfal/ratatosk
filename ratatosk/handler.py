@@ -77,7 +77,7 @@ def _load_module_function(handler_obj):
         return fn
     except:
         logger.warn("No function '{}' found: failed to register handler '{}'".format(".".join([opt_mod, opt_fn]), 
-                                                                                     handler_attr))
+                                                                                     handler_obj.label()))
         return None
 
 def _load_module_class(handler_obj):
@@ -96,7 +96,7 @@ def _load_module_class(handler_obj):
         return ret_cls
     except:
         logger.warn("No class '{}' found: failed to register handler '{}'".format(".".join([opt_mod, opt_fn]), 
-                                                                                  handler_attr))
+                                                                                  handler_obj.label()))
         return None
 
         # logger.warn("No class {} found: using default class {} for task '{}'".format(".".join([opt_mod, opt_cls]), 
