@@ -31,7 +31,7 @@ class FastQCJobRunner(DefaultShellJobRunner):
         (tmpdir, outdir) = tmp_files[0]
         arglist += ['-o', tmpdir.fn]
         arglist += [job_args[0]]
-        return arglist
+        return (arglist, tmp_files)
 
     def run_job(self, job):
         arglist = self._make_arglist(job)

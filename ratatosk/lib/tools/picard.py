@@ -38,7 +38,7 @@ class PicardJobRunner(DefaultShellJobRunner):
             arglist += job.opts()
         (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
         arglist += job_args
-        return arglist
+        return (arglist, tmp_files)
 
 class InputBamFile(JobTask):
     _config_section = "picard"

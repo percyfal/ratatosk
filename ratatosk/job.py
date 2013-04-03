@@ -89,10 +89,10 @@ class DefaultShellJobRunner(JobRunner):
         (tmp_files, job_args) = self.__class__._fix_paths(job)
         
         arglist += job_args
-        return arglist
+        return (arglist, tmp_files)
         
     def run_job(self, job):
-        arglist = self._make_arglist(job)
+        (arglist, tmp_files) = self._make_arglist(job)
         cmd = ' '.join(arglist)
         logger.info("\nJob runner '{0}';\n\trunning command '{1}'\n".format(self.__class__, cmd))
         (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)

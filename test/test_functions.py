@@ -12,7 +12,6 @@ import ratatosk.lib.utils.cutadapt as CUTADAPT
 import ratatosk.lib.tools.fastqc as FASTQC
 import ratatosk.lib.files.external
 from ratatosk.utils import make_fastq_links
-from site_functions import target_generator
 
 logging.basicConfig(level=logging.DEBUG)
 sample = "P001_101_index3_TGACCA_L001"
