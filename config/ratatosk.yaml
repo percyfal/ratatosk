@@ -8,20 +8,14 @@ picard:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   AlignmentMetrics:
     parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
-    #parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   InsertMetrics:
     parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
-    #parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   SortSam:
     parent_task: ratatosk.lib.tools.samtools.SamToBam
   MergeSamFiles:
     parent_task: ratatosk.lib.tools.picard.SortSam
 
 gatk:
-  ref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
-  knownSites: [~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf]
-  dbsnp: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/variation/dbsnp132_chr11.vcf
-
   RealignerTargetCreator:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   IndelRealigner:

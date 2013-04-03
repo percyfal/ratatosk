@@ -41,9 +41,12 @@ class FastqFileLink(JobTask):
 
     def run(self):
         # TODO: need to separate handling of paths
+        if not self.input().exists():
+            logger.error("No such input file {}".format(self.input().path))
+            return
         if not os.path.exists(os.path.relpath(self.outdir)):
             os.makedirs(os.path.relpath(self.outdir))
-        if not os.path.lexists(self.output().fn):
-            os.symlink(self.input().fn, self.output().fn)
+        if not os.path.lexists(self.output().path):
+            os.symlink(self.input().path, self.output().path)
         else:
-            print "Path {} already exists; something wrong!".format(self.output().fn)
+            print "Path {} already exists; something wrong!".format(self.output().path)

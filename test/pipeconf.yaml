@@ -8,18 +8,18 @@ misc:
     parent_task: ratatosk.lib.utils.cutadapt.CutadaptJobTask
 
 bwa:
-  bwaref: ${bwaref}
+  bwaref: bwa/hg19.fa
 
 fastq:
   link:
-    indir: ${fastq}
+    indir: indir
 
 gatk:
   knownSites: 
-    - ${knownSites1}
-    - ${knownSites2}
-  ref: ${ref}
-  dbsnp: ${dbsnp}
+    - knownSites1.vcf
+    - knownSites2.vcf
+  ref: reference.fa
+  dbsnp: dbsnp132.vcf
   RealignerTargetCreator:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   IndelRealigner:
@@ -44,8 +44,8 @@ picard:
     parent_task: ratatosk.lib.tools.samtools.SamToBam
   HsMetrics:
     parent_task: ratatosk.lib.tools.picard.SortSam
-    target_regions: ${targets}
-    bait_regions: ${baits}
+    target_regions: targets.interval_list
+    bait_regions: baits.interval_list
   DuplicationMetrics:
     parent_task: ratatosk.lib.tools.picard.SortSam
   AlignmentMetrics:

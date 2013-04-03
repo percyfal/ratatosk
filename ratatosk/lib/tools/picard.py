@@ -37,7 +37,6 @@ class PicardJobRunner(DefaultShellJobRunner):
         if job.opts():
             arglist += job.opts()
         (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
-
         arglist += job_args
         return arglist
 
