@@ -183,18 +183,18 @@ class BaseJobTask(luigi.Task):
     label = luigi.Parameter(default=None)
 
     # Handlers attached to a task
-    __handlers__ = {}
+    _handlers = {}
 
     def __init__(self, *args, **kwargs):
         params = self.get_params()
         param_values = self.get_param_values(params, args, kwargs)
+        self._handlers = {}
         # Main configuration file
         for key, value in param_values:
             if key == "config_file":
                 config_file = value
                 config = get_config()
                 config.add_config_path(config_file)
-                print "Updating config file " + config_file
                 kwargs = self._update_config(config, *args, **kwargs)
         for key, value in param_values:
             if key == "custom_config":

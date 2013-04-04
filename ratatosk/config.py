@@ -96,6 +96,7 @@ class RatatoskConfigParser(object):
                     _sections = yaml.load(fp)
                     if _sections is None:
                         _sections = {}
+                print _sections
                 self._sections = update(self._sections, _sections)
             except IOError:
                 logging.warn("No such file {}".format(path))
@@ -307,7 +308,7 @@ class RatatoskCustomConfigParser(RatatoskConfigParser):
         else:
             return
         # Need to clear sections before reloading
-        cls._instance._sections = cls._cls_dict
+        cls._instance._sections = cls._cls_dict()
         cls._instance.reload()
 
     @classmethod

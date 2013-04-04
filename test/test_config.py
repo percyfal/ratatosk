@@ -13,7 +13,6 @@ import ratatosk.lib.files.fastq
 import ratatosk.lib.tools.gatk
 import ratatosk.lib.tools.samtools
 import ratatosk.lib.tools.picard
-from luigi.mock import MockFile
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -92,14 +91,13 @@ class TestConfigParser(unittest.TestCase):
         cnf.del_config_path("mock.yaml")
 
 class TestConfigUpdate(unittest.TestCase):
-    def setUp(self):
-        global File
-        File = MockFile
-        MockFile._file_contents.clear()
+    @classmethod
+    def setUpClass(self):
         with open("mock.yaml", "w") as fp:
             fp.write(yaml.safe_dump({'gatk':{'parent_task':'another.class', 'UnifiedGenotyper':{'parent_task': 'no.such.class'}}}, default_flow_style=False))
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         if os.path.exists("mock.yaml"):
             os.unlink("mock.yaml")
         cnf.clear()
@@ -107,7 +105,15 @@ class TestConfigUpdate(unittest.TestCase):
     def test_config_update(self):
         """Test updating config with and without disable_parent_task_update"""
         # Main gatk task
+        #
+        # Setting parent_task is necessary since the config file has
+        # been set in test_command.py
+        cnf.add_config_path(ratatosk_file)
         gatkjt = ratatosk.lib.tools.gatk.GATKJobTask()
+        print "Parent task: " + str(gatkjt.parent_task)
+        kwargs = gatkjt._update_config(cnf)
+
+        cnf.del_config_path(ratatosk_file)
         self.assertEqual(gatkjt.parent_task, "ratatosk.lib.tools.gatk.InputBamFile")
         cnf.add_config_path("mock.yaml")
         kwargs = gatkjt._update_config(cnf)
@@ -115,6 +121,7 @@ class TestConfigUpdate(unittest.TestCase):
         kwargs = gatkjt._update_config(cnf, disable_parent_task_update=True)
         self.assertIsNone(kwargs.get('parent_task'))
         cnf.del_config_path("mock.yaml")
+        cnf.clear()
 
     def test_config_update_main(self):
         """Test updating main subsection"""
@@ -148,3 +155,4 @@ class TestGlobalConfig(unittest.TestCase):
         self.assertEqual(backend.__global_config__['picard'], self.ratatosk['picard'])
         self.assertEqual(backend.__global_config__['gatk'].get('UnifiedGenotyper').get('options'),
                          ('-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH',))
+        cnf.clear()

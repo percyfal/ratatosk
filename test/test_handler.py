@@ -7,7 +7,7 @@ import luigi
 import yaml
 import logging
 from ratatosk import interface, backend
-from ratatosk.config import get_config
+from ratatosk.config import get_config, get_custom_config
 from ratatosk.lib.tools.picard import MergeSamFiles
 from ratatosk.utils import fullclassname, rreplace
 from types import GeneratorType
@@ -17,6 +17,17 @@ logging.basicConfig(level=logging.DEBUG)
 
 def local_target_generator(task):
     return None
+
+def setUpModule():
+    global cnf, conf
+    cnf = get_custom_config()
+    cnf.clear()
+    conf = get_config()
+    conf.clear()
+
+def tearDownModule():
+    cnf.clear()
+    conf.clear()
 
 class TestHandler(unittest.TestCase):
     def test_register_handler(self):
@@ -28,11 +39,11 @@ class TestHandler(unittest.TestCase):
 
     def test_register_task_handler(self):
         obj = MergeSamFiles()
-        obj.__handlers__ = {}
+        obj._handlers = {}
         target_handler = RatatoskHandler(label="target_generator_handler", mod="test.test_handler.local_target_generator")
-        self.assertEqual(obj.__handlers__, {})
+        self.assertEqual(obj._handlers, {})
         register_task_handler(obj, target_handler)
-        self.assertEqual(fullclassname(obj.__handlers__['target_generator_handler']), "test.test_handler.local_target_generator")
+        self.assertEqual(fullclassname(obj._handlers['target_generator_handler']), "test.test_handler.local_target_generator")
 
     def test_iterate_targets(self):
         obj = MergeSamFiles()

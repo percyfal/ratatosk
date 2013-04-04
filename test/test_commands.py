@@ -21,6 +21,7 @@ import yaml
 import luigi
 import logging
 import ratatosk
+from ratatosk.config import get_config
 from subprocess import Popen, PIPE
 from ratatosk.job import JobTask, DefaultShellJobRunner, InputJobTask
 from ratatosk.lib.align.bwa import BwaIndex
@@ -81,6 +82,7 @@ def setUpModule():
 def tearDownModule():
     if os.path.exists(localconf):
         os.unlink(localconf)
+    cnf.clear()
 
 @attr("full")
 class TestCommand(unittest.TestCase):

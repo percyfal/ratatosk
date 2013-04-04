@@ -157,8 +157,8 @@ def register_task_handler(obj, handler_obj, default_handler=None):
     hdl = _load(handler_obj)
     if not hdl:
         return
-    if handler_obj.label() in obj.__handlers__:
-        old_hdl = obj.__handlers__[handler_obj.label()]
+    if handler_obj.label() in obj._handlers:
+        old_hdl = obj._handlers[handler_obj.label()]
         if fullclassname(old_hdl) == fullclassname(hdl):
             logging.info("Handler object '{}' already registered in {}; skipping".format(fullclassname(hdl), obj))
             return
@@ -166,7 +166,7 @@ def register_task_handler(obj, handler_obj, default_handler=None):
             logging.warn("Trying to reset already registered '{}' which is not supported".format(handler_obj.label()))
             return
     else:
-        obj.__handlers__[handler_obj.label()] = hdl
+        obj._handlers[handler_obj.label()] = hdl
 
 def target_generator_validator(fn):
     """Validate target generator function. Must return 3-tuple

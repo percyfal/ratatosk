@@ -110,14 +110,13 @@ class MergeSamFiles(PicardJobTask):
         cls = self.set_parent_task()
         sources = []
         cnf = get_config()
-        print "Config paths " + str(cnf._instance._config_paths)
-        if self.target_generator_handler and "target_generator_handler" not in self.__handlers__.keys():
+        if self.target_generator_handler and "target_generator_handler" not in self._handlers.keys():
             tgf = RatatoskHandler(label="target_generator_handler", mod=self.target_generator_handler)
             register_task_handler(self, tgf)
-        if not "target_generator_handler" in self.__handlers__.keys():
+        if not "target_generator_handler" in self._handlers.keys():
             logging.warn("MergeSamFiles requires a target generator hanler; no defaults are as of yet implemented")
             return []
-        sources = self.__handlers__["target_generator_handler"](self)
+        sources = self._handlers["target_generator_handler"](self)
         return [cls(target=src) for src in sources]    
     
 class AlignmentMetrics(PicardJobTask):

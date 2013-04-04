@@ -67,14 +67,20 @@ def _prune_luigi_tmp(args):
     return [re.sub(r'-luigi-tmp-[0-9]+(\.gz)?', '', x) for x in args]
 
 def setUpModule():
-    global cnf
+    global cnf, custom_cnf
     cnf = get_config()
-    # cnf.clear()
-    # cnf.add_config_path(os.path.join("../config/ratatosk.yaml"))
+    cnf.clear()
+    cnf.add_config_path(os.path.join(os.path.dirname(__file__), os.pardir, "config", "ratatosk.yaml"))
+    cnf.add_config_path(localconf)
     custom_cnf = get_custom_config()
+    custom_cnf.clear()
     custom_cnf.add_config_path(localconf)
     custom_cnf.reload()
     
+def tearDownModule():
+    cnf.clear()
+    custom_cnf.clear()
+
 class TestSamtoolsWrappers(unittest.TestCase):
     def test_samtools_view(self):
         task = ratatosk.lib.tools.samtools.SamToBam(target=bam)
@@ -147,6 +153,12 @@ class TestBwaWrappers(unittest.TestCase):
         self.assertEqual(['bwa', 'index', 'reference.fa'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
+
+
+# Temporary target generator
+def merge_bam_generator(task):
+    return ["sample1.sort.bam", "sample2.sort.bam"]
+
 @unittest.skipIf((os.getenv("PICARD_HOME") is None or os.getenv("PICARD_HOME") == ""), "No Environment PICARD_HOME set; skipping")
 class TestPicardWrappers(unittest.TestCase):
     def _path(self, exe):
@@ -187,8 +199,8 @@ class TestPicardWrappers(unittest.TestCase):
     # NOTE: if no target_generator exists will be impossible to check formatting of input
     def test_merge_sam_files(self):
         mergebam = os.path.join(os.curdir, samplename, "{}.sort.merge.bam".format(samplename))
-        task = ratatosk.lib.tools.picard.MergeSamFiles(target=mergebam)
-        self.assertEqual(['java', '-Xmx2g', '-jar', self._path('MergeSamFiles.jar'), 'SO=coordinate TMP_DIR=./tmp', 'OUTPUT=', './P001_101_index3/P001_101_index3.sort.merge.bam'],
+        task = ratatosk.lib.tools.picard.MergeSamFiles(target=mergebam, target_generator_handler='test.test_wrapper.merge_bam_generator')
+        self.assertEqual(['java', '-Xmx2g', '-jar', self._path('MergeSamFiles.jar'), 'SO=coordinate TMP_DIR=./tmp', 'OUTPUT=', './P001_101_index3/P001_101_index3.sort.merge.bam', 'INPUT=', 'sample1.sort.bam', 'INPUT=', 'sample2.sort.bam'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
 @unittest.skipIf((os.getenv("GATK_HOME") is None or os.getenv("GATK_HOME") == ""), "No environment GATK_HOME set; skipping")

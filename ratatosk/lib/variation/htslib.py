@@ -49,13 +49,12 @@ class HtslibVcfMergeJobTask(HtslibVcfJobTask):
     def requires(self):
         cls = self.set_parent_task()
         sources = []
-        if self.target_generator_handler and "target_generator_handler" not in self.__handlers__.keys():
+        if self.target_generator_handler and "target_generator_handler" not in self._handlers.keys():
             tgf = RatatoskHandler(label="target_generator_handler", mod=self.target_generator_handler)
             register_task_handler(self, tgf)
-        if not "target_generator_handler" in self.__handlers__.keys():
+        if not "target_generator_handler" in self._handlers.keys():
             logging.warn("vcf merge requires a target generator handler; no defaults are as of yet implemented")
             return []
-        sources = self.__handlers__["target_generator_handler"](self)
-        print sources
+        sources = self._handlers["target_generator_handler"](self)
         return [cls(target=src) for src in sources]
 
