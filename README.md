@@ -38,26 +38,30 @@ The tests depend on the following software to run:
    variable `GATK_HOME` to point to your installation path
 4. [picard](http://picard.sourceforge.net/) - set an environment
    variable `PICARD_HOME` to point to your installation path
-5. [cutadapt](http://code.google.com/p/cutadapt/) - install with `pip
+5. [fastqc](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)   
+
+There are also wrappers for the following software:
+
+1. [cutadapt](http://code.google.com/p/cutadapt/) - install with `pip
    install cutadapt`
-6. [fastqc](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+2. [htslib](https://github.com/samtools/htslib) - make a link from
+   `vcf` to `htscmd` to use the shortcut commands
+3. [annovar](http://www.openbioinformatics.org/annovar/)
+4. [tabix](http://sourceforge.net/projects/samtools/files/tabix/)
+5. [vcftools](http://vcftools.sourceforge.net/perl_module.html)
+6. [snpeff](http://snpeff.sourceforge.net/)
 
-You also need to install the test data set:
-
-	git clone https://github.com/percyfal/ngs.test.data
-	python setup.py develop
-	
-Note that you **must** use *setup.py develop*.
+More wrappers are continuously being added. 
 
 ## Running the tests  ##
 
 Cd to the luigi test directory (`tests`) and run
 
-	nosetests -v -s test_wrapper.py
+	nosetests -v -s test_commands.py
 	
-To run a given task (e.g. TestLuigiWrappers.test_fastqln), do
+To run a given task (e.g. TestCommand.test_bwaaln), do
 
-	nosetests -v -s test_wrapper.py:TestLuigiWrappers.test_fastqln
+	nosetests -v -s test_commands.py:TestCommand.test_bwaaln
 
 ### Task visualization and tabulation ###
 
@@ -80,18 +84,14 @@ In order to view tasks, run
 
 	bin/ratatoskd &
 	
-in the background, set the PYTHONPATH to the current directory and run
-the tests:
+in the background and run the tests:
 
-	PYTHONPATH=. nosetests -v -s test_wrapper.py
+	nosetests -v -s test_commands.py
 	
 ## Examples in tests ##
 
-NOTE: these are still not real unit tests in that they in some cases
-are inter-dependent. See issues.
-
 These examples are currently based on the tests in
-[ratatosk.tests.test_wrapper](https://github.com/percyfal/ratatosk/blob/master/test/test_wrapper.py).
+`ratatosk.tests.test_commands` and `ratatosk.tests.test_wrappers`.
 
 ### Creating file links ###
 
@@ -121,7 +121,7 @@ as shown above.
 
 Here's a more useful example; paired-end alignment using `bwa`.
 
-	nosetests -v -s test_wrapper.py:TestBwaWrappers.test_bwasampe
+	nosetests -v -s test_commands.py:TestCommand.test_bwasampe
 
 ![BwaSampe](https://raw.github.com/percyfal/ratatosk/master/doc/test_bwasampe.png)
 	
@@ -134,7 +134,7 @@ subclasses
 that can be used to require that several tasks have completed. Here
 I've used it to group picard metrics tasks:
 
-	nosetests -v -s test_wrapper.py:TestPicardWrappers.test_picard_metrics
+	nosetests -v -s test_commands.py:TestCommand.test_picard_metrics
 
 ![PicardMetrics](https://raw.github.com/percyfal/ratatosk/master/doc/test_picard_metrics.png)
 
@@ -187,6 +187,11 @@ Note also that `InputBamFile` has been changed to depend on
 
 ## Examples with *ratatosk_run.py* ##
 
+NB: these examples don't actually do anything except plot the
+dependencies. To actually run the pipelines, see the examples in the
+extension module
+[ratatosk.ext.scilife](https://github.com/percyfal/ratatosk.ext.scilife)
+
 The installation procedure will install an executable script,
 `ratatosk_run.py`, in your search path. The script collects all tasks
 currently available in the ratatosk modules:
@@ -227,10 +232,9 @@ is installed at `~/opt`.
 The `--dry-run` option will resolve dependencies but not actually run
 anything. In addition, it will print the tasks that will be called.
 By passing a target
-	
-	ratatosk_run.py RawIndelRealigner 
-	  --target P001_101_index3/P001_101_index3.merge.realign.bam
-      --custom-config ~/opt/ratatosk/examples/J.Doe_00_01.yaml --dry-run
+
+	ratatosk_run.py RawIndelRealigner --target sample.merge.realign.bam 
+		--custom-config /path/to/ratatosk/examples/J.Doe_00_01.yaml --dry-run
 
 we get the dependencies as specified in the config file:
 
@@ -243,21 +247,37 @@ HaloPlex data.
 
 ### Merging samples over several runs ###
 
-Sample *P001_101_index3* has data from two separate runs that should
-be merged. The class `ratatosk.lib.tools.picard.MergeSamFiles` merges
-sample_run files and places the result in the sample directory. The
-implementation currently depends on the directory structure
-'sample/fc1', sample/fc2' etc.
+Samples that have data from two separate runs should be merged. The
+class `ratatosk.lib.tools.picard.MergeSamFiles` merges sample_run
+files and places the result in the sample directory. The
+`MergeSamFiles` task needs information on how to find files to merge.
+This is currently done by registering a handler via the configuration
+option `target_generator_handler`. In the custom configuration file
+`J.Doe_00_01.yaml`, we have
 
-	ratatosk_run.py MergeSamFiles  --target P001_101_index3/P001_101_index3.sort.merge.bam
-	  --config-file ~/opt/ratatosk/examples/J.Doe_00_01.yaml
+    picard:
+      MergeSamFiles:
+        parent_task: ratatosk.lib.tools.picard.SortSam
+        target_generator_handler: test.site_functions.collect_sample_runs
 
-results in 
+where the function `test.site_functions.collect_sample_runs` is
+defined as
+
+```python
+def collect_sample_runs(task):
+    return ["sample/fc1/sample.sort.bam",
+            "sample/fc2/sample.sort.bam"]
+```
+
+This can be any python function, with the only requirement that it
+return a list of source file names. This task could be run as follows
+
+	ratatosk_run.py MergeSamFiles  --target sample.sort.merge.bam
+	  --config-file /path/to/ratatosk/examples/J.Doe_00_01.yaml
+
+resulting in (dry run version shown here)
 
 ![AlignSeqcapMerge](https://raw.github.com/percyfal/ratatosk/master/doc/example_align_seqcap_merge.png)
-
-Note that in this implementation the merged files end up directly in
-the sample directory (i.e. *P001_101_index3*).
 
 ### Adding adapter trimming  ###
 

@@ -28,6 +28,7 @@ logger = logging.getLogger('luigi-interface')
 
 class PicardJobRunner(DefaultShellJobRunner):
     def _make_arglist(self, job):
+        print job.__class__
         if not job.jar() or not os.path.exists(os.path.join(job.path(),job.jar())):
             logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),
                                                                      os.path.abspath(job.jar())))

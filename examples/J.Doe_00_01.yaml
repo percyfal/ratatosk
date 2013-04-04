@@ -3,7 +3,6 @@ settings:
   target_generator_handler: test.site_functions.target_generator
 
 bwa:
-  bwaref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
   aln:
     # NB: shouldn't work since this is a custom config file
     parent_task: ratatosk.lib.align.bwa.BwaSampe
@@ -15,15 +14,12 @@ samtools:
     parent_task: ratatosk.lib.align.bwa.BwaSampe
 
 picard:
-  HsMetrics:
-    target_regions: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seqcap/chr11_targets.interval_list
-    bait_regions: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seqcap/chr11_baits.interval_list
+  MergeSamFiles:
+    parent_task: ratatosk.lib.tools.picard.SortSam
+    target_generator_handler: test.site_functions.collect_sample_runs
   SortSam:
     parent_task: ratatosk.lib.tools.samtools.SamToBam
-  MergeSamFiles:
-    # How is this module found?!?
-    parent_task: ratatosk.lib.tools.picard.SortSam
-    target_generator_function: test.site_functions.collect_sample_runs
+
 
 gatk:
   ref: ~/opt/ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
@@ -36,8 +32,3 @@ gatk:
   IndelRealigner:
     options:
 
-pipeline:
-  HaloPlex:
-    target_generator_function: test.site_functions.target_generator
-  AlignSeqcap:
-    target_generator_function: test.site_functions.target_generator

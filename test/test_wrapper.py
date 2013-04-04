@@ -95,14 +95,16 @@ class TestSamtoolsWrappers(unittest.TestCase):
 
 class TestMiscWrappers(unittest.TestCase):
     def setUp(self):
+        self.fastqfile = os.path.relpath(os.path.join(os.path.dirname(__file__), 'indir', 'file.fastq.gz'), os.curdir)
         MockFile._file_contents = {}
         os.makedirs('indir')
-        with open('indir/file.fastq.gz', 'w') as fh:
+        with open(self.fastqfile, 'w') as fh:
             fh.write("")
 
     def tearDown(self):
-        os.unlink('indir/file.fastq.gz')
-        os.rmdir('indir')
+        if os.path.exists(self.fastqfile):
+            os.unlink(self.fastqfile)
+            os.rmdir(os.path.dirname(self.fastqfile))
 
     def test_luigihelp(self):
         try:
@@ -111,12 +113,11 @@ class TestMiscWrappers(unittest.TestCase):
             pass
 
     def test_fastqln(self):
-        outfile = 'file.fastq.gz'
-        fql = ratatosk.lib.files.fastq.FastqFileLink(target=outfile, outdir=os.curdir, indir="indir")
-        fql.run()
+        outfile = os.path.join(os.path.dirname(self.fastqfile), os.pardir, 'file.fastq.gz')
+        luigi.run(_luigi_args(['--use-long-names', '--target', outfile, '--outdir', os.path.dirname(outfile), '--indir', os.path.dirname(self.fastqfile), '--config-file', os.path.relpath(os.path.join(os.path.dirname(__file__), os.pardir, "config", "ratatosk.yaml"), os.curdir)]), main_task_cls=ratatosk.lib.files.fastq.FastqFileLink)
         self.assertTrue(os.path.exists(outfile))
         self.assertTrue(os.path.exists(os.readlink(outfile)))
-        os.unlink('./file.fastq.gz')
+        os.unlink(outfile)
 
     def test_cutadapt(self):
         task = ratatosk.lib.utils.cutadapt.CutadaptJobTask(target=fastq1.replace(".fastq.gz", ".trimmed.fastq.gz"), parent_task='ratatosk.lib.files.fastq.FastqFileLink')
