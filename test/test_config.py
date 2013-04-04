@@ -105,15 +105,8 @@ class TestConfigUpdate(unittest.TestCase):
     def test_config_update(self):
         """Test updating config with and without disable_parent_task_update"""
         # Main gatk task
-        #
-        # Setting parent_task is necessary since the config file has
-        # been set in test_command.py
-        cnf.add_config_path(ratatosk_file)
+        luigi.run(['--config-file', ratatosk_file, '--target', 'mock.fastq.gz', '--dry-run'], main_task_cls=ratatosk.lib.files.fastq.FastqFileLink)
         gatkjt = ratatosk.lib.tools.gatk.GATKJobTask()
-        print "Parent task: " + str(gatkjt.parent_task)
-        kwargs = gatkjt._update_config(cnf)
-
-        cnf.del_config_path(ratatosk_file)
         self.assertEqual(gatkjt.parent_task, "ratatosk.lib.tools.gatk.InputBamFile")
         cnf.add_config_path("mock.yaml")
         kwargs = gatkjt._update_config(cnf)
@@ -129,6 +122,7 @@ class TestConfigUpdate(unittest.TestCase):
         #
         # Incidentally, this verifies that subsection key value 'no.such.class'
         # overrides section key 'another.class'
+        luigi.run(['--config-file', ratatosk_file, '--target', 'mock.bam', '--dry-run'], main_task_cls=ratatosk.lib.files.fastq.FastqFileLink)
         ug = ratatosk.lib.tools.gatk.UnifiedGenotyper()
         self.assertEqual(ug.parent_task, "ratatosk.lib.tools.gatk.ClipReads")
         cnf.del_config_path(ratatosk_file)
