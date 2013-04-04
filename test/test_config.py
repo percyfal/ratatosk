@@ -20,9 +20,14 @@ logging.basicConfig(level=logging.DEBUG)
 configfile = os.path.join(os.path.dirname(__file__), "pipeconf.yaml")
 ratatosk_file = os.path.join(os.pardir, "config", "ratatosk.yaml")
 
+
 def setUpModule():
     global cnf
-    cnf = get_config()
+    cnf = get_custom_config()
+    cnf.clear()
+
+def tearDownModule():
+    cnf.clear()
 
 # FIX ME: 
 class TestConfigParser(unittest.TestCase):
@@ -31,24 +36,27 @@ class TestConfigParser(unittest.TestCase):
     def setUpClass(cls):
         with open(configfile) as fh:
             cls.yaml_config = yaml.load(fh)
-
-    def setUp(self):
-        cnf._config_paths = []
-        cnf.reload()
-        self.assertEqual([], cnf._instance._config_paths)
         os.environ["GATK_HOME_MOCK"] = os.path.abspath(os.curdir)
         os.environ["PICARD_HOME_MOCK"] = os.path.abspath(os.curdir)
         with open("mock.yaml", "w") as fp:
             fp.write(yaml.safe_dump({'gatk':{'java':'java', 'path': '$GATK_HOME_MOCK'},
                                      'picard':{'java':'java', 'path': '$PICARD_HOME_MOCK/test'}}, default_flow_style=False))
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         if os.path.exists("mock.yaml"):
             os.unlink("mock.yaml")
-        cnf._instance._config_paths = []
-        cnf.reload()
         del os.environ["GATK_HOME_MOCK"]
         del os.environ["PICARD_HOME_MOCK"]
+
+
+    def setUp(self):
+        cnf.clear()
+        self.assertEqual([], cnf._instance._custom_config_paths)
+
+    def tearDown(self):
+        cnf.clear()
+
 
     def test_get_config(self):
         """Test getting config instance"""
@@ -67,20 +75,21 @@ class TestConfigParser(unittest.TestCase):
     def test_add_config_path(self):
         """Test adding same config again"""
         cnf.add_config_path(configfile)
-        self.assertEqual(1, len(cnf._instance._config_paths))
+        self.assertEqual(1, len(cnf._instance._custom_config_paths))
         cnf.del_config_path(configfile)
 
     def test_del_config_path(self):
         """Test deleting config path"""
         cnf.add_config_path(configfile)
         cnf.del_config_path(configfile)
-        self.assertEqual([], cnf._instance._config_paths)
+        self.assertEqual([], cnf._instance._custom_config_paths)
         
     def test_expand_vars(self):
         cnf = get_config()
         cnf.add_config_path("mock.yaml")
         self.assertEqual(os.getenv("GATK_HOME_MOCK"), cnf._sections['gatk']['path'])
         self.assertEqual(os.path.join(os.getenv("PICARD_HOME_MOCK"), "test"), cnf._sections['picard']['path'])
+        cnf.del_config_path("mock.yaml")
 
 class TestConfigUpdate(unittest.TestCase):
     def setUp(self):
@@ -89,12 +98,11 @@ class TestConfigUpdate(unittest.TestCase):
         MockFile._file_contents.clear()
         with open("mock.yaml", "w") as fp:
             fp.write(yaml.safe_dump({'gatk':{'parent_task':'another.class', 'UnifiedGenotyper':{'parent_task': 'no.such.class'}}}, default_flow_style=False))
-        cnf.del_config_path("mock.yaml")
 
     def tearDown(self):
         if os.path.exists("mock.yaml"):
             os.unlink("mock.yaml")
-        cnf._instance._config_paths = []
+        cnf.clear()
 
     def test_config_update(self):
         """Test updating config with and without disable_parent_task_update"""
@@ -128,7 +136,6 @@ class TestGlobalConfig(unittest.TestCase):
     def setUp(self):
         with open(ratatosk_file) as fp:
             self.ratatosk = yaml.load(fp)
-
 
     def test_global_config(self):
         """Test that backend.__global_config__ is updated correctly when instantiating a task"""

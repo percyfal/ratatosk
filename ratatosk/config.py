@@ -287,7 +287,7 @@ class RatatoskCustomConfigParser(RatatoskConfigParser):
 
     @classmethod
     def add_config_path(cls, path):
-        if path and path not in cls._instance._custom_config_paths:
+        if path and not any(os.path.samefile(path, x) for x in cls._instance._custom_config_paths):
             logger.debug("adding config path {}".format(path))
             cls._instance._custom_config_paths.append(path)
         else:
@@ -310,9 +310,13 @@ class RatatoskCustomConfigParser(RatatoskConfigParser):
         cls._instance._sections = cls._cls_dict
         cls._instance.reload()
 
+    @classmethod
+    def clear(cls):
+        cls._instance._custom_config_paths = []
+        cls._instance._sections = cls._cls_dict()
+
     def reload(self):
         return self._instance.read(self._instance._custom_config_paths)
-
 
 def setup_interface_logging():
     # From luigi.interface - setup ratatosk-specific logging interface?

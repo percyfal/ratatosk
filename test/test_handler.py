@@ -7,6 +7,7 @@ import luigi
 import yaml
 import logging
 from ratatosk import interface, backend
+from ratatosk.config import get_config
 from ratatosk.lib.tools.picard import MergeSamFiles
 from ratatosk.utils import fullclassname, rreplace
 from types import GeneratorType

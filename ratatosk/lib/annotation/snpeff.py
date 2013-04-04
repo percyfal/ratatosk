@@ -33,7 +33,8 @@ class snpEffJobRunner(DefaultShellJobRunner):
         if job.opts():
             arglist += job.opts()
         (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
-        arglist += job_args
+        if not job.pipe:
+            arglist += job_args
         return (arglist , tmp_files)
 
     def run_job(self, job):

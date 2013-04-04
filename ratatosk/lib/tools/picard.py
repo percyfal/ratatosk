@@ -18,6 +18,7 @@ import time
 import glob
 import ratatosk.lib.files.external
 from ratatosk.utils import rreplace
+from ratatosk.config import get_config
 from ratatosk.job import InputJobTask, JobWrapperTask, JobTask, DefaultShellJobRunner
 from ratatosk.handler import RatatoskHandler, register, register_task_handler
 from ratatosk import backend
@@ -108,6 +109,8 @@ class MergeSamFiles(PicardJobTask):
     def requires(self):
         cls = self.set_parent_task()
         sources = []
+        cnf = get_config()
+        print "Config paths " + str(cnf._instance._config_paths)
         if self.target_generator_handler and "target_generator_handler" not in self.__handlers__.keys():
             tgf = RatatoskHandler(label="target_generator_handler", mod=self.target_generator_handler)
             register_task_handler(self, tgf)

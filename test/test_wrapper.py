@@ -30,7 +30,7 @@ import ratatosk.lib.utils.cutadapt
 import ratatosk.lib.utils.misc
 import ratatosk.lib.annotation.snpeff
 import ratatosk.lib.annotation.annovar
-from ratatosk.config import get_config
+from ratatosk.config import get_config, get_custom_config
 
 File = MockFile
 
@@ -67,10 +67,13 @@ def _prune_luigi_tmp(args):
     return [re.sub(r'-luigi-tmp-[0-9]+(\.gz)?', '', x) for x in args]
 
 def setUpModule():
-    global config
-    config = get_config()
-    config.add_config_path(localconf)
-    config.reload()
+    global cnf
+    cnf = get_config()
+    # cnf.clear()
+    # cnf.add_config_path(os.path.join("../config/ratatosk.yaml"))
+    custom_cnf = get_custom_config()
+    custom_cnf.add_config_path(localconf)
+    custom_cnf.reload()
     
 class TestSamtoolsWrappers(unittest.TestCase):
     def test_samtools_view(self):

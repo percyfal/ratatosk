@@ -87,8 +87,8 @@ class DefaultShellJobRunner(JobRunner):
         # Need to call self.__class__ since fix_paths overridden in
         # DefaultGzShellJobRunner
         (tmp_files, job_args) = self.__class__._fix_paths(job)
-        
-        arglist += job_args
+        if not job.pipe:
+            arglist += job_args
         return (arglist, tmp_files)
         
     def run_job(self, job):
@@ -157,6 +157,7 @@ class BaseJobTask(luigi.Task):
     options = luigi.Parameter(default=(), description="Program options", is_list=True)
     parent_task = luigi.Parameter(default=None, description="Main parent task from which the current task receives (parts) of its input")
     num_threads = luigi.Parameter(default=1)
+    pipe  = luigi.BooleanParameter(default=False, description="Piped input/output. In practice refrains from including input/output file names in command list.")
     # Note: output should generate one file only; in special cases we
     # need to do hacks
     target = luigi.Parameter(default=None, description="Output target name")
@@ -193,6 +194,7 @@ class BaseJobTask(luigi.Task):
                 config_file = value
                 config = get_config()
                 config.add_config_path(config_file)
+                print "Updating config file " + config_file
                 kwargs = self._update_config(config, *args, **kwargs)
         for key, value in param_values:
             if key == "custom_config":
