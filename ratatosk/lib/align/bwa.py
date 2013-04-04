@@ -16,7 +16,7 @@ import re
 import luigi
 import time
 import shutil
-from ratatosk.job import JobTask, JobWrapperTask, DefaultShellJobRunner
+from ratatosk.job import InputJobTask, JobTask, JobWrapperTask, DefaultShellJobRunner
 from ratatosk.utils import rreplace, fullclassname
 from cement.utils import shell
 
@@ -24,19 +24,17 @@ from cement.utils import shell
 class BwaJobRunner(DefaultShellJobRunner):
     pass
 
-class InputFastqFile(JobTask):
+class InputFastqFile(InputJobTask):
     _config_section = "bwa"
     _config_subsection = "InputFastqFile"
-    target = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
-    
-    def requires(self):
-        cls = self.set_parent_task()
-        return cls(target=self.target)
-    def output(self):
-        return luigi.LocalTarget(self.target)
-    def run(self):
-        pass
+    target_suffix = luigi.Parameter(default=".fastq")
+
+class InputFastaFile(InputJobTask):
+    _config_section = "bwa"
+    _config_subsection = "InputFastaFile"
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastaFile")
+    target_suffix = luigi.Parameter(default=".fa")
 
 class BwaJobTask(JobTask):
     """Main bwa class with parameters necessary for all bwa classes"""
@@ -131,3 +129,12 @@ class BwaSampe(BwaJobTask):
         return [self.read_group, self.bwaref, sai1, sai2, fastq1, fastq2, ">", self.output()]
 
     
+class BwaIndex(BwaJobTask):
+    _config_subsection = "index"
+    sub_executable = "index"
+    source_suffix = luigi.Parameter(default=".fa")
+    target_suffix = luigi.Parameter(default=".fa.bwt")
+    parent_task = luigi.Parameter(default="ratatosk.lib.align.bwa.InputFastaFile")
+    
+    def args(self):
+        return [self.input()]

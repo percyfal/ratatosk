@@ -31,7 +31,8 @@ setup(name = "ratatosk",
         # da20852fa10a60a388 - would want to put this here in master
         # in case something breaks in the future
         "luigi",
-        "nose"
+        "nose",
+        "nose-timer",
         ],
       test_suite = 'nose.collector',
       packages=[

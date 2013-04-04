@@ -45,7 +45,6 @@ fastq2 = os.path.join(os.curdir, sample + "_R2_001.fastq.gz")
 ref = "reference.fa"
 
 sai1 = os.path.join(sample + "_R1_001.sai")
-sai2 = os.path.join(sample + "_R2_001.sai")
 
 sam = os.path.join(sample + ".sam")
 bam = os.path.join(sample + ".bam")
@@ -78,6 +77,12 @@ class TestSamtoolsWrappers(unittest.TestCase):
         task = ratatosk.lib.tools.samtools.SamToBam(target=bam)
         self.assertEqual(['samtools', 'view', '-bSh', 'P001_101_index3_TGACCA_L001.sam', '>', 'P001_101_index3_TGACCA_L001.bam'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
+
+    def test_sortbam(self):
+        task = ratatosk.lib.tools.samtools.SortBam(target=sortbam)
+        self.assertEqual(['samtools', 'sort', 'P001_101_index3_TGACCA_L001.bam', 'P001_101_index3_TGACCA_L001.sort'],
+                         _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
+
 
 class TestMiscWrappers(unittest.TestCase):
     def setUp(self):
@@ -134,9 +139,9 @@ class TestBwaWrappers(unittest.TestCase):
         self.assertEqual(['bwa', 'sampe', '-r "@RG\tID:P001_101_index3_TGACCA_L001_R1_001\tSM:P001_101_index3_TGACCA_L001_R1_001\tPL:Illumina"', 'bwa/hg19.fa', 'P001_101_index3_TGACCA_L001_R1_001.sai', 'P001_101_index3_TGACCA_L001_R2_001.sai', 'P001_101_index3_TGACCA_L001_R1_001.fastq.gz', 'P001_101_index3_TGACCA_L001_R2_001.fastq.gz', '>', 'P001_101_index3_TGACCA_L001.sam'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
-    def test_sortbam(self):
-        task = ratatosk.lib.tools.samtools.SortBam(target=sortbam)
-        self.assertEqual(['samtools', 'sort', 'P001_101_index3_TGACCA_L001.bam', 'P001_101_index3_TGACCA_L001.sort'],
+    def test_bwaindex(self):
+        task = ratatosk.lib.align.bwa.BwaIndex(target=ref + ".bwt")
+        self.assertEqual(['bwa', 'index', 'reference.fa'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
 @unittest.skipIf((os.getenv("PICARD_HOME") is None or os.getenv("PICARD_HOME") == ""), "No Environment PICARD_HOME set; skipping")

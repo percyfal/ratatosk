@@ -10,6 +10,8 @@ picard:
     parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
   InsertMetrics:
     parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
+  HsMetrics:
+    parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
   SortSam:
     parent_task: ratatosk.lib.tools.samtools.SamToBam
   MergeSamFiles:

@@ -315,7 +315,7 @@ class BaseJobTask(luigi.Task):
         self.init_local()
         #if not self.dry_run:
         self.job_runner().run_job(self)
-        self.__class__.post_run_hook()
+        #self.__class__.post_run_hook()
 
     def post_run_hook(self):
         """Hook to run after job_runner"""
