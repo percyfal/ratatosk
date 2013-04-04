@@ -66,6 +66,10 @@ class TabixBgUnzipJobTask(TabixJobTask):
     def args(self):
         return [self.input()]
 
+    def post_run_hook(self):
+        #luigi.build(TabixTabixJobTask(target=rreplace(self.target, TabixTabixJobTask.source_suffix, TabixTabixJobTask.target_suffix, 1))
+        print "running post_run_hook"
+        print TabixTabixJobTask(target=rreplace(self.target, TabixTabixJobTask.source_suffix, TabixTabixJobTask.target_suffix, 1))
 
 class TabixTabixJobTask(TabixJobTask):
     _config_subsection = "tabix"

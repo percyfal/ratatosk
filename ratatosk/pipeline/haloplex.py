@@ -23,6 +23,7 @@ from ratatosk.lib.align.bwa import BwaSampe, BwaAln
 from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, RealignerTargetCreator, IndelRealigner
 from ratatosk.lib.tools.picard import PicardMetrics, MergeSamFiles
 from ratatosk.lib.tools.fastqc import FastQCJobTask
+from ratatosk.lib.variation.htslib import HtslibVcfMergeJobTask
 
 logger = logging.getLogger('luigi-interface')
 
@@ -107,6 +108,7 @@ class HaloPlex(PipelineTask):
     def requires(self):
         # List requirements for completion, consisting of classes above
         if self.indir is None:
+            logger.error("Need input directory to run")
             return []
         if self.outdir is None:
             self.outdir = self.indir
@@ -119,6 +121,7 @@ class HaloPlex(PipelineTask):
         reads = ["{}_R1_001.fastq.gz".format(x[2]) for x in targets] +  ["{}_R2_001.fastq.gz".format(x[2]) for x in targets]
         variant_targets = ["{}.{}".format(x[1], self.final_target_suffix) for x in targets]
         picard_metrics_targets = ["{}.{}".format(x[1], "trimmed.sync.sort.merge") for x in targets]
-        return [VariantEval(target=tgt) for tgt in variant_targets] + [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_targets] + [PrintConfig()]# + [FastQCJobTask(target=tgt) for tgt in reads]
+        vcf_targets = ["{}.{}".format(x[1], self.final_target_suffix.replace(".eval_metrics", ".vcf")) for x in targets]
+        return [VariantEval(target=tgt) for tgt in variant_targets] + [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_targets] + [PrintConfig()] + [FastQCJobTask(target=tgt) for tgt in reads] + [HtslibVcfMergeJobTask(target=os.path.join(self.indir, "all.vcfmerge.vcf.gz"), source_suffix=".{}".format(self.final_target_suffix.replace(".eval_metrics", ".vcf.gz")))]
 
 

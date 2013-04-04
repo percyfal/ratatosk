@@ -31,6 +31,7 @@ import ratatosk.lib.utils.misc
 import ratatosk.lib.annotation.snpeff
 import ratatosk.lib.annotation.annovar
 from ratatosk.config import get_config
+
 File = MockFile
 
 logging.basicConfig(level=logging.DEBUG)
@@ -294,7 +295,8 @@ class TestHtslibWrappers(unittest.TestCase):
 
     def test_vcf_merge(self):
         task = ratatosk.lib.variation.htslib.HtslibVcfMergeJobTask(target=self.bam.replace(".bam", ".vcfmerge.vcf.gz"), target_generator_handler='test.test_wrapper.vcf_generator')
-        print _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])
+        self.assertEqual(['vcf', 'merge', 'vcf1.vcf.gz', 'vcf2.vcf.gz'],
+                         _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
     
 class TestTabixWrappers(unittest.TestCase):
     @classmethod
@@ -314,7 +316,6 @@ class TestTabixWrappers(unittest.TestCase):
         self.assertEqual(['bgzip', '-d', 'P001_101_index3_TGACCA_L001.sort.vcf.gz'], _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
         task = ratatosk.lib.variation.tabix.TabixBgUnzipJobTask(target=self.bam.replace(".bam", ".vcf"), options=["-d"])
         self.assertEqual(['bgzip', '-d', 'P001_101_index3_TGACCA_L001.sort.vcf.gz'], _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
-
 
     def test_tabix(self):
         task = ratatosk.lib.variation.tabix.TabixTabixJobTask(target=self.bam.replace(".bam", ".vcf.gz.tbi"))

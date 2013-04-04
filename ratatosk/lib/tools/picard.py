@@ -98,7 +98,7 @@ class MergeSamFiles(PicardJobTask):
     executable = "MergeSamFiles.jar"
     label = luigi.Parameter(default=".merge")
     read1_suffix = luigi.Parameter(default="_R1_001")
-    target_generator_function = luigi.Parameter(default=None)
+    target_generator_handler = luigi.Parameter(default=None)
     # FIXME: TMP_DIR should not be hard-coded
     options = luigi.Parameter(default=("SO=coordinate TMP_DIR=./tmp",), is_list=True)
 
@@ -108,8 +108,8 @@ class MergeSamFiles(PicardJobTask):
     def requires(self):
         cls = self.set_parent_task()
         sources = []
-        if self.target_generator_function and self.target_generator_function not in self.__handlers__.keys():
-            tgf = RatatoskHandler(label="target_generator_handler", mod=self.target_generator_function)
+        if self.target_generator_handler and "target_generator_handler" not in self.__handlers__.keys():
+            tgf = RatatoskHandler(label="target_generator_handler", mod=self.target_generator_handler)
             register_task_handler(self, tgf)
         if not "target_generator_handler" in self.__handlers__.keys():
             logging.warn("MergeSamFiles requires a target generator hanler; no defaults are as of yet implemented")

@@ -32,7 +32,7 @@ class InputVcfFile(InputJobTask):
 class HtslibVcfJobTask(JobTask):
     _config_section = "htslib"
     executable = luigi.Parameter(default="vcf")
-    parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.TabixBgzipJobTask")
+    parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.TabixTabixJobTask")
 
     def job_runner(self):
         return HtslibJobRunner()
@@ -48,15 +48,14 @@ class HtslibVcfMergeJobTask(HtslibVcfJobTask):
     
     def requires(self):
         cls = self.set_parent_task()
-        #sources = ["vcf1.vcf.gz", "vcf2.vcf.gz"]
         sources = []
         if self.target_generator_handler and "target_generator_handler" not in self.__handlers__.keys():
-            print "Getting target generatore handler"
             tgf = RatatoskHandler(label="target_generator_handler", mod=self.target_generator_handler)
             register_task_handler(self, tgf)
         if not "target_generator_handler" in self.__handlers__.keys():
-            logging.warn("MergeSamFiles requires a target generator hanler; no defaults are as of yet implemented")
+            logging.warn("vcf merge requires a target generator handler; no defaults are as of yet implemented")
             return []
         sources = self.__handlers__["target_generator_handler"](self)
+        print sources
         return [cls(target=src) for src in sources]
 
