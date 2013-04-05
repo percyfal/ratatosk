@@ -10,8 +10,8 @@ import ratatosk.lib.align.bwa
 import ratatosk.lib.tools.gatk
 import ratatosk.lib.tools.samtools
 import ratatosk.lib.tools.picard
-from ratatosk.pipeline.haloplex import HaloPlex
-from ratatosk.pipeline.align import AlignSeqcap
+from ratatosk.pipeline.haloplex import HaloPlex, HaloPlexSummary
+from ratatosk.pipeline.align import Align
 from ratatosk.pipeline import config_dict
 
 if __name__ == "__main__":

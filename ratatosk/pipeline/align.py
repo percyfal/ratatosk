@@ -22,9 +22,9 @@ from ratatosk.utils import make_fastq_links
 
 logger = logging.getLogger('luigi-interface')
 
-class AlignSeqcap(PipelineTask):
+class Align(PipelineTask):
     _config_section = "pipeline"
-    _config_subsection = "AlignSeqcap"
+    _config_subsection = "Align"
     sample = luigi.Parameter(default=[], is_list=True, description="Samples to process")
     flowcell = luigi.Parameter(default=[], is_list=True, description = "flowcells to process")
     lane = luigi.Parameter(default=[], description="Lanes to process.", is_list=True)
@@ -43,5 +43,3 @@ class AlignSeqcap(PipelineTask):
 
         picard_metrics_targets = ["{}.{}".format(x[1], "sort.merge.dup") for x in targets]
         return [PicardMetrics(target=tgt) for tgt in picard_metrics_targets]
-
-
