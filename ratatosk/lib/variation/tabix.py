@@ -39,8 +39,8 @@ class TabixJobTask(JobTask):
     def main(self):
         return None
 
-class TabixBgzipJobTask(TabixJobTask):
-    _config_subsection = "bgzip"
+class Bgzip(TabixJobTask):
+    _config_subsection = "Bgzip"
     sub_executable = luigi.Parameter(default="bgzip")
     parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.InputVcfFile")
     target_suffix = luigi.Parameter(default=".gz")
@@ -50,8 +50,8 @@ class TabixBgzipJobTask(TabixJobTask):
         return [self.input()]
 
 # Since this is such a common operation, add the task here
-class TabixBgUnzipJobTask(TabixJobTask):
-    _config_subsection = "bgunzip"
+class BgUnzip(TabixJobTask):
+    _config_subsection = "BgUnzip"
     sub_executable = luigi.Parameter(default="bgzip")
     parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.InputVcfFile")
     target_suffix = luigi.Parameter(default=".vcf")
@@ -67,14 +67,15 @@ class TabixBgUnzipJobTask(TabixJobTask):
         return [self.input()]
 
     def post_run_hook(self):
-        #luigi.build(TabixTabixJobTask(target=rreplace(self.target, TabixTabixJobTask.source_suffix, TabixTabixJobTask.target_suffix, 1))
-        print "running post_run_hook"
-        print TabixTabixJobTask(target=rreplace(self.target, TabixTabixJobTask.source_suffix, TabixTabixJobTask.target_suffix, 1))
+        pass
+        # #luigi.build(TabixTabixJobTask(target=rreplace(self.target, TabixTabixJobTask.source_suffix, TabixTabixJobTask.target_suffix, 1))
+        # print "running post_run_hook"
+        # print TabixTabixJobTask(target=rreplace(self.target, TabixTabixJobTask.source_suffix, TabixTabixJobTask.target_suffix, 1))
 
-class TabixTabixJobTask(TabixJobTask):
-    _config_subsection = "tabix"
+class Tabix(TabixJobTask):
+    _config_subsection = "Tabix"
     sub_executable = luigi.Parameter(default="tabix")
-    parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.TabixBgzipJobTask")
+    parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.Bgzip")
     target_suffix = luigi.Parameter(default=".gz.tbi")
     source_suffix = luigi.Parameter(default=".gz")
 

@@ -315,7 +315,7 @@ class TestHtslibWrappers(unittest.TestCase):
         self.bam = sortbam
 
     def test_vcf_merge(self):
-        task = ratatosk.lib.variation.htslib.HtslibVcfMergeJobTask(target="out.vcfmerge.vcf.gz", target_generator_handler='test.test_wrapper.vcf_generator')
+        task = ratatosk.lib.variation.htslib.VcfMerge(target="out.vcfmerge.vcf.gz", target_generator_handler='test.test_wrapper.vcf_generator')
         self.assertEqual(['vcf', 'merge', 'vcf1.vcf.gz', 'vcf2.vcf.gz', '>', 'out.vcfmerge.vcf.gz'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
     
@@ -326,18 +326,18 @@ class TestTabixWrappers(unittest.TestCase):
         self.bam = sortbam
 
     def test_bgzip(self):
-        task = ratatosk.lib.variation.tabix.TabixBgzipJobTask(target=self.bam.replace(".bam", ".vcf.gz"))
+        task = ratatosk.lib.variation.tabix.Bgzip(target=self.bam.replace(".bam", ".vcf.gz"))
         self.assertEqual(['bgzip', 'P001_101_index3_TGACCA_L001.sort.vcf'], _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
     def test_bgunzip(self):
         """Test bgunzip via three different function calls"""
-        task = ratatosk.lib.variation.tabix.TabixBgzipJobTask(target=self.bam.replace(".bam", ".vcf"), target_suffix=".vcf", source_suffix=".vcf.gz", options=["-d"])
+        task = ratatosk.lib.variation.tabix.Bgzip(target=self.bam.replace(".bam", ".vcf"), target_suffix=".vcf", source_suffix=".vcf.gz", options=["-d"])
         self.assertEqual(['bgzip', '-d', 'P001_101_index3_TGACCA_L001.sort.vcf.gz'], _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
-        task = ratatosk.lib.variation.tabix.TabixBgUnzipJobTask(target=self.bam.replace(".bam", ".vcf"))
+        task = ratatosk.lib.variation.tabix.BgUnzip(target=self.bam.replace(".bam", ".vcf"))
         self.assertEqual(['bgzip', '-d', 'P001_101_index3_TGACCA_L001.sort.vcf.gz'], _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
-        task = ratatosk.lib.variation.tabix.TabixBgUnzipJobTask(target=self.bam.replace(".bam", ".vcf"), options=["-d"])
+        task = ratatosk.lib.variation.tabix.BgUnzip(target=self.bam.replace(".bam", ".vcf"), options=["-d"])
         self.assertEqual(['bgzip', '-d', 'P001_101_index3_TGACCA_L001.sort.vcf.gz'], _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
     def test_tabix(self):
-        task = ratatosk.lib.variation.tabix.TabixTabixJobTask(target=self.bam.replace(".bam", ".vcf.gz.tbi"))
+        task = ratatosk.lib.variation.tabix.Tabix(target=self.bam.replace(".bam", ".vcf.gz.tbi"))
         self.assertEqual(['tabix', 'P001_101_index3_TGACCA_L001.sort.vcf.gz'], _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))

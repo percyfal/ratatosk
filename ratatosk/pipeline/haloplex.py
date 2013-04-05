@@ -24,7 +24,8 @@ from ratatosk.lib.align.bwa import BwaSampe, BwaAln
 from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, RealignerTargetCreator, IndelRealigner
 from ratatosk.lib.tools.picard import PicardMetrics, MergeSamFiles
 from ratatosk.lib.tools.fastqc import FastQCJobTask
-from ratatosk.lib.variation.htslib import HtslibVcfMergeJobTask
+from ratatosk.lib.variation.htslib import VcfMerge
+from ratatosk.lib.variation.tabix import Bgzip
 
 logger = logging.getLogger('luigi-interface')
 
@@ -129,8 +130,11 @@ class HaloPlex(HaloPipeline):
 
         return [VariantEval(target=tgt) for tgt in variant_targets] + [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_targets] + [PrintConfig()] + [FastQCJobTask(target=tgt) for tgt in reads]
 
+class HaloBgzip(Bgzip):
+    _config_subsection = "HaloBgzip"
+    parent_task = luigi.Parameter(default="ratatosk.lib.variation.htslib.VcfMerge")
+
 class HaloPlexSummary(HaloPipeline):
     def requires(self):
         self._setup()
-        vcf_targets = ["{}.{}".format(x[1], self.final_target_suffix.replace(".eval_metrics", ".vcf")) for x in self.targets]
-        return [HtslibVcfMergeJobTask(target=os.path.join(self.outdir, "all.vcfmerge.vcf.gz"), source_suffix=".{}".format(self.final_target_suffix.replace(".eval_metrics", ".vcf.gz")))]
+        return [HaloBgzip(target=os.path.join(self.outdir, "all.vcfmerge.vcf.gz"))]

@@ -32,16 +32,18 @@ class InputVcfFile(InputJobTask):
 class HtslibVcfJobTask(JobTask):
     _config_section = "htslib"
     executable = luigi.Parameter(default="vcf")
-    parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.TabixTabixJobTask")
+    parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.Tabix")
 
     def job_runner(self):
         return HtslibJobRunner()
 
-class HtslibVcfMergeJobTask(HtslibVcfJobTask):
-    _config_subsection = "vcfmerge"
+class VcfMerge(HtslibVcfJobTask):
+    _config_subsection = "VcfMerge"
     sub_executable = luigi.Parameter(default="merge")
     target_generator_handler = luigi.Parameter(default=None)
     label = luigi.Parameter(default=".vcfmerge")
+    target_suffix = luigi.Parameter(default=".vcf")
+    source_suffix = luigi.Parameter(default=".vcf.gz")
 
     def args(self):
         return [x for x in self.input()] + [">", self.output()]
