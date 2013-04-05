@@ -42,9 +42,9 @@ class HtslibVcfMergeJobTask(HtslibVcfJobTask):
     sub_executable = luigi.Parameter(default="merge")
     target_generator_handler = luigi.Parameter(default=None)
     label = luigi.Parameter(default=".vcfmerge")
-    
+
     def args(self):
-        return [x for x in self.input()]
+        return [x for x in self.input()] + [">", self.output()]
     
     def requires(self):
         cls = self.set_parent_task()
