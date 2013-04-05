@@ -15,6 +15,10 @@
 # global config dict
 __global_config__ = {}
 
+# global vars dict
+# for storing stuff like targets
+__global_vars__ = {}
+
 # global handlers dict
 # Currently key corresponds to handler name and value is the handler
 __handlers__ = {}

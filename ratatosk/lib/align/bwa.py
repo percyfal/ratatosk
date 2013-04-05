@@ -119,13 +119,15 @@ class BwaSampe(BwaJobTask):
 
     def _get_read_group(self):
         if not self.read_group:
+            from ratatosk import backend
             sai1 = self.input()[0]
             rgid = sai1.fn.replace(".sai", "")
             smid = rgid
-            # Get sample information if present. Note that this
-            # requires the
-            # backend.__handlers__["target_generator_handler"] be set
-            for tgt in self.target_iterator():
+            # Get sample information if present in global vars. Note
+            # that this requires the
+            # backend.__global_vars__["targets"] be set
+            # This is not perfect but works for now
+            for tgt in backend.__global_vars__.get("targets", []):
                 if smid.startswith(tgt[2]):
                     smid = tgt[0]
                     break
