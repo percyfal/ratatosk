@@ -117,16 +117,29 @@ class BwaSampe(BwaJobTask):
         sai2 = rreplace(self._make_source_file_name(), self.source_suffix, self.read2_suffix + self.source_suffix, 1)
         return [BwaAln(target=sai1), BwaAln(target=sai2)]
 
+    def _get_read_group(self):
+        if not self.read_group:
+            sai1 = self.input()[0]
+            rgid = sai1.fn.replace(".sai", "")
+            smid = rgid
+            # Get sample information if present. Note that this
+            # requires the
+            # backend.__handlers__["target_generator_handler"] be set
+            for tgt in self.target_iterator():
+                if smid.startswith(tgt[2]):
+                    smid = tgt[0]
+                    break
+            # The platform should be configured elsewhere
+            return "-r \"{}\"".format("\t".join(["@RG", "ID:{}".format(rgid), "SM:{}".format(smid), "PL:{}".format(self.platform)]))
+        else:
+            return self.read_group
+
     def args(self):
         sai1 = self.input()[0]
         sai2 = self.input()[1]
         fastq1 = luigi.LocalTarget(rreplace(sai1.fn, self.source_suffix, ".fastq.gz", 1))
         fastq2 = luigi.LocalTarget(rreplace(sai2.fn, self.source_suffix, ".fastq.gz", 1))
-        if not self.read_group:
-            foo = sai1.fn.replace(".sai", "")
-            # The platform should be configured elsewhere
-            self.read_group = "-r \"{}\"".format("\t".join(["@RG", "ID:{}".format(foo), "SM:{}".format(foo), "PL:{}".format(self.platform)]))
-        return [self.read_group, self.bwaref, sai1, sai2, fastq1, fastq2, ">", self.output()]
+        return [self._get_read_group(), self.bwaref, sai1, sai2, fastq1, fastq2, ">", self.output()]
 
     
 class BwaIndex(BwaJobTask):

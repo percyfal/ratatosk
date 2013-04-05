@@ -105,6 +105,10 @@ class TestCommand(unittest.TestCase):
                   main_task_cls=ratatosk.lib.align.bwa.BwaAln)
 
     def test_bwasampe(self):
+        from ratatosk.handler import register, RatatoskHandler
+        key = "target_generator_handler"
+        h = RatatoskHandler(label=key, mod="test.site_functions.target_generator")
+        register(h)
         luigi.run(_luigi_args(['--target', read1.replace("1.fastq.gz", ".sam"), '--config-file', localconf, '--use-long-names']), main_task_cls=ratatosk.lib.align.bwa.BwaSampe)
 
     def test_sortbam(self):
