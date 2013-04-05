@@ -16,3 +16,6 @@ def collect_sample_runs(task):
     return ["sample/fc1/sample.sort.bam",
             "sample/fc2/sample.sort.bam"]
     
+def target_generator(**kwargs):
+    return [("sample", "sample", "data/read")]
+    
