@@ -24,7 +24,7 @@ import ratatosk
 from ratatosk.config import get_config
 from subprocess import Popen, PIPE
 from ratatosk.job import JobTask, DefaultShellJobRunner, InputJobTask
-from ratatosk.lib.align.bwa import BwaIndex
+from ratatosk.lib.align.bwa import BwaIndex, Bampe
 import ratatosk.lib.tools.picard
 from nose.plugins.attrib import attr
 
@@ -58,6 +58,8 @@ def setUpModule():
                         'InputFastqFile': {'target_suffix':'.fastq.gz'},
                         'bwaref': 'data/chr11.fa',
                         'sampe':{'read1_suffix':"1",
+                                 'read2_suffix':"2"},
+                        'Bampe':{'read1_suffix':"1",
                                  'read2_suffix':"2"},
                         },
                     'picard' : {
@@ -231,3 +233,6 @@ class TestPipedCommand(unittest.TestCase):
         t2 = Task2(target="output.sort.txt", pipe=True)
         pt = PipedTask(tasks=[t1, t2], target="output.sort.txt")
         luigi.build([pt])
+
+    def test_bampe(self):
+        luigi.run(['--target', "data/read.bam", '--config-file', localconf],main_task_cls=Bampe)

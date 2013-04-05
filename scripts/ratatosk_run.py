@@ -11,7 +11,8 @@ import ratatosk.lib.tools.gatk
 import ratatosk.lib.tools.samtools
 import ratatosk.lib.tools.picard
 from ratatosk.pipeline.haloplex import HaloPlex, HaloPlexSummary
-from ratatosk.pipeline.align import Align
+from ratatosk.pipeline.seqcap import SeqCap, SeqCapSummary
+from ratatosk.pipeline.align import Align, AlignSummary
 from ratatosk.pipeline import config_dict
 
 if __name__ == "__main__":

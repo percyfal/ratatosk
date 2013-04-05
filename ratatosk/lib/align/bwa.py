@@ -16,10 +16,10 @@ import re
 import luigi
 import time
 import shutil
-from ratatosk.job import InputJobTask, JobTask, JobWrapperTask, DefaultShellJobRunner
+from ratatosk.job import InputJobTask, JobTask, JobWrapperTask, DefaultShellJobRunner, PipedTask
+from ratatosk.lib.tools.samtools import SamToBam
 from ratatosk.utils import rreplace, fullclassname
 from cement.utils import shell
-
 
 class BwaJobRunner(DefaultShellJobRunner):
     pass
@@ -132,7 +132,11 @@ class BwaSampe(BwaJobTask):
                     smid = tgt[0]
                     break
             # The platform should be configured elsewhere
-            return "-r \"{}\"".format("\t".join(["@RG", "ID:{}".format(rgid), "SM:{}".format(smid), "PL:{}".format(self.platform)]))
+            rg = "\"{}\"".format("\t".join(["@RG", "ID:{}".format(rgid), "SM:{}".format(smid), "PL:{}".format(self.platform)]))
+            if self.pipe:
+                return rg.replace("\t", "\\t")
+            else:
+                return rg
         else:
             return self.read_group
 
@@ -141,9 +145,30 @@ class BwaSampe(BwaJobTask):
         sai2 = self.input()[1]
         fastq1 = luigi.LocalTarget(rreplace(sai1.fn, self.source_suffix, ".fastq.gz", 1))
         fastq2 = luigi.LocalTarget(rreplace(sai2.fn, self.source_suffix, ".fastq.gz", 1))
-        return [self._get_read_group(), self.bwaref, sai1, sai2, fastq1, fastq2, ">", self.output()]
+        return ["-r", self._get_read_group(), self.bwaref, sai1, sai2, fastq1, fastq2, ">", self.output()]
 
-    
+class Bampe(PipedTask):
+    _config_section = "bwa"
+    _config_subsection = "Bampe"
+    read1_suffix = luigi.Parameter(default="_R1_001")
+    read2_suffix = luigi.Parameter(default="_R2_001")
+    source_suffix = luigi.Parameter(default=".sai")
+    target_suffix = luigi.Parameter(default=".bam")
+    read_group = luigi.Parameter(default=None)
+    platform = luigi.Parameter(default="Illumina")
+    can_multi_thread = False
+    max_memory_gb = 6 # bwa documentation says ~5.4 for human genome
+
+    def requires(self):
+        # From target name, generate sai1, sai2, fastq1, fastq2
+        sai1 = rreplace(self._make_source_file_name(), self.source_suffix, self.read1_suffix + self.source_suffix, 1)
+        sai2 = rreplace(self._make_source_file_name(), self.source_suffix, self.read2_suffix + self.source_suffix, 1)
+        return [BwaAln(target=sai1), BwaAln(target=sai2)]
+
+    def args(self):
+        #return [BwaSampe(target=self.target.replace(".bam", ".sam"), pipe=True)]
+        return [BwaSampe(target=self.target.replace(".bam", ".sam"), pipe=True), SamToBam(target=self.target, pipe=True)]
+
 class BwaIndex(BwaJobTask):
     _config_subsection = "index"
     sub_executable = "index"

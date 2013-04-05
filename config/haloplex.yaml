@@ -54,3 +54,6 @@ gatk:
   # Finally, make BaseRecalibrator depend on RawIndelRealigner
   BaseRecalibrator:
     parent_task: ratatosk.pipeline.haloplex.RawIndelRealigner
+
+fastqc:
+  parent_task: ratatosk.lib.align.bwa.InputFastqFile

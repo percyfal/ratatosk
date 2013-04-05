@@ -59,7 +59,10 @@ class SamToBam(SamtoolsJobTask):
     source_suffix = luigi.Parameter(default=".sam")
 
     def args(self):
-        return [self.input(), ">", self.output()]
+        retval = [self.input(), ">", self.output()]
+        if self.pipe:
+            return retval + ["-"]
+        return retval
 
 class SortBam(SamtoolsJobTask):
     _config_subsection = "sortbam"
@@ -89,8 +92,8 @@ class IndexBam(SamtoolsJobTask):
         return [self.input(), self.output()]
 
 # "Connection" tasks
-import ratatosk.lib.align.bwa as bwa
+import ratatosk.lib.align.bwa 
 class SampeToSamtools(SamToBam):
     def requires(self):
         source = self._make_source_file_name()
-        return bwa.BwaSampe(target=source)
+        return ratatosk.lib.align.bwa.BwaSampe(target=source)

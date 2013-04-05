@@ -15,14 +15,16 @@ import luigi
 import os
 import glob
 import logging
+from ratatosk import backend
 from ratatosk.job import PipelineTask, JobTask, JobWrapperTask
 from ratatosk.lib.tools.picard import PicardMetrics, SortSam
+from ratatosk.lib.tools.fastqc import FastQCJobTask
 from ratatosk.lib.files.fastq import FastqFileLink
 from ratatosk.utils import make_fastq_links
 
 logger = logging.getLogger('luigi-interface')
 
-class Align(PipelineTask):
+class AlignPipeline(PipelineTask):
     _config_section = "pipeline"
     _config_subsection = "Align"
     sample = luigi.Parameter(default=[], is_list=True, description="Samples to process")
@@ -32,14 +34,29 @@ class Align(PipelineTask):
     outdir = luigi.Parameter(description="Where analysis takes place", default=None)
     final_target_suffix = ".sort.merge.dup.bam"
 
-    def requires(self):
-        if not self.indir:
-            return
+    def _setup(self):
+        # List requirements for completion, consisting of classes above
+        if self.indir is None:
+            logger.error("Need input directory to run")
+            self.targets = []
         if self.outdir is None:
             self.outdir = self.indir
-        targets = [tgt for tgt in self.target_iterator()]
+        self.targets = [tgt for tgt in self.target_iterator()]
         if self.outdir != self.indir:
-            targets = make_fastq_links(targets, self.indir, self.outdir)
+            self.targets = make_fastq_links(self.targets, self.indir, self.outdir)
+        # Finally register targets in backend
+        backend.__global_vars__["targets"] = self.targets
 
-        picard_metrics_targets = ["{}.{}".format(x[1], "sort.merge.dup") for x in targets]
-        return [PicardMetrics(target=tgt) for tgt in picard_metrics_targets]
+
+
+class Align(AlignPipeline):
+    def requires(self):
+        self._setup()
+        reads = ["{}_R1_001.fastq.gz".format(x[2]) for x in self.targets] +  ["{}_R2_001.fastq.gz".format(x[2]) for x in self.targets]
+        picard_metrics_targets = ["{}.{}".format(x[1], "sort.merge.dup") for x in self.targets]
+        return [PicardMetrics(target=tgt) for tgt in picard_metrics_targets]  + [FastQCJobTask(target=tgt) for tgt in reads]
+
+
+class AlignSummary(AlignPipeline):
+    def requires(self):
+        self._setup()

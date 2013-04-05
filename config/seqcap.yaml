@@ -1,5 +1,4 @@
 picard:
-  # InputBamFile "pipes" input from other modules
   InputBamFile:
     parent_task: ratatosk.lib.tools.samtools.SamToBam
   SortSam:
@@ -9,15 +8,15 @@ picard:
   DuplicationMetrics:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   AlignmentMetrics:
-    #parent_task: ratatosk.lib.tools.picard.MergeSamFiles
     parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
   InsertMetrics:
-    #parent_task: ratatosk.lib.tools.picard.MergeSamFiles
     parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
   HsMetrics:
-    #parent_task: ratatosk.lib.tools.picard.MergeSamFiles
     parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
 
 samtools:
   SamToBam:
     parent_task: ratatosk.lib.align.bwa.BwaSampe
+
+fastqc:
+  parent_task: ratatosk.lib.align.bwa.InputFastqFile

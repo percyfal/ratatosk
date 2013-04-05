@@ -20,7 +20,7 @@ import subprocess
 import logging
 import warnings
 import luigi
-import importlib
+from subprocess import Popen, PIPE
 from itertools import izip
 from luigi.task import flatten
 import ratatosk.shell as shell
@@ -93,6 +93,8 @@ class DefaultShellJobRunner(JobRunner):
         
     def run_job(self, job):
         (arglist, tmp_files) = self._make_arglist(job)
+        if job.pipe:
+            return (arglist, tmp_files)
         cmd = ' '.join(arglist)
         logger.info("\nJob runner '{0}';\n\trunning command '{1}'\n".format(self.__class__, cmd))
         (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)
@@ -147,7 +149,45 @@ class DefaultGzShellJobRunner(DefaultShellJobRunner):
                 args.append(str(x))
         return (tmp_files, args)
 
+class PipedJobRunner(DefaultShellJobRunner):
+    @staticmethod
+    def _strip_output(job):
+        tmp_files = []
+        args = []
+        for x in job.args():
+            if isinstance(x, luigi.LocalTarget): # input/output
+                if x.exists(): # input
+                    args.append(x.path)
+                else: # output
+                    pass
+            else:
+                # Strip out any options that have to do with outputs.
+                # Should be defined in task
+                if str(x) not in ["-o", ">", "OUTPUT=", "O="]:
+                    args.append(str(x))
+        return (tmp_files, args)
+        
+    def run_job(self, job):
+        cmdlist = []
+        tmp_files = []
+        for j in job.args():
+            arglist = j.job_runner()._make_arglist(j)[0] + self._strip_output(j)[1]
+            cmdlist.append(arglist)
 
+        plist = []
+        # This is extremely annoying. The bwa -r "@RG\tID:foo" etc
+        # screws up the regular call to Popen, forcing me to use
+        # shell=True. Some escape character that needs correcting;
+        # throws error [bwa_sai2sam_pe] malformated @RG line
+        plist.append(Popen(" ".join(cmdlist[0]), stdout=PIPE, shell=True))
+        for i in xrange(1, len(cmdlist)):
+            plist.append(Popen(" ".join(cmdlist[1]), stdin=plist[i-1].stdout, stdout=PIPE, shell=True))
+        pipe = Popen("cat > {}".format(job.target), stdin=plist[-1].stdout, shell=True)
+        out, err = pipe.communicate()
+
+##############################
+# Job tasks
+##############################
 class BaseJobTask(luigi.Task):
     config_file = luigi.Parameter(is_global=True, default=os.path.join(os.path.join(ratatosk.__path__[0], os.pardir, "config", "ratatosk.yaml")), description="Main configuration file.")
     custom_config = luigi.Parameter(is_global=True, default=None, description="Custom configuration file for tuning options in predefined pipelines in which workflow may not be altered.")
@@ -495,7 +535,7 @@ class JobWrapperTask(JobTask):
     def run(self):
         pass
 
-class GenericWrapper(JobWrapperTask):
+class GenericWrapperTask(JobWrapperTask):
     """Generic task wrapper"""
     generic_wrapper_target = luigi.Parameter(default=(), is_list=True)
     task = luigi.Parameter(default=None)
@@ -508,6 +548,24 @@ class GenericWrapper(JobWrapperTask):
         else:
             cls = Register.get_reg()[self.task]
             return [cls(target=x) for x in self.generic_wrapper_target]
+
+class InputPath(InputJobTask):
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.Path")
+
+class PipedTask(JobTask):
+    tasks = luigi.Parameter(default=[], is_list=True)
+
+    def requires(self):
+        return InputPath(target=os.curdir)
+    
+    def output(self):
+        return luigi.LocalTarget(self.target)
+
+    def job_runner(self):
+        return PipedJobRunner()
+
+    def args(self):
+        return self.tasks
 
 class PipelineTask(JobWrapperTask):
     """Wrapper task for predefined pipelines. Adds option
