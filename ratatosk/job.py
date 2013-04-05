@@ -180,8 +180,11 @@ class PipedJobRunner(DefaultShellJobRunner):
         # shell=True. Some escape character that needs correcting;
         # throws error [bwa_sai2sam_pe] malformated @RG line
         plist.append(Popen(" ".join(cmdlist[0]), stdout=PIPE, shell=True))
+        #plist.append(Popen(cmdlist[0], stdout=PIPE))
         for i in xrange(1, len(cmdlist)):
+            #plist.append(Popen(cmdlist[i], stdin=plist[i-1].stdout, stdout=PIPE))
             plist.append(Popen(" ".join(cmdlist[1]), stdin=plist[i-1].stdout, stdout=PIPE, shell=True))
+            plist[i-1].stdout.close()
         pipe = Popen("cat > {}".format(job.target), stdin=plist[-1].stdout, shell=True)
         out, err = pipe.communicate()
 

@@ -18,6 +18,7 @@ import ratatosk.lib.files.external
 from ratatosk.utils import rreplace, fullclassname
 from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner
 import ratatosk.shell as shell
+import pysam
 
 logger = logging.getLogger('luigi-interface')
 
@@ -172,8 +173,7 @@ class IndelRealigner(GATKIndexedJobTask):
 class BaseRecalibrator(GATKIndexedJobTask):
     _config_subsection = "BaseRecalibrator"
     sub_executable = "BaseRecalibrator"
-    # Setting default=[] doesn't work?!?
-    knownSites = luigi.Parameter(default=None)
+    knownSites = luigi.Parameter(default=(), is_list=True)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
     target_suffix = luigi.Parameter(default=".recal_data.grp")
 
@@ -369,3 +369,56 @@ class UnifiedGenotyper(GATKIndexedJobTask):
         retval += [" -R {}".format(self.ref)]
         return retval
 
+class SplitUnifiedGenotyper(UnifiedGenotyper):
+    label = luigi.Parameter(default="-variants")
+    
+    def _make_source_file_name(self):
+        """Assume pattern is {base}-split/{base}-{ref}{ext}, as in
+        CombineVariants.
+
+        FIX ME: well, generalize
+        """
+        base = rreplace(os.path.join(os.path.dirname(os.path.dirname(self.target)), os.path.basename(self.target)), self.label, "", 1).split("-")
+        return "".join(base[0:-1]) + self.source_suffix
+
+class CombineVariants(GATKJobTask):
+    _config_subsection = "CombineVariants"
+    sub_executable = "CombineVariants"
+    source_suffix = luigi.Parameter(default=".vcf")
+    target_suffix = luigi.Parameter(default=".vcf")
+    label = luigi.Parameter(default="-variants")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.SplitUnifiedGenotyper")
+    split = luigi.BooleanParameter(default=True)
+    by_chromosome = luigi.BooleanParameter(default=True)
+
+    def requires(self):
+        cls = self.set_parent_task()
+        source = self._make_source_file_name()
+        if self.split:
+            # Partition sources by chromosome
+            # Need to get the references from the source bam file
+            bamfile = rreplace(source, self.target_suffix, cls().source_suffix, 1)
+            if os.path.exists(bamfile):
+                samfile = pysam.Samfile(bamfile, "rb")
+                refs = samfile.references
+                outdir = "{base}-split".format(base=os.path.splitext(self.target)[0])
+                if not os.path.exists(outdir):
+                    os.makedirs(outdir)
+                split_targets = [os.path.join("{base}-split".format(base=os.path.splitext(self.target)[0]), 
+                                              "{base}-{ref}{ext}".format(base=os.path.splitext(os.path.basename(self.target))[0], ref=chr_ref, ext=self.target_suffix)) for chr_ref in refs]
+                samfile.close()
+                return [cls(target=tgt, target_region=chr_ref) for tgt in split_targets]
+            else:
+                return []
+        else:
+            return [cls(target=source)]
+
+    def args(self):
+        retval = []
+        for x in self.input():
+            retval += ["-V", x]
+        retval += ["-o", self.output()]
+        if not self.ref:
+            raise Exception("need reference for UnifiedGenotyper")
+        retval += ["-R", self.ref]
+        return retval

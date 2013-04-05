@@ -45,13 +45,12 @@ class InputBamFile(JobTask):
     _config_section = "picard"
     _config_subsection = "InputBamFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
-    def requires(self):
-        cls = self.set_parent_task()
-        return cls(target=self.target)
-    def output(self):
-        return luigi.LocalTarget(self.target)
-    def run(self):
-        pass
+
+class InputFastaFile(InputJobTask):
+    _config_section = "picard"
+    _config_subsection = "InputFastaFile"
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastaFile")
+    target_suffix = luigi.Parameter(default=".fa")
 
 class PicardJobTask(JobTask):
     _config_section = "picard"
@@ -84,6 +83,16 @@ class PicardJobTask(JobTask):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
         return cls(target=source)
+
+class CreateSequenceDictionary(PicardJobTask):
+    _config_subsection = "CreateSequenceDictionary"
+    executable = "CreateSequenceDictionary.jar"
+    source_suffix = luigi.Parameter(default=".fa")
+    target_suffix = luigi.Parameter(default=".dict")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.InputFastaFile")
+
+    def args(self):
+        return ["REFERENCE=", self.input(), "OUTPUT=", self.output()]
 
 class SortSam(PicardJobTask):
     _config_subsection = "SortSam"

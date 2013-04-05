@@ -169,6 +169,10 @@ class TestPicardWrappers(unittest.TestCase):
         self.assertEqual(['java', '-Xmx2g', '-jar', self._path('SortSam.jar'), 'SO=coordinate MAX_RECORDS_IN_RAM=750000', 'INPUT=', 'P001_101_index3_TGACCA_L001.bam', 'OUTPUT=', 'P001_101_index3_TGACCA_L001.sort.bam'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
+    def test_picard_create_sequence_dictionary(self):
+        task = ratatosk.lib.tools.picard.CreateSequenceDictionary(target="data/chr11.dict")
+        self.assertEqual(['java', '-Xmx2g', '-jar', self._path('CreateSequenceDictionary.jar'), 'REFERENCE=', 'data/chr11.fa', 'OUTPUT=', 'data/chr11.dict'],
+                         _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
     def test_picard_alignmentmetrics(self):
         task = ratatosk.lib.tools.picard.AlignmentMetrics(target=sortbam.replace(".bam", ".align_metrics"), options=['REFERENCE_SEQUENCE={}'.format(ref)])
@@ -259,6 +263,10 @@ class TestGATKWrappers(unittest.TestCase):
         self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T VariantAnnotator', '', '--variant', './P001_101_index3/P001_101_index3.sort.merge.vcf', '--out', './P001_101_index3/P001_101_index3.sort.merge-annotated.vcf', '--snpEffFile', './P001_101_index3/P001_101_index3.sort.merge-effects.vcf', ' -R reference.fa', '-A', 'SnpEff'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
+    def test_combine_variants(self):
+        task = ratatosk.lib.tools.gatk.CombineVariants(target="data/read.sort-variants.vcf")
+        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T CombineVariants', '-V', 'data/read.sort-variants-split/read.sort-variants-chr11.vcf', '-o', 'data/read.sort-variants.vcf', '-R', 'reference.fa'],
+                         _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
 @unittest.skipIf((os.getenv("SNPEFF_HOME") is None or os.getenv("SNPEFF_HOME") == ""), "No environment SNPEFF_HOME set; skipping")
 class TestSnpEffWrappers(unittest.TestCase):

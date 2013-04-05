@@ -78,6 +78,11 @@ def setUpModule():
                              'bait_regions' : 'data/chr11_baits.interval_list',
                              'target_regions' : 'data/chr11_targets.interval_list'},
                         }
+                    'gatk' : 
+                    {
+                        'UnifiedGenotyper' : {'ref': 'data/chr11.fa'},
+                        'CombineVariants' : {'ref': 'data/chr11.fa'},
+                        }
                     },
                                 default_flow_style=False))
         
@@ -98,7 +103,7 @@ class TestCommand(unittest.TestCase):
         [os.unlink(os.path.join("data", x)) for x in files if x.startswith("chr11.fa.")]
 
     def tearDown(self):
-        files = os.listdir("data")
+        files = [x for x in os.listdir("data") if os.path.isfile(x)]
         [os.unlink(os.path.join("data", x)) for x in files if x.startswith("read.")]
         [os.unlink(os.path.join("data", x)) for x in files if x.endswith(".sai")]
 

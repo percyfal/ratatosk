@@ -166,7 +166,6 @@ class Bampe(PipedTask):
         return [BwaAln(target=sai1), BwaAln(target=sai2)]
 
     def args(self):
-        #return [BwaSampe(target=self.target.replace(".bam", ".sam"), pipe=True)]
         return [BwaSampe(target=self.target.replace(".bam", ".sam"), pipe=True), SamToBam(target=self.target, pipe=True)]
 
 class BwaIndex(BwaJobTask):
