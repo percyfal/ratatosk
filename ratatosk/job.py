@@ -511,29 +511,10 @@ class GenericWrapper(JobWrapperTask):
 
 class PipelineTask(JobWrapperTask):
     """Wrapper task for predefined pipelines. Adds option
-    target_generator_function which must be defined in order to
+    target_generator_handler which must be defined in order to
     collect targets.
     """
-    target_generator_function = luigi.Parameter(default=None)
-
-    def set_target_generator_function(self):
-        """Try to import a module task class represented as string in
-        target_generator_function and use it as such.
-
-        """
-        opt_mod = ".".join(self.target_generator_function.split(".")[0:-1])
-        opt_fn = self.target_generator_function.split(".")[-1]
-        if not self.target_generator_function:
-            return None
-        try:
-            m = __import__(opt_mod, fromlist=[opt_fn])
-            fn = getattr(sys.modules[m.__name__], opt_fn)
-            return fn
-        except:
-            logger.warn("No function '{}' found: need to define a generator function for task '{}'".format(".".join([opt_mod, opt_fn]), 
-                                                                                                           self.__class__))
-            return None
-    
+    target_generator_handler = luigi.Parameter(default=None)
     
 class PrintConfig(JobTask):
     """Print global configuration for all tasks, including all

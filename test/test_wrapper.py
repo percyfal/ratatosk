@@ -315,8 +315,8 @@ class TestHtslibWrappers(unittest.TestCase):
         self.bam = sortbam
 
     def test_vcf_merge(self):
-        task = ratatosk.lib.variation.htslib.HtslibVcfMergeJobTask(target=self.bam.replace(".bam", ".vcfmerge.vcf.gz"), target_generator_handler='test.test_wrapper.vcf_generator')
-        self.assertEqual(['vcf', 'merge', 'vcf1.vcf.gz', 'vcf2.vcf.gz'],
+        task = ratatosk.lib.variation.htslib.HtslibVcfMergeJobTask(target="out.vcfmerge.vcf.gz", target_generator_handler='test.test_wrapper.vcf_generator')
+        self.assertEqual(['vcf', 'merge', 'vcf1.vcf.gz', 'vcf2.vcf.gz', '>', 'out.vcfmerge.vcf.gz'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
     
 class TestTabixWrappers(unittest.TestCase):
