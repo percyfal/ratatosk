@@ -501,16 +501,21 @@ class BaseJobTask(luigi.Task):
         if isinstance(self.target_suffix, tuple):
             if self.target_suffix[0] and not self.source_suffix is None:
                 source = rreplace(source, self.target_suffix[0], self.source_suffix, 1)
+                #source = [rreplace(source_ref, x, self.source_suffix, 1) for x in self.target_suffix]
         else:
             if self.target_suffix and not self.source_suffix is None:
                 source = rreplace(source, self.target_suffix, self.source_suffix, 1)
         if not self.label:
             return source
-        if source.count(self.label) > 1:
-            logger.warn("label '{}' found multiple times in target '{}'; this could be intentional".format(self.label, source))
-        elif source.count(self.label) == 0:
-            logger.warn("label '{}' not found in target '{}'; are you sure your target is correctly formatted?".format(self.label, source))
-        return rreplace(source, self.label, "", 1)
+        if isinstance(source, list):
+            source = [rreplace(x, self.label, "", 1) for x in source]
+        else:
+            if source.count(self.label) > 1:
+                logger.warn("label '{}' found multiple times in target '{}'; this could be intentional".format(self.label, source))
+            elif source.count(self.label) == 0:
+                logger.warn("label '{}' not found in target '{}'; are you sure your target is correctly formatted?".format(self.label, source))
+            source = rreplace(source, self.label, "", 1)
+        return source
             
 class JobTask(BaseJobTask):
     def job_runner(self):

@@ -21,7 +21,7 @@ from ratatosk import backend
 from ratatosk.job import PipelineTask, JobTask, JobWrapperTask, PrintConfig
 from ratatosk.utils import rreplace, fullclassname, make_fastq_links
 from ratatosk.lib.align.bwa import BwaSampe, BwaAln
-from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, RealignerTargetCreator, IndelRealigner
+from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, RealignerTargetCreator, IndelRealigner, VariantFiltration
 from ratatosk.lib.tools.picard import PicardMetrics, MergeSamFiles
 from ratatosk.lib.tools.fastqc import FastQCJobTask
 from ratatosk.lib.variation.htslib import VcfMerge
@@ -92,6 +92,13 @@ class RawIndelRealigner(IndelRealigner):
             raise Exception("need reference for Realignment")
         retval.append(" -R {}".format(self.ref))
         return retval
+
+class VariantHaloFiltration(VariantFiltration):
+    """Settings for filtering haloplex variant calls"""
+    _config_subsection = "VariantHaloFiltration"
+    # Options from Halo
+    options = luigi.Parameter(default=('--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL > 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 1.5" --filterName "LowQD"',), is_list=True)
+
 
 class HaloPipeline(PipelineTask):
     _config_section = "pipeline"

@@ -270,8 +270,42 @@ class TestGATKWrappers(unittest.TestCase):
 
     def test_select_variants(self):
         task = ratatosk.lib.tools.gatk.SelectVariants(target="data/read.sort-snp-all.vcf")
-        self.assertEqual(['java', '-Xmx2g', '-jar', '/Users/peru/local/bioinfo/GenomeAnalysisTK/GenomeAnalysisTK.jar', '-T SelectVariants', '--selectTypeToInclude', 'SNP', '--selectTypeToInclude', 'INDEL', '--selectTypeToInclude', 'MIXED', '--selectTypeToInclude', 'MNP', '--selectTypeToInclude', 'SYMBOLIC', '--selectTypeToInclude', 'NO_VARIATION', '--variant', 'data/read.sort-snp.vcf', '--out', 'data/read.sort-snp-all.vcf', '-R', 'reference.fa'],
+        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T SelectVariants', '--selectTypeToInclude', 'SNP', '--selectTypeToInclude', 'INDEL', '--selectTypeToInclude', 'MIXED', '--selectTypeToInclude', 'MNP', '--selectTypeToInclude', 'SYMBOLIC', '--selectTypeToInclude', 'NO_VARIATION', '--variant', 'data/read.sort-snp.vcf', '--out', 'data/read.sort-snp-all.vcf', '-R', 'reference.fa'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
+
+    def test_select_snp_variants(self):
+        task = ratatosk.lib.tools.gatk.SelectSnpVariants(target="data/read.sort-snp.vcf")
+        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T SelectVariants', '--selectTypeToInclude', 'SNP', '--variant', 'data/read.sort.vcf', '--out', 'data/read.sort-snp.vcf', '-R', 'reference.fa'],
+                         _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
+
+    def test_select_indel_variants(self):
+        task = ratatosk.lib.tools.gatk.SelectIndelVariants(target="data/read.sort-indel.vcf")
+        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T SelectVariants', '--selectTypeToInclude', 'INDEL', '--selectTypeToInclude', 'MIXED', '--selectTypeToInclude', 'MNP', '--selectTypeToInclude', 'SYMBOLIC', '--selectTypeToInclude', 'NO_VARIATION', '--variant', 'data/read.sort.vcf', '--out', 'data/read.sort-indel.vcf', '-R', 'reference.fa'],
+                         _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
+
+    def test_variant_recalibrator(self):
+        task = ratatosk.lib.tools.gatk.VariantRecalibrator(target="data/read.sort-indel.tranches")
+        print _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])
+
+    def test_variant_snp_recalibrator(self):
+        task = ratatosk.lib.tools.gatk.VariantSnpRecalibrator(target="data/read.sort-indel.tranches")
+        print _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])
+
+    def test_variant_snp_recalibrator_regional(self):
+        task = ratatosk.lib.tools.gatk.VariantSnpRecalibratorRegional(target="data/read.sort-indel.tranches")
+        print _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])
+
+    def test_variant_indel_recalibrator(self):
+        task = ratatosk.lib.tools.gatk.VariantIndelRecalibrator(target="data/read.sort-indel.tranches", train_indels="train.indels")
+        print _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])
+ 
+    def test_apply_recalibration(self):
+        task = ratatosk.lib.tools.gatk.ApplyRecalibration(target="data/read.sort-indel-filter.vcf")
+        print _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])
+
+    def test_readbackedphasing(self):
+        task = ratatosk.lib.tools.gatk.ReadBackedPhasing(target="data/read.sort-indel-filter.vcf")
+        print _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])
 
 @unittest.skipIf((os.getenv("SNPEFF_HOME") is None or os.getenv("SNPEFF_HOME") == ""), "No environment SNPEFF_HOME set; skipping")
 class TestSnpEffWrappers(unittest.TestCase):

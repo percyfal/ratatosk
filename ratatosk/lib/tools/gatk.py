@@ -140,7 +140,7 @@ class RealignerTargetCreator(GATKIndexedJobTask):
         retval = ["-I", self.input()[0], "-o", self.output()]
         if not self.ref:
             raise Exception("need reference for Realignment")
-        retval.append(" -R {}".format(self.ref))
+        retval += ["-R", self.ref]
         return retval
 
 class IndelRealigner(GATKIndexedJobTask):
@@ -167,7 +167,7 @@ class IndelRealigner(GATKIndexedJobTask):
         retval = ["-I", self.input()[0], "-o", self.output(), "--targetIntervals", self.input()[2]]
         if not self.ref:
             raise Exception("need reference for Realignment")
-        retval += [" -R {}".format(self.ref)]
+        retval += ["-R", self.ref]
         return retval
 
 class BaseRecalibrator(GATKIndexedJobTask):
@@ -194,7 +194,7 @@ class BaseRecalibrator(GATKIndexedJobTask):
             raise Exception("need reference for BaseRecalibrator")
         if not self.knownSites:
             raise Exception("need knownSites to run BaseRecalibrator")
-        retval += [" -R {}".format(self.ref)]
+        retval += ["-R", self.ref]
         retval += [" ".join([" -knownSites {}".format(x) for x in self.knownSites])]
         return retval
 
@@ -226,7 +226,7 @@ class PrintReads(GATKJobTask):
             retval = ["-I", self.input(), "-o", self.output()]
         if not self.ref:
             raise Exception("need reference for PrintReads")
-        retval += [" -R {}".format(self.ref)]
+        retval += ["-R", self.ref]
         return retval
 
 class ClipReads(GATKJobTask):
@@ -241,24 +241,7 @@ class ClipReads(GATKJobTask):
         retval = ["-I", self.input(), "-o", self.output()]
         if not self.ref:
             raise Exception("need reference for ClipReads")
-        retval += [" -R {}".format(self.ref)]
-        return retval
-
-class VariantFiltration(GATKJobTask):
-    _config_subsection = "VariantFiltration"
-    sub_executable = "VariantFiltration"
-    # Options from Halo
-    options = luigi.Parameter(default=('--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL > 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 1.5" --filterName "LowQD"',), is_list=True)
-    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputVcfFile")
-    label = luigi.Parameter(default=".filtered")
-    target_suffix = luigi.Parameter(default=".vcf")
-    source_suffix = luigi.Parameter(default=".vcf")
-
-    def args(self):
-        retval = ["--variant", self.input(), "-o", self.output()]
-        if not self.ref:
-            raise Exception("need reference for VariantFiltration")
-        retval += [" -R {}".format(self.ref)]
+        retval += ["-R", self.ref]
         return retval
 
 class VariantEval(GATKJobTask):
@@ -275,17 +258,17 @@ class VariantEval(GATKJobTask):
         # TODO: Sort this one out
         if not self.dbsnp:
             raise Exception("need dbsnp for VariantEval")
-        retval += [" --dbsnp {}".format(self.dbsnp)]
+        retval += ["--dbsnp", self.dbsnp]
         # TODO: This too
         if self.target_region:
-            retval += ["-L {}".format(self.target_region)]
+            retval += ["-L", self.target_region]
         return retval
     
     def args(self):
         retval = ["--eval", self.input(), "-o", self.output()]
         if not self.ref:
             raise Exception("need reference for VariantEval")
-        retval += [" -R {}".format(self.ref)]
+        retval += ["-R", self.ref]
         return retval
 
 class VariantAnnotator(GATKJobTask):
@@ -314,7 +297,7 @@ class VariantAnnotator(GATKJobTask):
         retval = ["--variant", self.input(), "--out", self.output()]
         if not self.ref:
             raise Exception("need reference for VariantAnnotator")
-        retval += [" -R {}".format(self.ref)]
+        retval += ["-R", self.ref]
         for x in self.annotations:
             retval += ["-A", x]
         return retval
@@ -339,7 +322,7 @@ class VariantSnpEffAnnotator(VariantAnnotator):
         retval = ["--variant", self.input()[0], "--out", self.output(), "--snpEffFile", self.input()[1]]
         if not self.ref:
             raise Exception("need reference for VariantAnnotator")
-        retval += [" -R {}".format(self.ref)]
+        retval += ["-R", self.ref]
         retval += ["-A", "SnpEff"]
         return retval
 
@@ -366,7 +349,7 @@ class UnifiedGenotyper(GATKIndexedJobTask):
         retval =  ["-I", self.input()[0], "-o", self.output()]
         if not self.ref:
             raise Exception("need reference for UnifiedGenotyper")
-        retval += [" -R {}".format(self.ref)]
+        retval += ["-R", self.ref]
         return retval
 
 class SplitUnifiedGenotyper(UnifiedGenotyper):
@@ -438,18 +421,227 @@ class SelectVariants(GATKJobTask):
     source_suffix = luigi.Parameter(default=".vcf")
     target_suffix = luigi.Parameter(default=".vcf")
     label = luigi.Parameter(default="-all")
-    options = luigi.Parameter(default=("--selectTypeToInclude", "SNP", 
-                                       "--selectTypeToInclude", "INDEL",
-                                       "--selectTypeToInclude", "MIXED",
-                                       "--selectTypeToInclude", "MNP",
-                                       "--selectTypeToInclude", "SYMBOLIC",
-                                       "--selectTypeToInclude", "NO_VARIATION"))
+    selectType = luigi.Parameter(default=("--selectTypeToInclude", "SNP", 
+                                          "--selectTypeToInclude", "INDEL",
+                                          "--selectTypeToInclude", "MIXED",
+                                          "--selectTypeToInclude", "MNP",
+                                          "--selectTypeToInclude", "SYMBOLIC",
+                                          "--selectTypeToInclude", "NO_VARIATION"), is_list=True)
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.UnifiedGenotyper")
 
     def args(self):
-        retval = ['--variant', self.input(), '--out', self.output()]
+        retval = [x for x in self.selectType]
+        retval += ['--variant', self.input(), '--out', self.output()]
         if not self.ref:
             raise Exception("need reference for SelectVariants")
         retval += ["-R", self.ref]
         return retval
 
+class SelectSnpVariants(SelectVariants):
+    _config_subsection = "SelectSnpVariants"
+    label = luigi.Parameter(default="-snp")
+    selectType = luigi.Parameter(default=("--selectTypeToInclude", "SNP"), is_list=True)
+
+class SelectIndelVariants(SelectVariants):
+    _config_subsection = "SelectIndelVariants"
+    label = luigi.Parameter(default="-indel")
+    selectType = luigi.Parameter(default=("--selectTypeToInclude", "INDEL",
+                                          "--selectTypeToInclude", "MIXED",
+                                          "--selectTypeToInclude", "MNP",
+                                          "--selectTypeToInclude", "SYMBOLIC",
+                                          "--selectTypeToInclude", "NO_VARIATION"), is_list=True)
+
+# Variant recalibration
+#
+# This section has many different tasks, tailored for various best practice settings
+#
+class VariantRecalibrator(GATKJobTask):
+    """Generic VariantRecalibrator task from which specialized
+    recalibration tasks inherit"""
+    _config_subsection = "VariantRecalibrator"
+    sub_executable = "VariantRecalibrator"
+    label = luigi.Parameter(default=None)
+    mode = luigi.Parameter(default="BOTH")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputVcfFile")
+    target_suffix = luigi.Parameter(default=(".tranches", ".recal"))
+    source_suffix = luigi.Parameter(default=".vcf")
+    options = luigi.Parameter(default=())
+
+    def output(self):
+        if isinstance(self.target_suffix, tuple):
+            return [luigi.LocalTarget(rreplace(self.target, self.target_suffix[0], x, 1)) for x in self.target_suffix]
+        else:
+            return [luigi.LocalTarget(self.target)]
+
+    def args(self):
+        retval = ["--input", self.input(), 
+                   "--tranches_file", self.output()[0]]
+        retval += ['--mode', self.mode]
+        if len(self.output()) == 2:
+            retval += ["--recal_file", self.output()[1]]
+        if not self.ref:
+            raise Exception("need reference for VariantRecalibration")
+        retval += ["-R", self.ref]
+        return retval
+
+class VariantSnpRecalibrator(VariantRecalibrator):
+    _config_subsection = "VariantSnpRecalibrator"
+    label = luigi.Parameter(default=None)
+    mode = luigi.Parameter(default="SNP")
+    target_suffix = luigi.Parameter(default=(".tranches", ".recal"))
+    train_hapmap = luigi.Parameter(default=None)
+    train_1000g_omni = luigi.Parameter(default=None)
+    dbsnp = luigi.Parameter(default=None)
+    options = luigi.Parameter(default=( 
+                              "-an", "QD",
+                              "-an", "HaplotypeScore",
+                              "-an", "MQRankSum",
+                              "-an", "ReadPosRankSum",
+                              "-an", "FS",
+                              "-an", "MQ",
+                              "-an", "DP"), is_list=True)
+    def opts(self):
+        retval = list(self.options)
+        if not self.train_hapmap and not self.train_1000g_omni:
+            raise Exception("need training file for VariantIndelRecalibrator")
+        if self.train_hapmap:
+            retval += ["-resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0",
+                       self.train_hapmap]
+        if self.train_1000g_omni:
+            retval += ["-resource:omni,VCF,known=false,training=true,truth=false,prior=12.0",
+                       self.train_1000g_omni]
+        if self.dbsnp:
+            retval += ["-resource:dbsnp,VCF,known=true,training=false,truth=false,prior=8.0",
+                       self.dbsnp]
+        return retval
+
+class VariantSnpRecalibratorRegional(VariantSnpRecalibrator):
+    _config_subsection = "VariantSnpRecalibratorRegional"
+    options = luigi.Parameter(default=( 
+                              "-an", "QD",
+                              "-an", "HaplotypeScore",
+                              "-an", "MQRankSum",
+                              "-an", "ReadPosRankSum",
+                              "-an", "FS",
+                              "-an", "MQ",
+                              "--maxGaussians", "4", 
+                              "--percentBadVariants", "0.05"), is_list=True)
+    
+
+class VariantIndelRecalibrator(VariantRecalibrator):
+    _config_subsection = "VariantIndelRecalibrator"
+    label = luigi.Parameter(default=None)
+    mode = luigi.Parameter(default="INDEL")
+    train_indels = luigi.Parameter(default=None)
+    options = luigi.Parameter(default=(
+            "-an", "QD",
+            "-an", "FS",
+            "-an", "HaplotypeScore",
+            "-an", "ReadPosRankSum"), is_list=True)
+
+    def opts(self):
+        retval = list(self.options)
+        if not self.train_indels:
+            raise Exception("need indel training file for VariantIndelRecalibrator")
+        retval += ["-resource:mills,VCF,known=true,training=true,truth=true,prior=12.0",
+                   self.train_indels]
+        return retval
+
+# 
+# VariantFiltration
+#
+class VariantFiltration(GATKJobTask):
+    """Generic VariantFiltration class"""
+    _config_subsection = "VariantFiltration"
+    sub_executable = "VariantFiltration"
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputVcfFile")
+    label = luigi.Parameter(default=".filtered")
+    target_suffix = luigi.Parameter(default=".vcf")
+    source_suffix = luigi.Parameter(default=".vcf")
+        
+    def args(self):
+        retval = ["--variant", self.input(), "--out", self.output()]
+        if not self.ref:
+            raise Exception("need reference for VariantFiltration")
+        retval += ["-R", self.ref]
+        return retval
+
+class VariantFiltrationExp(VariantFiltration):
+    """Perform hard filtering using JEXL expressions"""
+    _config_subsection = "VariantFiltrationExp"
+    expression = luigi.Parameter(default=(), is_list=True)
+
+    def opts(self):
+        retval = list(self.options)
+        for exp in expressions:
+            retval += ["--filterName", "GATKStandard{e}".format(e=exp.split()[0]),
+                       "--filterExpression", exp]
+        return retval
+
+class VariantSnpFiltrationExp(VariantFiltrationExp):
+    """Perform hard filtering using JEXL expressions"""
+    _config_subsection = "VariantSnpFiltrationExp"
+    label = luigi.Parameter(default="-filterSNP")
+    expressions = luigi.Parameter(default=("QD < 2.0", "MQ < 40.0", "FS > 60.0",
+                                           "HaplotypeScore > 13.0",
+                                           "MQRankSum < -12.5",
+                                           "ReadPosRankSum < -8.0"), is_list=True)
+
+class VariantIndelFiltrationExp(VariantFiltrationExp):
+    """Perform hard filtering using JEXL expressions"""
+    _config_subsection = "VariantIndelFiltrationExp"
+    label = luigi.Parameter(default="-filterINDEL")
+    expressions = luigi.Parameter(default=("QD < 2.0", "ReadPosRankSum < -20.0", "FS > 200.0"), is_list=True)
+
+
+#
+# ApplyRecalibration
+#
+class ApplyRecalibration(GATKJobTask):
+    _config_subsection = "ApplyRecalibration"
+    sub_executable = "ApplyRecalibration"
+    label = luigi.Parameter(default="-filter")
+    mode = luigi.Parameter(default="SNP")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.VariantRecalibrator")
+    target_suffix = luigi.Parameter(default=".vcf")
+    source_suffix = luigi.Parameter(default=".tranches")
+    
+    def opts(self):
+        retval = list(self.options)
+        retval += ["--mode", self.mode]
+        return retval
+
+    def args(self):
+        # Hack to get at the input vcf used by parent task
+        source = rreplace(self._make_source_file_name(), self.source_suffix, self.target_suffix, 1)
+        retval = ["--input", source, "--tranches_file", self.input()[0],
+                  "--recal_file", self.input()[1], '--out', self.output()]
+        if not self.ref:
+            raise Exception("need reference for ApplyRecalibration")
+        retval += ["-R", self.ref]
+        return retval
+    
+    
+class ReadBackedPhasing(GATKJobTask):
+    _config_subsection = "ReadBackedPhasing"
+    sub_executable = "ReadBackedPhasing"
+    label = luigi.Parameter(default="-phased")
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
+    # BIG PROBLEM: vcf and bam source have completely different
+    # suffixes. We really need two things:
+    # 1. parent task as a list
+    # 2. automated generation of suffix string between two tasks
+    # May need to hardcode this in pipelines for now
+    def requires(self):
+        cls = self.set_parent_task()
+        source = self._make_source_file_name()
+        return [cls(target=source), cls(target=source)]
+
+    def args(self):
+        retval = ["-I", self.input()[0], '--variant', self.input()[1],
+                  '--out', self.output()]
+        if not self.ref:
+            raise Exception("need reference for ReadBackedPhasing")
+        retval += ["-R", self.ref]
+        return retval
+    
