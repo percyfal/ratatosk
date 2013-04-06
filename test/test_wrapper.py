@@ -245,14 +245,16 @@ class TestGATKWrappers(unittest.TestCase):
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
     def test_variantfiltration(self):
-        task = ratatosk.lib.tools.gatk.VariantFiltration(target=self.mergebam.replace(".bam", ".realign.recal.clip.filtered.vcf"))
-        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T VariantFiltration', '--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL > 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 1.5" --filterName "LowQD"', '--variant', './P001_101_index3/P001_101_index3.sort.merge.realign.recal.clip.vcf', '-o', './P001_101_index3/P001_101_index3.sort.merge.realign.recal.clip.filtered.vcf', ' -R reference.fa'],
+        task = ratatosk.lib.tools.gatk.VariantFiltration(target=self.mergebam.replace(".bam", ".realign.recal.clip.filtered.vcf"),
+                                                         options=['--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL > 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 1.5" --filterName "LowQD"', '--variant', './P001_101_index3/P001_101_index3.sort.merge.realign.recal.clip.vcf'])
+        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T VariantFiltration','--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL > 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 1.5" --filterName "LowQD"', '--variant', './P001_101_index3/P001_101_index3.sort.merge.realign.recal.clip.vcf', '--variant', './P001_101_index3/P001_101_index3.sort.merge.realign.recal.clip.vcf', '--out', './P001_101_index3/P001_101_index3.sort.merge.realign.recal.clip.filtered.vcf', '-R', 'reference.fa'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
     def test_varianteval(self):
         task = ratatosk.lib.tools.gatk.VariantEval(target=self.mergebam.replace(".bam", ".realign.recal.clip.filtered.eval_metrics"))
         self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T VariantEval', '-ST Filter -l INFO --doNotUseAllStandardModules --evalModule CompOverlap --evalModule CountVariants --evalModule GenotypeConcordance --evalModule TiTvVariantEvaluator --evalModule ValidationReport --stratificationModule Filter', ' --dbsnp dbsnp132.vcf', '--eval', './P001_101_index3/P001_101_index3.sort.merge.realign.recal.clip.filtered.vcf', '-o', './P001_101_index3/P001_101_index3.sort.merge.realign.recal.clip.filtered.eval_metrics', ' -R reference.fa'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
+
 
     def test_variant_annotator(self):
         task = ratatosk.lib.tools.gatk.VariantAnnotator(target=self.mergebam.replace(".bam", "-gatkann.vcf"))
@@ -284,24 +286,42 @@ class TestGATKWrappers(unittest.TestCase):
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
     def test_variant_recalibrator(self):
-        task = ratatosk.lib.tools.gatk.VariantRecalibrator(target="data/read.sort-indel.tranches")
-        print _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])
+        """Test variant recalibation. Note that commands that require
+        training data will not work; only JEXL filtering is
+        applicable"""
+        task = ratatosk.lib.tools.gatk.VariantRecalibrator(target="data/read.sort.dup.tranches", ref="data/chr11.fa", 
+                                                           options=["-an", "QD", "-resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0", "data/hapmap_3.3.vcf"])
+        self.assertEqual(['java', '-Xmx2g', '-jar', java.gatk, '-T VariantRecalibrator', '-an', 'QD', '-resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0', 'data/hapmap_3.3.vcf', '--input', 'data/read.sort.dup.vcf', '--tranches_file', 'data/read.sort.dup.tranches', '--mode', 'BOTH', '--recal_file', 'data/read.sort.dup.recal', '-R', 'data/chr11.fa'],
+                         _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
     def test_variant_snp_recalibrator(self):
-        task = ratatosk.lib.tools.gatk.VariantSnpRecalibrator(target="data/read.sort-indel.tranches")
-        print _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])
+        task = ratatosk.lib.tools.gatk.VariantSnpRecalibrator(target="data/read.sort.dup.tranches", 
+                                                              train_hapmap="data/hapmap_3.3.vcf",
+                                                              ref="data/chr11.fa", dbsnp="data/dbsnp132_chr11.vcf")
+        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T VariantRecalibrator', '-an', 'QD', '-an', 'HaplotypeScore', '-an', 'MQRankSum', '-an', 'ReadPosRankSum', '-an', 'FS', '-an', 'MQ', '-an', 'DP', '-resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0', 'data/hapmap_3.3.vcf', '-resource:dbsnp,VCF,known=true,training=false,truth=false,prior=8.0', 'data/dbsnp132_chr11.vcf', '--input', 'data/read.sort.dup.vcf', '--tranches_file', 'data/read.sort.dup.tranches', '--mode', 'SNP', '--recal_file', 'data/read.sort.dup.recal', '-R', 'data/chr11.fa'],
+                         _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
-    def test_variant_snp_recalibrator_regional(self):
-        task = ratatosk.lib.tools.gatk.VariantSnpRecalibratorRegional(target="data/read.sort-indel.tranches")
-        print _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])
+    def test_variant_snp_recalibrator_exome(self):
+        """Modified settings for exome. Should contain --maxGaussians"""
+        task = ratatosk.lib.tools.gatk.VariantSnpRecalibratorExome(target="data/read.sort.dup.tranches", 
+                                                                   train_hapmap="data/hapmap_3.3.vcf",
+                                                                   ref="data/chr11.fa", dbsnp="data/dbsnp132_chr11.vcf")
+        arglist = _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])
+        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T VariantRecalibrator', '-an', 'QD', '-an', 'HaplotypeScore', '-an', 'MQRankSum', '-an', 'ReadPosRankSum', '-an', 'FS', '-an', 'MQ', '--maxGaussians', '4', '--percentBadVariants', '0.05', '-resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0', 'data/hapmap_3.3.vcf', '-resource:dbsnp,VCF,known=true,training=false,truth=false,prior=8.0', 'data/dbsnp132_chr11.vcf', '--input', 'data/read.sort.dup.vcf', '--tranches_file', 'data/read.sort.dup.tranches', '--mode', 'SNP', '--recal_file', 'data/read.sort.dup.recal', '-R', 'data/chr11.fa'],
+                         arglist)
+        self.assertIn('--maxGaussians', arglist)
 
     def test_variant_indel_recalibrator(self):
-        task = ratatosk.lib.tools.gatk.VariantIndelRecalibrator(target="data/read.sort-indel.tranches", train_indels="train.indels")
-        print _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])
+        task = ratatosk.lib.tools.gatk.VariantIndelRecalibrator(target="data/read.sort.dup.tranches", 
+                                                                train_indels="data/Mills_Devine_2hit.indels.vcf",
+                                                                ref="data/chr11.fa")
+        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T VariantRecalibrator', '-an', 'QD', '-an', 'FS', '-an', 'HaplotypeScore', '-an', 'ReadPosRankSum', '-resource:mills,VCF,known=true,training=true,truth=true,prior=12.0', 'data/Mills_Devine_2hit.indels.vcf', '--input', 'data/read.sort.dup.vcf', '--tranches_file', 'data/read.sort.dup.tranches', '--mode', 'INDEL', '--recal_file', 'data/read.sort.dup.recal', '-R', 'data/chr11.fa'],
+                         _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
  
     def test_apply_recalibration(self):
-        task = ratatosk.lib.tools.gatk.ApplyRecalibration(target="data/read.sort-indel-filter.vcf")
+        task = ratatosk.lib.tools.gatk.ApplyRecalibration(target="data/read.sort.dup-filter.vcf", ref="data/chr11.fa")
         print _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])
+        print " ".join(_prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
     def test_readbackedphasing(self):
         task = ratatosk.lib.tools.gatk.ReadBackedPhasing(target="data/read.sort-indel-filter.vcf")

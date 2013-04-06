@@ -6,12 +6,21 @@
 Welcome to ratatosk's documentation!
 ====================================
 
-Contents:
+`ratatosk` is a library of [luigi](https://github.com/spotify/luigi)
+tasks, currently focused on, but not limited to, common
+bioinformatical tasks. 
+
+Features
+--------
+
+Documentation
+=============
 
 .. toctree::
    :maxdepth: 2
 
-
+   installation
+   pipeline/index
 
 Indices and tables
 ==================

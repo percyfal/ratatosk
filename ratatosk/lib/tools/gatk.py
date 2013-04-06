@@ -198,7 +198,6 @@ class BaseRecalibrator(GATKIndexedJobTask):
         retval += [" ".join([" -knownSites {}".format(x) for x in self.knownSites])]
         return retval
 
-
 class PrintReads(GATKJobTask):
     # NB: print reads does *not* require BaseRecalibrator. Still this
     # is usually the case so supply an option
@@ -353,7 +352,8 @@ class UnifiedGenotyper(GATKIndexedJobTask):
         return retval
 
 class SplitUnifiedGenotyper(UnifiedGenotyper):
-    label = luigi.Parameter(default="-variants-combined")
+    # Label should be same as calling function (often CombineVariants)
+    label = luigi.Parameter(default="-variants")
     
     def _make_source_file_name(self):
         """Assume pattern is {base}-split/{base}-{ref}{ext}, as in
@@ -362,8 +362,6 @@ class SplitUnifiedGenotyper(UnifiedGenotyper):
         FIX ME: well, generalize
         """
         base = rreplace(os.path.join(os.path.dirname(os.path.dirname(self.target)), os.path.basename(self.target)), self.label, "", 1).split("-")
-        print "Base " + str(base)
-        print "".join(base[0:-1]) + self.source_suffix
         return "".join(base[0:-1]) + self.source_suffix
 
 class CombineVariants(GATKJobTask):
@@ -371,7 +369,7 @@ class CombineVariants(GATKJobTask):
     sub_executable = "CombineVariants"
     source_suffix = luigi.Parameter(default=".vcf")
     target_suffix = luigi.Parameter(default=".vcf")
-    label = luigi.Parameter(default="-combined")
+    label = luigi.Parameter(default="-variants")
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.SplitUnifiedGenotyper")
     split = luigi.BooleanParameter(default=True)
     by_chromosome = luigi.BooleanParameter(default=True)
@@ -384,7 +382,6 @@ class CombineVariants(GATKJobTask):
             # Need to get the references from the source bam file
             bamfile = rreplace(source, self.target_suffix, cls().source_suffix, 1)
             if os.path.exists(bamfile):
-                print "bam file exists"
                 samfile = pysam.Samfile(bamfile, "rb")
                 refs = samfile.references
                 samfile.close()
@@ -503,7 +500,7 @@ class VariantSnpRecalibrator(VariantRecalibrator):
     def opts(self):
         retval = list(self.options)
         if not self.train_hapmap and not self.train_1000g_omni:
-            raise Exception("need training file for VariantIndelRecalibrator")
+            raise Exception("need training file for VariantSnp")
         if self.train_hapmap:
             retval += ["-resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0",
                        self.train_hapmap]
@@ -515,7 +512,18 @@ class VariantSnpRecalibrator(VariantRecalibrator):
                        self.dbsnp]
         return retval
 
-class VariantSnpRecalibratorRegional(VariantSnpRecalibrator):
+class VariantSnpRecalibratorExome(VariantSnpRecalibrator):
+    """Variant snp recalibration, smaller callsets. Recommendations
+    are to use 30 samples for VQSR, adding additional samples, or
+    using other settings, as those implemented here.
+
+    From http://gatkforums.broadinstitute.org/discussion/1259/what-vqsr-training-sets-arguments-should-i-use-for-my-specific-project:
+
+    2. Use the VQSR with the smaller SNP callset but experiment with the precise
+    argument settings (try adding --maxGaussians 4 --percentBad 0.05
+    to your command line, for example)
+    """
+
     _config_subsection = "VariantSnpRecalibratorRegional"
     options = luigi.Parameter(default=( 
                               "-an", "QD",
@@ -529,6 +537,13 @@ class VariantSnpRecalibratorRegional(VariantSnpRecalibrator):
     
 
 class VariantIndelRecalibrator(VariantRecalibrator):
+    """From
+    http://gatkforums.broadinstitute.org/discussion/1259/what-vqsr-training-sets-arguments-should-i-use-for-my-specific-project:
+
+    Note that achieving great results with indels may require even
+    more than the recommended 30 samples in your exome sequencing
+    project
+    """
     _config_subsection = "VariantIndelRecalibrator"
     label = luigi.Parameter(default=None)
     mode = luigi.Parameter(default="INDEL")
@@ -569,13 +584,13 @@ class VariantFiltration(GATKJobTask):
 class VariantFiltrationExp(VariantFiltration):
     """Perform hard filtering using JEXL expressions"""
     _config_subsection = "VariantFiltrationExp"
-    expression = luigi.Parameter(default=(), is_list=True)
+    expressions = luigi.Parameter(default=(), is_list=True)
 
     def opts(self):
         retval = list(self.options)
-        for exp in expressions:
+        for exp in self.expressions:
             retval += ["--filterName", "GATKStandard{e}".format(e=exp.split()[0]),
-                       "--filterExpression", exp]
+                       "--filterExpression", "'{}'".format(exp)]
         return retval
 
 class VariantSnpFiltrationExp(VariantFiltrationExp):
@@ -627,6 +642,8 @@ class ReadBackedPhasing(GATKJobTask):
     sub_executable = "ReadBackedPhasing"
     label = luigi.Parameter(default="-phased")
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
+    target_suffix = luigi.Parameter(default=".vcf")
+    source_suffix = luigi.Parameter(default=".bam")
     # BIG PROBLEM: vcf and bam source have completely different
     # suffixes. We really need two things:
     # 1. parent task as a list

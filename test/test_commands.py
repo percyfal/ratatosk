@@ -77,7 +77,7 @@ def setUpModule():
                             {'parent_task' : 'ratatosk.lib.tools.picard.DuplicationMetrics',
                              'bait_regions' : 'data/chr11_baits.interval_list',
                              'target_regions' : 'data/chr11_targets.interval_list'},
-                        }
+                        },
                     'gatk' : 
                     {
                         'UnifiedGenotyper' : {'ref': 'data/chr11.fa'},
