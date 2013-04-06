@@ -264,8 +264,13 @@ class TestGATKWrappers(unittest.TestCase):
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
     def test_combine_variants(self):
-        task = ratatosk.lib.tools.gatk.CombineVariants(target="data/read.sort-variants.vcf")
-        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T CombineVariants', '-V', 'data/read.sort-variants-split/read.sort-variants-chr11.vcf', '-o', 'data/read.sort-variants.vcf', '-R', 'reference.fa'],
+        task = ratatosk.lib.tools.gatk.CombineVariants(target="data/read.sort-variants-combined.vcf", ref='data/chr11.fa')
+        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T CombineVariants', '-V', 'data/read.sort-variants-combined-split/read.sort-variants-combined-chr11.vcf', '-o', 'data/read.sort-variants-combined.vcf', '-R', 'data/chr11.fa'],
+                         _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
+
+    def test_select_variants(self):
+        task = ratatosk.lib.tools.gatk.SelectVariants(target="data/read.sort-snp-all.vcf")
+        self.assertEqual(['java', '-Xmx2g', '-jar', '/Users/peru/local/bioinfo/GenomeAnalysisTK/GenomeAnalysisTK.jar', '-T SelectVariants', '--selectTypeToInclude', 'SNP', '--selectTypeToInclude', 'INDEL', '--selectTypeToInclude', 'MIXED', '--selectTypeToInclude', 'MNP', '--selectTypeToInclude', 'SYMBOLIC', '--selectTypeToInclude', 'NO_VARIATION', '--variant', 'data/read.sort-snp.vcf', '--out', 'data/read.sort-snp-all.vcf', '-R', 'reference.fa'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
 @unittest.skipIf((os.getenv("SNPEFF_HOME") is None or os.getenv("SNPEFF_HOME") == ""), "No environment SNPEFF_HOME set; skipping")

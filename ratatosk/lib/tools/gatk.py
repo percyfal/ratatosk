@@ -431,3 +431,25 @@ class CombineVariants(GATKJobTask):
             raise Exception("need reference for CombineVariants")
         retval += ["-R", self.ref]
         return retval
+
+class SelectVariants(GATKJobTask):
+    _config_subsection = "SelectVariants"
+    sub_executable = "SelectVariants"
+    source_suffix = luigi.Parameter(default=".vcf")
+    target_suffix = luigi.Parameter(default=".vcf")
+    label = luigi.Parameter(default="-all")
+    options = luigi.Parameter(default=("--selectTypeToInclude", "SNP", 
+                                       "--selectTypeToInclude", "INDEL",
+                                       "--selectTypeToInclude", "MIXED",
+                                       "--selectTypeToInclude", "MNP",
+                                       "--selectTypeToInclude", "SYMBOLIC",
+                                       "--selectTypeToInclude", "NO_VARIATION"))
+    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.UnifiedGenotyper")
+
+    def args(self):
+        retval = ['--variant', self.input(), '--out', self.output()]
+        if not self.ref:
+            raise Exception("need reference for SelectVariants")
+        retval += ["-R", self.ref]
+        return retval
+
