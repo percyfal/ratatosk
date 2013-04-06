@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 import os
+import re
 import luigi
 import logging
 import ratatosk.lib.files.external
@@ -149,13 +150,12 @@ class IndelRealigner(GATKIndexedJobTask):
     label = luigi.Parameter(default=".realign")
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
     source_suffix = luigi.Parameter(default=".bam")
-    source = None
 
     def requires(self):
         cls = self.set_parent_task()
         source = self._make_source_file_name()
         return [cls(target=source),
-                ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task="ratatosk.lib.tools.gatk.InputBamFile"), 
+                ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls)), 
                 ratatosk.lib.tools.gatk.RealignerTargetCreator(target=rreplace(source, ".bam", ".intervals", 1))]
 
     def opts(self):
@@ -370,7 +370,7 @@ class UnifiedGenotyper(GATKIndexedJobTask):
         return retval
 
 class SplitUnifiedGenotyper(UnifiedGenotyper):
-    label = luigi.Parameter(default="-variants")
+    label = luigi.Parameter(default="-variants-combined")
     
     def _make_source_file_name(self):
         """Assume pattern is {base}-split/{base}-{ref}{ext}, as in
@@ -379,6 +379,8 @@ class SplitUnifiedGenotyper(UnifiedGenotyper):
         FIX ME: well, generalize
         """
         base = rreplace(os.path.join(os.path.dirname(os.path.dirname(self.target)), os.path.basename(self.target)), self.label, "", 1).split("-")
+        print "Base " + str(base)
+        print "".join(base[0:-1]) + self.source_suffix
         return "".join(base[0:-1]) + self.source_suffix
 
 class CombineVariants(GATKJobTask):
@@ -386,7 +388,7 @@ class CombineVariants(GATKJobTask):
     sub_executable = "CombineVariants"
     source_suffix = luigi.Parameter(default=".vcf")
     target_suffix = luigi.Parameter(default=".vcf")
-    label = luigi.Parameter(default="-variants")
+    label = luigi.Parameter(default="-combined")
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.SplitUnifiedGenotyper")
     split = luigi.BooleanParameter(default=True)
     by_chromosome = luigi.BooleanParameter(default=True)
@@ -399,17 +401,24 @@ class CombineVariants(GATKJobTask):
             # Need to get the references from the source bam file
             bamfile = rreplace(source, self.target_suffix, cls().source_suffix, 1)
             if os.path.exists(bamfile):
+                print "bam file exists"
                 samfile = pysam.Samfile(bamfile, "rb")
                 refs = samfile.references
-                outdir = "{base}-split".format(base=os.path.splitext(self.target)[0])
-                if not os.path.exists(outdir):
-                    os.makedirs(outdir)
-                split_targets = [os.path.join("{base}-split".format(base=os.path.splitext(self.target)[0]), 
-                                              "{base}-{ref}{ext}".format(base=os.path.splitext(os.path.basename(self.target))[0], ref=chr_ref, ext=self.target_suffix)) for chr_ref in refs]
                 samfile.close()
-                return [cls(target=tgt, target_region=chr_ref) for tgt in split_targets]
+            elif os.path.exists(os.path.expanduser(self.ref)):
+                dictfile = os.path.expanduser(os.path.splitext(self.ref)[0] + ".dict")
+                with open(dictfile) as fh:
+                    seqdict = [x for x in fh.readlines() if x.startswith("@SQ")]
+                m = [re.search(r'SN:([a-zA-z0-9]+)', x) for x in seqdict]
+                refs = [x.group(1) for x in m]
             else:
                 return []
+            outdir = "{base}-split".format(base=os.path.splitext(self.target)[0])
+            if not os.path.exists(outdir):
+                os.makedirs(outdir)
+            split_targets = [os.path.join("{base}-split".format(base=os.path.splitext(self.target)[0]), 
+                                          "{base}-{ref}{ext}".format(base=os.path.splitext(os.path.basename(self.target))[0], ref=chr_ref, ext=self.target_suffix)) for chr_ref in refs]
+            return [cls(target=tgt, target_region=chr_ref) for tgt in split_targets]
         else:
             return [cls(target=source)]
 
@@ -419,6 +428,6 @@ class CombineVariants(GATKJobTask):
             retval += ["-V", x]
         retval += ["-o", self.output()]
         if not self.ref:
-            raise Exception("need reference for UnifiedGenotyper")
+            raise Exception("need reference for CombineVariants")
         retval += ["-R", self.ref]
         return retval
