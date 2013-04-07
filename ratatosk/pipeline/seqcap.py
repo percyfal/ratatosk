@@ -135,7 +135,7 @@ class SeqCap(SeqCapPipeline):
         picard_metrics_targets = ["{}.{}".format(x[1], "sort.merge.dup") for x in self.targets]
         out_targets = ["{}.{}".format(x[1], "sort.merge.dup.realign.recal-variants-combined-phased.vcf") for x in self.targets]
         #out_targets = ["{}.{}".format(x[1], "sort.merge.dup.realign.recal.vcf") for x in self.targets]
-        print reads
+        print fastqc_targets
         print picard_metrics_targets
         print out_targets
         return [PicardMetrics(target=tgt) for tgt in picard_metrics_targets]  + [FastQCJobTask(target=tgt) for tgt in fastqc_targets] + [SeqCapReadBackedPhasing(target=tgt) for tgt in out_targets]
