@@ -25,6 +25,7 @@ from itertools import izip
 from luigi.task import flatten
 import ratatosk.shell as shell
 import ratatosk
+from ratatosk.jobrunner import DefaultShellJobRunner, PipedJobRunner
 from ratatosk import backend
 from ratatosk.handler import RatatoskHandler, register_attr
 from ratatosk.config import get_config, get_custom_config
@@ -32,162 +33,6 @@ from ratatosk.utils import rreplace, update, config_to_dict
 
 # Use luigi-interface for now
 logger = logging.getLogger('luigi-interface')
-
-class JobRunner(object):
-    run_job = NotImplemented
-
-class DefaultShellJobRunner(JobRunner):
-    """Default job runner to use for shell jobs."""
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def _fix_paths(job):
-        """Modelled after hadoop_jar.HadoopJarJobRunner._fix_paths.
-        """
-        tmp_files = []
-        args = []
-        for x in job.args():
-            if isinstance(x, luigi.LocalTarget): # input/output
-                if x.exists(): # input
-                    args.append(x.path)
-                else: # output
-                    ypath = x.path + '-luigi-tmp-%09d' % random.randrange(0, 1e10)
-                    y = luigi.LocalTarget(ypath)
-                    logger.info("Using temp path: {0} for path {1}".format(y.path, x.path))
-                    args.append(y.path)
-                    if job.add_suffix():
-                        x = luigi.LocalTarget(x.path + job.add_suffix())
-                        y = luigi.LocalTarget(y.path + job.add_suffix())
-                    tmp_files.append((y, x))
-            else:
-                args.append(str(x))
-        return (tmp_files, args)
-
-    @staticmethod
-    def _get_main(job):
-        """Add main program to command. Override this for programs
-        where main is given as a parameter, e.g. for GATK"""
-        return job.main()
-
-    def _make_arglist(self, job):
-        """Make and return the arglist"""
-        if job.path():
-            exe = os.path.join(job.path(), job.exe())
-        else:
-            exe = job.exe()
-        if not exe:# or not os.path.exists(exe):
-            logger.error("Can't find executable: {0}, full path {1}".format(exe,
-                                                                            os.path.abspath(exe)))
-            raise Exception("executable does not exist")
-        arglist = [exe]
-        if job.main():
-            arglist.append(self._get_main(job))
-        if job.opts():
-            arglist += job.opts()
-        # Need to call self.__class__ since fix_paths overridden in
-        # DefaultGzShellJobRunner
-        (tmp_files, job_args) = self.__class__._fix_paths(job)
-        if not job.pipe:
-            arglist += job_args
-        return (arglist, tmp_files)
-        
-    def run_job(self, job):
-        (arglist, tmp_files) = self._make_arglist(job)
-        if job.pipe:
-            return (arglist, tmp_files)
-        cmd = ' '.join(arglist)
-        logger.info("\nJob runner '{0}';\n\trunning command '{1}'\n".format(self.__class__, cmd))
-        (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)
-        if returncode == 0:
-            logger.info("Shell job completed")
-            for a, b in tmp_files:
-                logger.info("renaming {0} to {1}".format(a.path, b.path))
-                # This is weird; using the example in luigi
-                # (a.move(b)) doesn't work, and using just b.path
-                # fails unless it contains a directory (e.g. './file'
-                # works, 'file' doesn't)
-                a.move(os.path.join(os.curdir, b.path))
-        else:
-            raise Exception("Job '{}' failed: \n{}".format(' '.join(arglist), " ".join([stderr])))
-                
-
-# Aaarrgh - it doesn't get uglier than this. Some programs
-# "seamlessly" read and write gzipped files. In the job runner we work
-# with temp files that lack the .gz suffix, so the output is not
-# compressed... Took me a while to figure out. Solution for now
-#  is to add suffix 'gz' to the temp file. Obviously this won't work
-#  for uncompressed input (SIGH), but as I discuss in issues, maybe
-#  this is a good thing.
-class DefaultGzShellJobRunner(DefaultShellJobRunner):
-    """Temporary fix for programs that determine if output is zipped
-    based on the suffix of the file name. When working with tmp files
-    this will not work so an extra .gz suffix needs to be added. This
-    should be taken care of in a cleaner way."""
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def _fix_paths(job):
-        """Modelled after hadoop_jar.HadoopJarJobRunner._fix_paths.
-        """
-        tmp_files = []
-        args = []
-        for x in job.args():
-            if isinstance(x, luigi.LocalTarget): # input/output
-                if x.exists(): # input
-                    args.append(x.path)
-                else: # output
-                    ypath = x.path + '-luigi-tmp-%09d' % random.randrange(0, 1e10) + '.gz'
-                    y = luigi.LocalTarget(ypath)
-                    logger.info("Using temp path: {0} for path {1}".format(y.path, x.path))
-                    args.append(y.path)
-                    if job.add_suffix():
-                        x = luigi.LocalTarget(x.path + job.add_suffix())
-                        y = luigi.LocalTarget(y.path + job.add_suffix())
-                    tmp_files.append((y, x))
-            else:
-                args.append(str(x))
-        return (tmp_files, args)
-
-class PipedJobRunner(DefaultShellJobRunner):
-    @staticmethod
-    def _strip_output(job):
-        tmp_files = []
-        args = []
-        for x in job.args():
-            if isinstance(x, luigi.LocalTarget): # input/output
-                if x.exists(): # input
-                    args.append(x.path)
-                else: # output
-                    pass
-            else:
-                # Strip out any options that have to do with outputs.
-                # Should be defined in task
-                if str(x) not in ["-o", ">", "OUTPUT=", "O="]:
-                    args.append(str(x))
-        return (tmp_files, args)
-        
-    def run_job(self, job):
-        cmdlist = []
-        tmp_files = []
-        for j in job.args():
-            arglist = j.job_runner()._make_arglist(j)[0] + self._strip_output(j)[1]
-            cmdlist.append(arglist)
-
-        plist = []
-        # This is extremely annoying. The bwa -r "@RG\tID:foo" etc
-        # screws up the regular call to Popen, forcing me to use
-        # shell=True. Some escape character that needs correcting;
-        # throws error [bwa_sai2sam_pe] malformated @RG line
-        plist.append(Popen(" ".join(cmdlist[0]), stdout=PIPE, shell=True))
-        #plist.append(Popen(cmdlist[0], stdout=PIPE))
-        for i in xrange(1, len(cmdlist)):
-            #plist.append(Popen(cmdlist[i], stdin=plist[i-1].stdout, stdout=PIPE))
-            plist.append(Popen(" ".join(cmdlist[1]), stdin=plist[i-1].stdout, stdout=PIPE, shell=True))
-            plist[i-1].stdout.close()
-        pipe = Popen("cat > {}".format(job.target), stdin=plist[-1].stdout, shell=True)
-        out, err = pipe.communicate()
 
 ##############################
 # Job tasks
@@ -205,9 +50,8 @@ class BaseJobTask(luigi.Task):
     # Note: output should generate one file only; in special cases we
     # need to do hacks
     target = luigi.Parameter(default=None, description="Output target name")
-    target_suffix = luigi.Parameter(default=None, description="File suffix for target")
+    target_suffix = luigi.Parameter(default=(), description="File suffix for target", is_list=True)
     source_suffix = luigi.Parameter(default=None, description="File suffix for source")
-    # source = None
     # Use for changing labels in graph visualization
     use_long_names = luigi.Parameter(default=False, description="Use long names (including all options) in graph vizualization", is_boolean=True, is_global=True)
 
@@ -239,8 +83,6 @@ class BaseJobTask(luigi.Task):
     # Parent task classes
     _parent_cls = []
 
-    # Source file name
-    # _source_name = 
     def __init__(self, *args, **kwargs):
         self._parent_cls = []
         self._handers = {}
@@ -274,7 +116,12 @@ class BaseJobTask(luigi.Task):
             print "DRY RUN: " + str(self)
 
     def _register_parent_task(self, parents):
-        """Register parent task class(es) to task."""
+        """Register parent task class(es) to task. Uses
+        RatatoskHandler to register class to _parent_cls placeholder.
+
+        :param parents: list of python classes represented as strings in option parent_task
+
+        """
         default_parents = self.get_param_default("parent_task")
         if not isinstance(default_parents, tuple):
             default_parents = [default_parents]
@@ -283,29 +130,6 @@ class BaseJobTask(luigi.Task):
         for p,d in izip(parents, default_parents):
             h = RatatoskHandler(label="_parent_cls", mod=p)
             register_attr(self, h, default_handler=d)
-
-    def set_parent_task(self):
-        """Try to import a module task class represented as string in
-        parent_task and use it as such.
-
-        TODO: handle parent task list where tasks have several requirements?
-        """
-        opt_mod = ".".join(self.parent_task.split(".")[0:-1])
-        opt_cls = self.parent_task.split(".")[-1]
-        default_task = self.get_param_default("parent_task")
-        default_mod = ".".join(default_task.split(".")[0:-1])
-        default_cls = default_task.split(".")[-1]
-        try:
-            mod = __import__(opt_mod, fromlist=[opt_cls])
-            cls = getattr(mod, opt_cls)
-            ret_cls = cls
-        except:
-            logger.warn("No class {} found: using default class {} for task '{}'".format(".".join([opt_mod, opt_cls]), 
-                                                                                         ".".join([default_mod, default_cls]),
-                                                                                         self.__class__))
-            ret_mod = __import__(default_mod, fromlist=[default_cls])
-            ret_cls = getattr(ret_mod, default_cls)
-        return ret_cls
         
     def _update_config(self, config, disable_parent_task_update=False, *args, **kwargs):
         """Update configuration for this task. All task options should
@@ -406,20 +230,14 @@ class BaseJobTask(luigi.Task):
         return ""
         
     def init_local(self):
-        """Setup local settings"""
+        """Setup local settings for run"""
         pass
 
     def run(self):
         """Init job runner.
         """
         self.init_local()
-        #if not self.dry_run:
         self.job_runner().run_job(self)
-        #self.__class__.post_run_hook()
-
-    def post_run_hook(self):
-        """Hook to run after job_runner"""
-        pass
 
     def parent(self):
         """Parent task class(es). List of tuples consisting of
@@ -493,38 +311,55 @@ class BaseJobTask(luigi.Task):
             sample, sample_merge, sample_run = tgt
             yield sample, sample_merge, sample_run
 
+    def source(self):
+        """Make source file names from parent tasks in self.parent()"""
+        if self.diff_label:
+            assert len(self.diff_label) == len(self.parents()), "if diff_label is defined, it must have as many elements as parent_task"
+            return [self._make_source_file_name(p, dl) for p, dl in izip(self.parent(), self.diff_label)]
+        else:
+            return [self._make_source_file_name(p) for p in self.parent()]
 
-    # Helper functions to calculate target and source file names. Move
-    # to generic function outside class?
-    def _make_source_file_name(self):
-        """Construct source file name from a target.
+    def _make_source_file_name(self, parent_cls, diff_label=None):
+        """Make source file name for parent tasks. Uses parent_cls to
+        get parent class target_suffix (i.e. source suffix as viewed
+        from self). The optional argument diff_label is needed for
+        cases where the parent class is several steps up in the
+        workflow, meaning that several labels have been added along
+        the way. This is an irritating and as of yet unresolved issue.
 
-        Change target_suffix to source_suffix. Remove label from a
-        target file name. A target given to a task must have its file
-        name modified for the requirement. This function should
-        therefore be called in the requires function. Make sure only
-        to replace the last label.
+        :param parent_cls: parent class
+        :param diff_label: the "difference" in labels between self and parent.  E.g. if self.target=file.merge.sort.recal.bam depends on task with output file.merge.bam, and self.label=.recal, we would need to set the difference (.sort) here.
 
-        :return: string
+        :return: parent task target name (source)
         """
-        source = self.target
-        if isinstance(self.target_suffix, tuple):
-            if self.target_suffix[0] and not self.source_suffix is None:
-                source = rreplace(source, self.target_suffix[0], self.source_suffix, 1)
-                #source = [rreplace(source_ref, x, self.source_suffix, 1) for x in self.target_suffix]
+        src_label = parent_cls().label
+        tgt_suffix = self.target_suffix
+        src_suffix = parent_cls().target_suffix
+        if isinstance(tgt_suffix, tuple) or isinstance(tgt_suffix, list):
+            tgt_suffix = tgt_suffix[0]
+        if isinstance(src_suffix, tuple) or isinstance(src_suffix, list):
+            src_suffix = src_suffix[0]
+        # Start by stripping tgt_suffix
+        if tgt_suffix:
+            source = rreplace(self.target, tgt_suffix, "", 1)
         else:
-            if self.target_suffix and not self.source_suffix is None:
-                source = rreplace(source, self.target_suffix, self.source_suffix, 1)
-        if not self.label:
-            return source
-        if isinstance(source, list):
-            source = [rreplace(x, self.label, "", 1) for x in source]
+            source = self.target
+        # Then remove the target label and optional diff_label
+        source = rreplace(source, self.label, "", 1)
+        if diff_label:
+            source = rreplace(source, str(diff_label), "", 1)
+        if src_label:
+            # Trick: remove src_label first if present since
+            # the source label addition here corresponds to a
+            # "diff" compared to target name
+            source = rreplace(source, str(src_label), "", 1) + str(src_label) + str(src_suffix)
         else:
-            if source.count(self.label) > 1:
-                logger.warn("label '{}' found multiple times in target '{}'; this could be intentional".format(self.label, source))
-            elif source.count(self.label) == 0:
-                logger.warn("label '{}' not found in target '{}'; are you sure your target is correctly formatted?".format(self.label, source))
-            source = rreplace(source, self.label, "", 1)
+            source = source + str(src_suffix)
+        if src_label:
+            if source.count(str(src_label)) > 1:
+                print "label '{}' found multiple times in target '{}'; this could be intentional".format(src_label, source)
+            elif source.count(src_label) == 0:
+                print "label '{}' not found in target '{}'; are you sure your target is correctly formatted?".format(src_label, source)
         return source
             
 class JobTask(BaseJobTask):

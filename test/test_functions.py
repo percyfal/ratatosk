@@ -50,13 +50,13 @@ def setUpModule():
         cnf.add_config_path(localconf)
 
 def tearDownModule():
-    # if os.path.exists(localconf):
-    #     os.unlink(localconf)
+    if os.path.exists(localconf):
+        os.unlink(localconf)
     cnf.clear()
 
 class TestGeneralFunctions(unittest.TestCase):
     def test_make_source_file_name_from_string(self):
-        """Test generating source file names from strings only"""
+        """Test generating source file names from strings only. Obsolete."""
         def _make_source_file_name(target, label, src_suffix, tgt_suffix, src_label=None):
             # If tgt_suffix is list, target suffix should always
             # correspond to tgt_suffix[0]
@@ -172,15 +172,12 @@ class TestGeneralFunctions(unittest.TestCase):
         s = ratatosk.lib.tools.picard.InsertMetrics(target=target)
         self.assertEqual(_make_source_file_name(s, s.parent().pop()), ".merge.dup.bam")
 
-class TestFunctions(unittest.TestCase):
-    def setUp(self):
-        pass
 
-    def test_make_fastq_links(self):
-        """Test making fastq links"""
-        pass
-        # tl = target_generator(indir=self.project)
-        # fql = make_fastq_links(tl, indir=self.project, outdir="tmp")
-        # self.assertTrue(os.path.lexists(os.path.join("tmp", os.path.relpath(tl[0][2], self.project) + "_R1_001.fastq.gz")))
-        # self.assertTrue(os.path.lexists(os.path.join("tmp", os.path.dirname(os.path.relpath(tl[0][2], self.project)),
-        #                                              "SampleSheet.csv")))
+    def test_jobtask_source(self):
+        task = ratatosk.lib.tools.picard.InsertMetrics(target="data/sample.merge.dup.insert_metrics")
+        self.assertEqual(task.source(), ["data/sample.merge.dup.bam"])
+        task = ratatosk.lib.tools.gatk.IndelRealigner(target="data/sample.merge.dup.realign.bam",
+                                                      parent_task=['ratatosk.lib.tools.picard.MergeSamFiles',
+                                                                   'ratatosk.lib.tools.gatk.RealignerTargetCreator',
+                                                                   'ratatosk.lib.tools.gatk.UnifiedGenotyper',])
+        self.assertEqual(task.source(), ['data/sample.dup.merge.bam', 'data/sample.merge.dup.intervals', 'data/sample.merge.dup.vcf'])
