@@ -233,7 +233,7 @@ class TestGATKWrappers(unittest.TestCase):
                          
     def test_indelrealigner(self):
         task = ratatosk.lib.tools.gatk.IndelRealigner(target=self.mergebam.replace(".bam", ".realign.bam"))
-        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T IndelRealigner', '', '-I', 'data/sample.sort.merge.bam', '-o', 'data/sample.sort.merge.realign.bam', '--targetIntervals', 'data/sample.sort.merge.intervals', '-R', 'data/chr11.fa'],
+        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T IndelRealigner', '', '-I', 'data/sample.sort.merge.bam', '-o', 'data/sample.sort.merge.realign.bam', '--targetIntervals', 'data/sample.sort.merge.intervals', '-known data/sample.sort.merge.vcf', '-R', 'data/chr11.fa'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
     def test_base_recalibrator(self):
@@ -243,8 +243,10 @@ class TestGATKWrappers(unittest.TestCase):
 
     def test_printreads(self):
         task = ratatosk.lib.tools.gatk.PrintReads(target=self.mergebam.replace(".bam", ".realign.recal.bam"))
-        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T PrintReads', '-BQSR', 'data/sample.sort.merge.realign.recal_data.grp', '-o', 'data/sample.sort.merge.realign.recal.bam', '-I', 'data/sample.sort.merge.realign.bam', '-R', 'data/chr11.fa'],
-                         _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
+        self.assertEqual(
+            ['java', '-Xmx2g', '-jar', self.gatk, '-T PrintReads', '-I', 'data/sample.sort.merge.realign.bam', '-o', 'data/sample.sort.merge.realign.recal.bam', '-BQSR', 'data/sample.sort.merge.realign.recal_data.grp', '-R', 'data/chr11.fa'],
+            _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
+
 
     def test_clipreads(self):
         task = ratatosk.lib.tools.gatk.ClipReads(target=self.mergebam.replace(".bam", ".realign.recal.clip.bam"))

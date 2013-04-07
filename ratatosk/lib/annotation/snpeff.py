@@ -105,6 +105,7 @@ class snpEff(snpEffJobTask):
     label = luigi.Parameter(default="-effects")
     options = luigi.Parameter(default=("-1",))
     parent_task = luigi.Parameter(default="ratatosk.lib.annotation.snpeff.InputVcfFile")
+    suffix = luigi.Parameter(default=(".vcf", ), is_list=True)
         
     def args(self):
         retval = ["-i", self.source_suffix.strip("."),

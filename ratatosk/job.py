@@ -259,9 +259,6 @@ class BaseJobTask(luigi.Task):
         """Task requirements. In many cases this is a single source
         whose name can be generated following the code below, and
         therefore doesn't need reimplementation in the subclasses."""
-        print "in requires"
-        print self.parent()
-        print self.source()
         return [cls(target=source) for cls, source in izip(self.parent(), self.source())]
 
     def complete(self):
@@ -394,7 +391,7 @@ class InputJobTask(JobTask):
     """Input job task. Should have as a parent task one of the tasks
     in ratatosk.lib.files.external"""
     def requires(self):
-        cls = self.set_parent_task()
+        cls = self.parent()[0]
         return cls(target=self.target)
     
     def run(self):

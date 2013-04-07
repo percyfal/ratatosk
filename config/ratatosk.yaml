@@ -21,7 +21,6 @@ gatk:
   RealignerTargetCreator:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   IndelRealigner:
-    #parent_task: ratatosk.lib.tools.gatk.RealignerTargetCreator
     parent_task:
     - ratatosk.lib.tools.picard.MergeSamFiles
     - ratatosk.lib.tools.gatk.RealignerTargetCreator
@@ -29,7 +28,9 @@ gatk:
   BaseRecalibrator:
     parent_task: ratatosk.lib.tools.gatk.IndelRealigner
   PrintReads:
-    parent_task: ratatosk.lib.tools.gatk.BaseRecalibrator
+    parent_task:
+      - ratatosk.lib.tools.gatk.InputBamFile
+      - ratatosk.lib.tools.gatk.BaseRecalibrator
   ClipReads:
     parent_task: ratatosk.lib.tools.gatk.PrintReads
   UnifiedGenotyper:
