@@ -18,6 +18,7 @@ import shutil
 import random
 import logging
 from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner, DefaultGzShellJobRunner
+from ratatosk.utils import rreplace
 from cement.utils import shell
 
 logger = logging.getLogger('luigi-interface')
@@ -30,7 +31,6 @@ class InputFastqFile(InputJobTask):
     _config_section = "cutadapt"
     _config_subsection = "InputFastqFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
-    
 
 # NB: cutadapt is a non-hiearchical tool. Group under, say, utils?
 class CutadaptJobTask(JobTask):
@@ -46,11 +46,11 @@ class CutadaptJobTask(JobTask):
 
     def read1(self):
         # Assume read 2 if no match...
-        return self.input().fn.find(self.read1_suffix) > 0
+        return self.input().path.find(self.read1_suffix) > 0
 
     def job_runner(self):
         return CutadaptJobRunner()
 
     def args(self):
         seq = self.threeprime if self.read1() else self.fiveprime
-        return ["-a", seq, self.input(), "-o", self.output(), ">", self.input().fn.replace(".fastq.gz", ".trimmed.fastq.cutadapt_metrics")]
+        return ["-a", seq, self.input(), "-o", self.output(), ">", rreplace(self.input().path, ".fastq.gz", ".trimmed.fastq.cutadapt_metrics", 1)]

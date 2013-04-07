@@ -121,7 +121,7 @@ class BwaSampe(BwaJobTask):
         if not self.read_group:
             from ratatosk import backend
             sai1 = self.input()[0]
-            rgid = sai1.fn.replace(".sai", "")
+            rgid = rreplace(rreplace(sai1.path, self.source_suffix, "", 1), self.read1_suffix, "", 1)
             smid = rgid
             # Get sample information if present in global vars. Note
             # that this requires the

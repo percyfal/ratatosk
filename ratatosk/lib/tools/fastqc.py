@@ -29,14 +29,14 @@ class FastQCJobRunner(DefaultShellJobRunner):
             arglist += job.opts()
         (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
         (tmpdir, outdir) = tmp_files[0]
-        arglist += ['-o', tmpdir.fn]
+        arglist += ['-o', tmpdir.path]
         arglist += [job_args[0]]
         return (arglist, tmp_files)
 
     def run_job(self, job):
         (arglist, tmp_files) = self._make_arglist(job)
         (tmpdir, outdir) = tmp_files[0]
-        os.makedirs(os.path.join(os.curdir, tmpdir.fn))
+        os.makedirs(os.path.join(os.curdir, tmpdir.path))
         # Need to send output to temporary *directory*, not file
         cmd = ' '.join(arglist)        
         logger.info("Job runner '{0}'; running command '{1}'".format(self.__class__, cmd))
@@ -64,16 +64,11 @@ class FastQCJobTask(JobTask):
     _config_section = "fastqc"
     executable = luigi.Parameter(default="fastqc")
     parent_task = luigi.Parameter(default = "ratatosk.lib.tools.fastqc.InputFastqFile")
-    # fastqc has many outputs (targets) - arbitrarily use the
-    # "summary.txt" output. Or use the --noextract option?
-    target_file_name = luigi.Parameter(default = "summary.txt")
+    source_suffix = luigi.Parameter(default=".fastq.gz")
+    target_suffix = luigi.Parameter(default="_fastqc")
 
     def job_runner(self):
         return FastQCJobRunner()
-
-    def output(self):
-        outdir = "{}_fastqc".format(os.path.splitext(self.input().fn.replace(".gz", ""))[0])
-        return luigi.LocalTarget(outdir)
 
     def args(self):
         return [self.input(), self.output()]

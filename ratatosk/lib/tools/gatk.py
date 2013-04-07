@@ -341,7 +341,7 @@ class UnifiedGenotyper(GATKIndexedJobTask):
         if self.target_region:
             retval += ["-L {}".format(self.target_region)]
         if self.dbsnp:
-            retval += [" --dbsnp {}".format(self.dbsnp)]
+            retval += ["--dbsnp", self.dbsnp]
         return retval
 
     def args(self):

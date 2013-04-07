@@ -131,11 +131,11 @@ class HaloPipeline(PipelineTask):
 class HaloPlex(HaloPipeline):
     def requires(self):
         self._setup()
-        reads = ["{}_R1_001.fastq.gz".format(x[2]) for x in self.targets] +  ["{}_R2_001.fastq.gz".format(x[2]) for x in self.targets]
+        fastqc_targets = ["{}_R1_001_fastqc".format(x[2]) for x in self.targets] +  ["{}_R2_001_fastqc".format(x[2]) for x in self.targets]
         variant_targets = ["{}.{}".format(x[1], self.final_target_suffix) for x in self.targets]
         picard_metrics_targets = ["{}.{}".format(x[1], "trimmed.sync.sort.merge") for x in self.targets]
 
-        return [VariantEval(target=tgt) for tgt in variant_targets] + [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_targets] + [PrintConfig()] + [FastQCJobTask(target=tgt) for tgt in reads]
+        return [VariantEval(target=tgt) for tgt in variant_targets] + [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_targets] + [PrintConfig()] + [FastQCJobTask(target=tgt) for tgt in fastqc_targets]
 
 class HaloBgzip(Bgzip):
     _config_subsection = "HaloBgzip"
