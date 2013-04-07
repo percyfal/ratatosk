@@ -33,7 +33,7 @@ class TestJobTask(unittest.TestCase):
         # print task
         cnf = get_config()
         cnf.add_config_path(localconf)
-        task = ratatosk.lib.align.bwa.BwaAln(target="data/sample1_1.sai", parent_task=('ratatosk.lib.align.bwa.InputFastqFile', ))
+        task = ratatosk.lib.align.bwa.Aln(target="data/sample1_1.sai", parent_task=('ratatosk.lib.align.bwa.InputFastqFile', ))
         #luigi.build([task])
         print task.parent()
         print task

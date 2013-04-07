@@ -25,7 +25,7 @@ from ratatosk.config import get_config
 from subprocess import Popen, PIPE
 from ratatosk.job import JobTask, InputJobTask
 from ratatosk.jobrunner import DefaultShellJobRunner
-from ratatosk.lib.align.bwa import BwaIndex, Bampe
+from ratatosk.lib.align.bwa import Index, Bampe
 import ratatosk.lib.tools.picard
 from nose.plugins.attrib import attr
 
@@ -58,7 +58,7 @@ def setUpModule():
                     'bwa' :{
                         'InputFastqFile': {'target_suffix':'.fastq.gz'},
                         'bwaref': 'data/chr11.fa',
-                        'sampe':{'read1_suffix':"_1",
+                        'Sampe':{'read1_suffix':"_1",
                                  'read2_suffix':"_2"},
                         'Bampe':{'read1_suffix':"_1",
                                  'read2_suffix':"_2"},
@@ -96,7 +96,7 @@ def tearDownModule():
 class TestCommand(unittest.TestCase):
     @classmethod 
     def setUpClass(cls):
-        luigi.build([BwaIndex(target=ref + ".bwt")])
+        luigi.build([Index(target=ref + ".bwt")])
 
     @classmethod
     def tearDownClass(cls):
@@ -110,14 +110,14 @@ class TestCommand(unittest.TestCase):
 
     def test_bwaaln(self):
         luigi.run(_luigi_args(['--target', read1.replace(".fastq.gz", ".sai"), '--config-file', localconf]),
-                  main_task_cls=ratatosk.lib.align.bwa.BwaAln)
+                  main_task_cls=ratatosk.lib.align.bwa.Aln)
 
     def test_bwasampe(self):
         from ratatosk.handler import register, RatatoskHandler
         key = "target_generator_handler"
         h = RatatoskHandler(label=key, mod="test.site_functions.target_generator")
         register(h)
-        luigi.run(_luigi_args(['--target', read1.replace("1.fastq.gz", ".sam"), '--config-file', localconf, '--use-long-names']), main_task_cls=ratatosk.lib.align.bwa.BwaSampe)
+        luigi.run(_luigi_args(['--target', read1.replace("1.fastq.gz", ".sam"), '--config-file', localconf, '--use-long-names']), main_task_cls=ratatosk.lib.align.bwa.Sampe)
 
     def test_sortbam(self):
         luigi.run(_luigi_args(['--target', read1.replace("1.fastq.gz", ".sort.bam"), '--config-file', localconf]), main_task_cls=ratatosk.lib.tools.picard.SortSam)

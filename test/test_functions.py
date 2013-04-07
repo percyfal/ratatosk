@@ -117,12 +117,14 @@ class TestGeneralFunctions(unittest.TestCase):
         """
         def _make_source_file_name(target_cls, source_cls, diff_label=None):
             src_label = source_cls().label
-            tgt_suffix = target_cls.target_suffix
-            src_suffix = source_cls().target_suffix
+            tgt_suffix = target_cls.suffix
+            src_suffix = source_cls().suffix
             if isinstance(tgt_suffix, tuple) or isinstance(tgt_suffix, list):
-                tgt_suffix = tgt_suffix[0]
+                if len(tgt_suffix) > 0:
+                    tgt_suffix = tgt_suffix[0]
             if isinstance(src_suffix, tuple) or isinstance(src_suffix, list):
-                src_suffix = src_suffix[0]
+                if len(src_suffix) > 0:
+                    src_suffix = src_suffix[0]
             # Start by stripping tgt_suffix
             if tgt_suffix:
                 source = rreplace(target_cls.target, tgt_suffix, "", 1)

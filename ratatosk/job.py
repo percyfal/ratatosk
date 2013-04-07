@@ -351,9 +351,11 @@ class BaseJobTask(luigi.Task):
             target = self.target[self._target_iter]
             self._target_iter += 1
         if isinstance(tgt_suffix, tuple) or isinstance(tgt_suffix, list):
-            tgt_suffix = tgt_suffix[0]
+            if len(tgt_suffix) > 0:
+                tgt_suffix = tgt_suffix[0]
         if isinstance(src_suffix, tuple) or isinstance(src_suffix, list):
-            src_suffix = src_suffix[0]
+            if len(src_suffix) > 0:
+                src_suffix = src_suffix[0]
         # Start by stripping tgt_suffix
         if tgt_suffix:
             source = rreplace(target, tgt_suffix, "", 1)

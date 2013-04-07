@@ -107,7 +107,7 @@ class TestConfigUpdate(unittest.TestCase):
         # Main gatk task
         luigi.run(['--config-file', ratatosk_file, '--target', 'mock.fastq.gz', '--dry-run'], main_task_cls=ratatosk.lib.files.fastq.FastqFileLink)
         gatkjt = ratatosk.lib.tools.gatk.GATKJobTask()
-        self.assertEqual(gatkjt.parent_task, "ratatosk.lib.tools.gatk.InputBamFile")
+        self.assertEqual(gatkjt.parent_task, ("ratatosk.lib.tools.gatk.InputBamFile", ))
         cnf.add_config_path("mock.yaml")
         kwargs = gatkjt._update_config(cnf)
         self.assertEqual(kwargs['parent_task'], 'another.class')
