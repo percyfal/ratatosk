@@ -15,7 +15,8 @@ import os
 import luigi
 import logging
 import ratatosk.lib.files.external
-from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner
+from ratatosk.job import InputJobTask, JobTask
+from ratatosk.jobrunner import DefaultShellJobRunner
 
 class TabixJobRunner(DefaultShellJobRunner):
     pass
@@ -24,7 +25,7 @@ class InputVcfFile(InputJobTask):
     _config_section = "tabix"
     _config_subsection = "InputVcfFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
-    target_suffix = luigi.Parameter(default=".vcf")
+    suffix = luigi.Parameter(default=(".vcf", ), is_list=True)
 
 class TabixJobTask(JobTask):
     _config_section = "tabix"
@@ -43,19 +44,17 @@ class Bgzip(TabixJobTask):
     _config_subsection = "Bgzip"
     sub_executable = luigi.Parameter(default="bgzip")
     parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.InputVcfFile")
-    target_suffix = luigi.Parameter(default=".gz")
-    source_suffix = luigi.Parameter(default="")
+    suffix = luigi.Parameter(default=".vcf.gz")
 
     def args(self):
-        return [self.input()]
+        return [self.input()[0]]
 
 # Since this is such a common operation, add the task here
 class BgUnzip(TabixJobTask):
     _config_subsection = "BgUnzip"
     sub_executable = luigi.Parameter(default="bgzip")
-    parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.InputVcfFile")
-    target_suffix = luigi.Parameter(default=".vcf")
-    source_suffix = luigi.Parameter(default=".vcf.gz")
+    parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.Bgzip")
+    suffix = luigi.Parameter(default=".vcf")
 
     def opts(self):
         retval = list(self.options)
@@ -64,21 +63,14 @@ class BgUnzip(TabixJobTask):
         return retval
 
     def args(self):
-        return [self.input()]
-
-    def post_run_hook(self):
-        pass
-        # #luigi.build(TabixTabixJobTask(target=rreplace(self.target, TabixTabixJobTask.source_suffix, TabixTabixJobTask.target_suffix, 1))
-        # print "running post_run_hook"
-        # print TabixTabixJobTask(target=rreplace(self.target, TabixTabixJobTask.source_suffix, TabixTabixJobTask.target_suffix, 1))
+        return [self.input()[0]]
 
 class Tabix(TabixJobTask):
     _config_subsection = "Tabix"
     sub_executable = luigi.Parameter(default="tabix")
     parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.Bgzip")
-    target_suffix = luigi.Parameter(default=".gz.tbi")
-    source_suffix = luigi.Parameter(default=".gz")
+    suffix = luigi.Parameter(default=".vcf.gz.tbi")
 
     def args(self):
-        return [self.input()]
+        return [self.input()[0]]
     

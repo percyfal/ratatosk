@@ -18,7 +18,8 @@ import ratatosk.lib.files.external
 import ratatosk.lib.variation.tabix
 from ratatosk.handler import RatatoskHandler, register_task_handler
 from ratatosk import backend
-from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner
+from ratatosk.job import InputJobTask, JobTask
+from ratatosk.jobrunner import  DefaultShellJobRunner
 
 class HtslibJobRunner(DefaultShellJobRunner):
     pass
@@ -27,7 +28,7 @@ class InputVcfFile(InputJobTask):
     _config_section = "htslib"
     _config_subsection = "InputVcfFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
-    target_suffix = luigi.Parameter(default=".vcf")
+    suffix = luigi.Parameter(default=(".vcf", ), is_list=True)
 
 class HtslibVcfJobTask(JobTask):
     _config_section = "htslib"
@@ -42,14 +43,13 @@ class VcfMerge(HtslibVcfJobTask):
     sub_executable = luigi.Parameter(default="merge")
     target_generator_handler = luigi.Parameter(default=None)
     label = luigi.Parameter(default=".vcfmerge")
-    target_suffix = luigi.Parameter(default=".vcf")
-    source_suffix = luigi.Parameter(default=".vcf.gz")
+    suffix = luigi.Parameter(default=".vcf")
 
     def args(self):
         return [x for x in self.input()] + [">", self.output()]
     
     def requires(self):
-        cls = self.set_parent_task()
+        cls = self.parent()[0]
         sources = []
         if self.target_generator_handler and "target_generator_handler" not in self._handlers.keys():
             tgf = RatatoskHandler(label="target_generator_handler", mod=self.target_generator_handler)
@@ -59,4 +59,3 @@ class VcfMerge(HtslibVcfJobTask):
             return []
         sources = self._handlers["target_generator_handler"](self)
         return [cls(target=src) for src in sources]
-

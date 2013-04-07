@@ -16,7 +16,8 @@ import luigi
 import logging
 import ratatosk.lib.files.external
 from ratatosk.utils import rreplace, fullclassname
-from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner
+from ratatosk.job import InputJobTask, JobTask
+from ratatosk.jobrunner import  DefaultShellJobRunner
 import ratatosk.shell as shell
 
 logger = logging.getLogger('luigi-interface')
@@ -64,7 +65,7 @@ class InputVcfFile(InputJobTask):
     _config_section = "snpeff"
     _config_subsection = "InputVcfFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
-    target_suffix = luigi.Parameter(default=".vcf")
+    suffix = luigi.Parameter(default=(".vcf", ), is_list=True)
 
 class snpEffJobTask(JobTask):
     _config_section = "snpeff"
@@ -108,11 +109,12 @@ class snpEff(snpEffJobTask):
     suffix = luigi.Parameter(default=(".vcf", ), is_list=True)
         
     def args(self):
-        retval = ["-i", self.source_suffix.strip("."),
-                  "-o", self.target_suffix.strip("."),
+        pcls = self.parent()[0]
+        retval = ["-i", pcls().suffix[0].strip("."),
+                  "-o", self.suffix[0].strip("."),
                   "-c", self.snpeff_config,
                   self.genome,
-                  self.input(),
+                  self.input()[0],
                   ">", self.output()
                   ]
         return retval
