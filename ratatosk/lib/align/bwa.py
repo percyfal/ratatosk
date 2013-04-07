@@ -67,7 +67,7 @@ class BwaAln(BwaJobTask):
         return retval + ['-t {}'.format(str(self.threads()))]
 
     def requires(self):
-        cls = self.set_parent_task()
+        cls = self.parent().pop()
         source = self._make_source_file_name()
         # Ugly hack for 1 -> 2 dependency: works but should be dealt with otherwise
         if str(fullclassname(cls)) in ["ratatosk.lib.utils.misc.ResyncMatesJobTask"]:

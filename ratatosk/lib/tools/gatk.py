@@ -16,6 +16,7 @@ import re
 import luigi
 import logging
 import ratatosk.lib.files.external
+import ratatosk.lib.tools.samtools
 from ratatosk.utils import rreplace, fullclassname
 from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner
 import ratatosk.shell as shell
@@ -131,11 +132,6 @@ class RealignerTargetCreator(GATKIndexedJobTask):
         retval.append(" ".join(["-known {}".format(x) for x in self.known]))
         return retval
 
-    def requires(self):
-        cls = self.set_parent_task()
-        source = self._make_source_file_name()
-        return [cls(target=source), ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls))]
-
     def args(self):
         retval = ["-I", self.input()[0], "-o", self.output()]
         if not self.ref:
@@ -148,7 +144,10 @@ class IndelRealigner(GATKIndexedJobTask):
     sub_executable = "IndelRealigner"
     known = luigi.Parameter(default=(), is_list=True)
     label = luigi.Parameter(default=".realign")
-    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
+    parent_task = luigi.Parameter(default=('ratatosk.lib.tools.gatk.InputBamFile',
+                                           'ratatosk.lib.tools.gatk.RealignerTargetCreator',
+                                           'ratatosk.lib.tools.gatk.UnifiedGenotyper',
+                                           ), is_list=True)
     source_suffix = luigi.Parameter(default=".bam")
 
     def requires(self):
@@ -641,7 +640,8 @@ class ReadBackedPhasing(GATKJobTask):
     _config_subsection = "ReadBackedPhasing"
     sub_executable = "ReadBackedPhasing"
     label = luigi.Parameter(default="-phased")
-    parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputBamFile")
+    parent_task = luigi.Parameter(default=('ratatosk.lib.tools.gatk.InputBamFile',
+                                           'ratatosk.lib.tools.gatk.UnifiedGenotyper'), is_list=True)
     target_suffix = luigi.Parameter(default=".vcf")
     source_suffix = luigi.Parameter(default=".bam")
     # BIG PROBLEM: vcf and bam source have completely different

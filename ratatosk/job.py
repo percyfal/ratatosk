@@ -26,6 +26,7 @@ from luigi.task import flatten
 import ratatosk.shell as shell
 import ratatosk
 from ratatosk import backend
+from ratatosk.handler import RatatoskHandler, register_attr
 from ratatosk.config import get_config, get_custom_config
 from ratatosk.utils import rreplace, update, config_to_dict
 
@@ -198,40 +199,53 @@ class BaseJobTask(luigi.Task):
     restart = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="Restart pipeline from scratch.")
     restart_from = luigi.Parameter(default=None, is_global=True, description="NOT YET IMPLEMENTED: Restart pipeline from a given task.")
     options = luigi.Parameter(default=(), description="Program options", is_list=True)
-    parent_task = luigi.Parameter(default=None, description="Main parent task from which the current task receives (parts) of its input")
-    num_threads = luigi.Parameter(default=1)
+    parent_task = luigi.Parameter(default=(), description="Main parent task(s) from which the current task receives of its input", is_list=True)
+    num_threads = luigi.Parameter(default=1, description="Number of threads to run. Set to 1 if task.can_multi_thread is false")
     pipe  = luigi.BooleanParameter(default=False, description="Piped input/output. In practice refrains from including input/output file names in command list.")
     # Note: output should generate one file only; in special cases we
     # need to do hacks
     target = luigi.Parameter(default=None, description="Output target name")
     target_suffix = luigi.Parameter(default=None, description="File suffix for target")
     source_suffix = luigi.Parameter(default=None, description="File suffix for source")
-    source = None
+    # source = None
     # Use for changing labels in graph visualization
     use_long_names = luigi.Parameter(default=False, description="Use long names (including all options) in graph vizualization", is_boolean=True, is_global=True)
 
+    # Labels ("tag") for output file name; not all tasks are allowed
+    # to "label" their output
+    label = luigi.Parameter(default=None)
+    # Hack to communicate between tasks between which many labels have
+    # been added. I see no easy way to generate this information
+    # automatically.
+    diff_label = luigi.Parameter(default=None, is_list=True)
     # Path to main program; used by job runner
     exe_path = luigi.Parameter(default=None)
     # Name of executable to run a program
     executable = None
     # Name of 'sub_executable' (e.g. for GATK, bwa). 
     sub_executable = None
-    
-    _config_section = None
-    _config_subsection = None
+
     n_reduce_tasks = 8
     can_multi_thread = False
     max_memory_gb = 3
-    # Not all tasks are allowed to "label" their output
-    label = luigi.Parameter(default=None)
+
+    # Configuration sections
+    _config_section = None
+    _config_subsection = None
 
     # Handlers attached to a task
     _handlers = {}
 
+    # Parent task classes
+    _parent_cls = []
+
+    # Source file name
+    # _source_name = 
     def __init__(self, *args, **kwargs):
+        self._parent_cls = []
+        self._handers = {}
         params = self.get_params()
         param_values = self.get_param_values(params, args, kwargs)
-        self._handlers = {}
         # Main configuration file
         for key, value in param_values:
             if key == "config_file":
@@ -249,9 +263,50 @@ class BaseJobTask(luigi.Task):
                 custom_config.add_config_path(custom_config_file)
                 kwargs = self._update_config(custom_config, disable_parent_task_update=True, *args, **kwargs)
         super(BaseJobTask, self).__init__(*args, **kwargs)
+
+        # Register parent tasks
+        parents = [v for k, v in self.get_param_values(params, args, kwargs) if k == "parent_task"].pop()
+        # In case parent_task is defined as a string, not a list
+        if not isinstance(parents, tuple):
+            parents = [parents]
+        self._register_parent_task(parents)
         if self.dry_run:
             print "DRY RUN: " + str(self)
 
+    def _register_parent_task(self, parents):
+        """Register parent task class(es) to task."""
+        default_parents = self.get_param_default("parent_task")
+        if not isinstance(default_parents, tuple):
+            default_parents = [default_parents]
+        if len(parents) != len(default_parents):
+            logger.warn("length of parent list ({}) differs from length of default_parents list ({}); this may result in unpredicted behaviour".format(len(parents), len(default_parents)))
+        for p,d in izip(parents, default_parents):
+            h = RatatoskHandler(label="_parent_cls", mod=p)
+            register_attr(self, h, default_handler=d)
+
+    def set_parent_task(self):
+        """Try to import a module task class represented as string in
+        parent_task and use it as such.
+
+        TODO: handle parent task list where tasks have several requirements?
+        """
+        opt_mod = ".".join(self.parent_task.split(".")[0:-1])
+        opt_cls = self.parent_task.split(".")[-1]
+        default_task = self.get_param_default("parent_task")
+        default_mod = ".".join(default_task.split(".")[0:-1])
+        default_cls = default_task.split(".")[-1]
+        try:
+            mod = __import__(opt_mod, fromlist=[opt_cls])
+            cls = getattr(mod, opt_cls)
+            ret_cls = cls
+        except:
+            logger.warn("No class {} found: using default class {} for task '{}'".format(".".join([opt_mod, opt_cls]), 
+                                                                                         ".".join([default_mod, default_cls]),
+                                                                                         self.__class__))
+            ret_mod = __import__(default_mod, fromlist=[default_cls])
+            ret_cls = getattr(ret_mod, default_cls)
+        return ret_cls
+        
     def _update_config(self, config, disable_parent_task_update=False, *args, **kwargs):
         """Update configuration for this task. All task options should
         have a default. Order of preference:
@@ -366,6 +421,13 @@ class BaseJobTask(luigi.Task):
         """Hook to run after job_runner"""
         pass
 
+    def parent(self):
+        """Parent task class(es). List of tuples consisting of
+        uninstantiated python objects paired with their used for dynamic generation of
+        task dependencies.
+        """
+        return self._parent_cls
+
     def output(self):
         """Task output. In many cases this defaults to the target and
         doesn't need reimplementation in the subclasses. """
@@ -375,7 +437,7 @@ class BaseJobTask(luigi.Task):
         """Task requirements. In many cases this is a single source
         whose name can be generated following the code below, and
         therefore doesn't need reimplementation in the subclasses."""
-        cls = self.set_parent_task()
+        cls = self.parent()[0]
         source = self._make_source_file_name()
         return cls(target=source)
 
@@ -431,58 +493,6 @@ class BaseJobTask(luigi.Task):
             sample, sample_merge, sample_run = tgt
             yield sample, sample_merge, sample_run
 
-    def set_parent_task(self):
-        """Try to import a module task class represented as string in
-        parent_task and use it as such.
-
-        TODO: handle parent task list where tasks have several requirements?
-        """
-        opt_mod = ".".join(self.parent_task.split(".")[0:-1])
-        opt_cls = self.parent_task.split(".")[-1]
-        default_task = self.get_param_default("parent_task")
-        default_mod = ".".join(default_task.split(".")[0:-1])
-        default_cls = default_task.split(".")[-1]
-        try:
-            mod = __import__(opt_mod, fromlist=[opt_cls])
-            cls = getattr(mod, opt_cls)
-            ret_cls = cls
-        except:
-            logger.warn("No class {} found: using default class {} for task '{}'".format(".".join([opt_mod, opt_cls]), 
-                                                                                         ".".join([default_mod, default_cls]),
-                                                                                         self.__class__))
-            ret_mod = __import__(default_mod, fromlist=[default_cls])
-            ret_cls = getattr(ret_mod, default_cls)
-        return ret_cls
-
-    def set_parent_task_list(self):
-        """Try to import a module task class represented as string in
-        parent_task and use it as such
-        """
-        ret_cls = []
-        opt_mod = []
-        default_cls = []
-        default_task = self.get_param_default("parent_task")
-        for task in default_task:
-            mod = ".".join(default_task.split(".")[0:-1])
-            cls = default_task.split(".")[-1]
-            imp_mod = __import__(mod, fromlist=[cls])
-            default_cls.append(getattr(imp_mod, cls))
-
-        for task in self.parent_task.split(","):
-            opt_mod.append((".".join(task.split(".")[0:-1]),
-                            task.split(".")[-1]))
-
-        for o_mod, o_cls in opt_mod:
-            try:
-                mod = __import__(o_mod, fromlist=[o_cls])
-                cls = getattr(mod, o_cls)
-                ret_cls.append(cls)
-            except:
-                logger.warn("No such class '{0}': using default class '{1}'".format(".".join([o_mod, o_cls]),
-                                                                                    ",".join(default_cls)))
-                ret_cls = default_cls
-
-        return ret_cls
 
     # Helper functions to calculate target and source file names. Move
     # to generic function outside class?
@@ -636,3 +646,6 @@ def name_prefix():
     pass
 
 
+def get_source_path(target_cls,_cls, label):
+    """Construct source file name"""
+    pass

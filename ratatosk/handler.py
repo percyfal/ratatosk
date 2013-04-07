@@ -168,6 +168,27 @@ def register_task_handler(obj, handler_obj, default_handler=None):
     else:
         obj._handlers[handler_obj.label()] = hdl
 
+def register_attr(obj, handler_obj, default_handler=None):
+    """Register a class represented as string to a task attribute.
+    
+    :param obj: the object to which the handler class is registered
+    :param handler_obj: the handler object to register, with attribute defined by handler_obj.label()
+    :param default_handler: the default handler to fall back on
+
+    :return: None
+    """
+    attr_list = getattr(obj, handler_obj.label(), [])
+    if not handler_obj:
+        logging.warn("No handler object provided; skipping")
+        return
+    if not isinstance(handler_obj, IHandler):
+        raise ValueError, "handler object must implement the IHandler interface"
+    hdl = _load(handler_obj)
+    if not hdl:
+        return
+    attr_list.append(hdl)
+    setattr(obj, handler_obj.label(), attr_list)
+
 def target_generator_validator(fn):
     """Validate target generator function. Must return 3-tuple
     (sample, sample target prefix (merge target), sample run prefix

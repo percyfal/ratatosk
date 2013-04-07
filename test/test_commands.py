@@ -44,8 +44,8 @@ def _luigi_args(args):
     return args
 
 ref = "data/chr11.fa"
-read1 = "data/read1.fastq.gz"
-read2 = "data/read2.fastq.gz"
+read1 = "data/sample1_1.fastq.gz"
+read2 = "data/sample1_2.fastq.gz"
 localconf = "mock.yaml"
 
 def setUpModule():
@@ -57,10 +57,10 @@ def setUpModule():
                     'bwa' :{
                         'InputFastqFile': {'target_suffix':'.fastq.gz'},
                         'bwaref': 'data/chr11.fa',
-                        'sampe':{'read1_suffix':"1",
-                                 'read2_suffix':"2"},
-                        'Bampe':{'read1_suffix':"1",
-                                 'read2_suffix':"2"},
+                        'sampe':{'read1_suffix':"_1",
+                                 'read2_suffix':"_2"},
+                        'Bampe':{'read1_suffix':"_1",
+                                 'read2_suffix':"_2"},
                         },
                     'picard' : {
                         'InputBamFile' :
@@ -104,7 +104,7 @@ class TestCommand(unittest.TestCase):
 
     def tearDown(self):
         files = [x for x in os.listdir("data") if os.path.isfile(x)]
-        [os.unlink(os.path.join("data", x)) for x in files if x.startswith("read.")]
+        [os.unlink(os.path.join("data", x)) for x in files if x.startswith("sample1.")]
         [os.unlink(os.path.join("data", x)) for x in files if x.endswith(".sai")]
 
     def test_bwaaln(self):
