@@ -50,8 +50,9 @@ class BaseJobTask(luigi.Task):
     # Note: output should generate one file only; in special cases we
     # need to do hacks
     target = luigi.Parameter(default=None, description="Output target name")
-    target_suffix = luigi.Parameter(default=(), description="File suffix for target", is_list=True)
-    source_suffix = luigi.Parameter(default=None, description="File suffix for source")
+    suffix = luigi.Parameter(default=(), description="File suffix for target", is_list=True)
+    #target_suffix = luigi.Parameter(default=(), description="File suffix for target", is_list=True)
+    #source_suffix = luigi.Parameter(default=None, description="File suffix for source")
     # Use for changing labels in graph visualization
     use_long_names = luigi.Parameter(default=False, description="Use long names (including all options) in graph vizualization", is_boolean=True, is_global=True)
 
@@ -62,6 +63,8 @@ class BaseJobTask(luigi.Task):
     # been added. I see no easy way to generate this information
     # automatically.
     diff_label = luigi.Parameter(default=None, is_list=True)
+    # Conversely, label to be added to source. For e.g. BwaSampe
+    add_label = luigi.Parameter(default=None, is_list=True)
     # Path to main program; used by job runner
     exe_path = luigi.Parameter(default=None)
     # Name of executable to run a program
@@ -255,9 +258,10 @@ class BaseJobTask(luigi.Task):
         """Task requirements. In many cases this is a single source
         whose name can be generated following the code below, and
         therefore doesn't need reimplementation in the subclasses."""
-        cls = self.parent()[0]
-        source = self._make_source_file_name()
-        return cls(target=source)
+        print "in requires"
+        print self.parent()
+        print self.source()
+        return [cls(target=source) for cls, source in izip(self.parent(), self.source())]
 
     def complete(self):
         """
@@ -314,14 +318,23 @@ class BaseJobTask(luigi.Task):
     def source(self):
         """Make source file names from parent tasks in self.parent()"""
         if self.diff_label:
-            assert len(self.diff_label) == len(self.parents()), "if diff_label is defined, it must have as many elements as parent_task"
-            return [self._make_source_file_name(p, dl) for p, dl in izip(self.parent(), self.diff_label)]
+            assert len(self.diff_label) == len(self.parent()), "if diff_label is defined, it must have as many elements as parent_task"
+            return [self._make_source_file_name(p, diff_label=dl) for p, dl in izip(self.parent(), self.diff_label)]
+        elif self.add_label:
+            assert len(self.add_label) == len(self.parent()), "if add_label is defined, it must have as many elements as parent_task"
+            return [self._make_source_file_name(p, add_label=al) for p, al in izip(self.parent(), self.add_label)]
+        elif self.diff_label and self.add_label:
+            assert len(self.diff_label) == len(self.parent()), "if diff_label is defined, it must have as many elements as parent_task"
+            assert len(self.add_label) == len(self.parent()), "if add_label is defined, it must have as many elements as parent_task"
+            return [self._make_source_file_name(p, diff_label=dl, add_label=al) for p, dl, al in izip(self.parent(), self.diff_label, self.add_label)]
         else:
+            print "Making source"
+            print self.parent()
             return [self._make_source_file_name(p) for p in self.parent()]
 
-    def _make_source_file_name(self, parent_cls, diff_label=None):
+    def _make_source_file_name(self, parent_cls, diff_label=None, add_label=None):
         """Make source file name for parent tasks. Uses parent_cls to
-        get parent class target_suffix (i.e. source suffix as viewed
+        get parent class suffix (i.e. source suffix as viewed
         from self). The optional argument diff_label is needed for
         cases where the parent class is several steps up in the
         workflow, meaning that several labels have been added along
@@ -333,8 +346,8 @@ class BaseJobTask(luigi.Task):
         :return: parent task target name (source)
         """
         src_label = parent_cls().label
-        tgt_suffix = self.target_suffix
-        src_suffix = parent_cls().target_suffix
+        tgt_suffix = self.suffix
+        src_suffix = parent_cls().suffix
         if isinstance(tgt_suffix, tuple) or isinstance(tgt_suffix, list):
             tgt_suffix = tgt_suffix[0]
         if isinstance(src_suffix, tuple) or isinstance(src_suffix, list):
@@ -348,6 +361,8 @@ class BaseJobTask(luigi.Task):
         source = rreplace(source, self.label, "", 1)
         if diff_label:
             source = rreplace(source, str(diff_label), "", 1)
+        if add_label:
+            source = source + add_label
         if src_label:
             # Trick: remove src_label first if present since
             # the source label addition here corresponds to a

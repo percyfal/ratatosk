@@ -57,7 +57,7 @@ picard:
 
 samtools:
   SamToBam:
-    parent_task: ratatosk.lib.align.bwa.BwaSampe
+    parent_task: ratatosk.lib.align.bwa.Sampe
 
 snpeff:
   InputVcfFile:

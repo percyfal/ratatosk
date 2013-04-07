@@ -17,7 +17,8 @@ import time
 import shutil
 import random
 import logging
-from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner, DefaultGzShellJobRunner
+from ratatosk.job import InputJobTask, JobTask
+from ratatosk.jobrunner import DefaultShellJobRunner, DefaultGzShellJobRunner
 from ratatosk.utils import rreplace
 from cement.utils import shell
 

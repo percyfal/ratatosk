@@ -151,19 +151,19 @@ class TestMiscWrappers(unittest.TestCase):
 
 class TestBwaWrappers(unittest.TestCase):
     def test_bwaaln(self):
-        task = ratatosk.lib.align.bwa.BwaAln(target=sai1)
+        task = ratatosk.lib.align.bwa.Aln(target=sai1)
         self.assertEqual(['bwa', 'aln', '-t 1', 'data/chr11.fa', 'data/sample1_1.fastq.gz', '>', 'data/sample1_1.sai'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
     def test_bwasampe(self):
-        task = ratatosk.lib.align.bwa.BwaSampe(target=sam, read1_suffix=read1_suffix, read2_suffix=read2_suffix)
+        task = ratatosk.lib.align.bwa.Sampe(target=sam, add_label=(read1_suffix, read2_suffix))
         self.assertEqual(
             ['bwa', 'sampe', '-r', '"@RG\tID:data/sample1\tSM:data/sample1\tPL:Illumina"', 'data/chr11.fa', 'data/sample1_1.sai', 'data/sample1_2.sai', 'data/sample1_1.fastq.gz', 'data/sample1_2.fastq.gz', '>', 'data/sample1.sam'],
             _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])
         )
 
     def test_bwaindex(self):
-        task = ratatosk.lib.align.bwa.BwaIndex(target=ref + ".bwt")
+        task = ratatosk.lib.align.bwa.Index(target=ref + ".bwt")
         self.assertEqual(['bwa', 'index', 'data/chr11.fa'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 

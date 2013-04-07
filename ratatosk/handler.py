@@ -198,7 +198,7 @@ def target_generator_validator(fn):
 
     :return: True if ok, false otherwise
     """
-    if not len(data.pop()) == 3:
+    if data and not len(data[-1]) == 3:
         raise ValueError, "target generator function must return a 3-tuple consisting of sample, sample target prefix, sample run prefix"
     return True
 

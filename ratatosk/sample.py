@@ -20,7 +20,8 @@ import os
 import luigi
 import logging
 import ratatosk.external
-from ratatosk.job import JobTask, DefaultShellJobRunner
+from ratatosk.job import JobTask
+from ratatosk.jobrunner import DefaultShellJobRunner
 from cement.utils import shell
 
 logger = logging.getLogger('luigi-interface')

@@ -1,7 +1,7 @@
 # Main configuration file
 samtools:
   SamToBam:
-    parent_task: ratatosk.lib.align.bwa.BwaSampe
+    parent_task: ratatosk.lib.align.bwa.Sampe
 
 picard:
   DuplicationMetrics:

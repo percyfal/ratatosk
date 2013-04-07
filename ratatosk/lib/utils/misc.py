@@ -16,7 +16,8 @@ import luigi
 import time
 import shutil
 import logging
-from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner, DefaultGzShellJobRunner
+from ratatosk.job import InputJobTask, JobTask
+from ratatosk.jobrunner import DefaultShellJobRunner, DefaultGzShellJobRunner
 from ratatosk.utils import rreplace
 
 logger = logging.getLogger('luigi-interface')

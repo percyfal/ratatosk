@@ -46,6 +46,7 @@ class SamFile(luigi.ExternalTask):
 class FastqFile(luigi.ExternalTask):
     target = luigi.Parameter(default=None)
     label = luigi.Parameter(default=None)
+    suffix = luigi.Parameter(default=".fastq.gz")
 
     def output(self):
         if not self.target:

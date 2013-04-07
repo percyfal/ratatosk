@@ -23,7 +23,8 @@ import logging
 import ratatosk
 from ratatosk.config import get_config
 from subprocess import Popen, PIPE
-from ratatosk.job import JobTask, DefaultShellJobRunner, InputJobTask
+from ratatosk.job import JobTask, InputJobTask
+from ratatosk.jobrunner import DefaultShellJobRunner
 from ratatosk.lib.align.bwa import BwaIndex, Bampe
 import ratatosk.lib.tools.picard
 from nose.plugins.attrib import attr
