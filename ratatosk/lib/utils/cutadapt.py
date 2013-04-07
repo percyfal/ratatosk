@@ -31,27 +31,30 @@ class CutadaptJobRunner(DefaultGzShellJobRunner):
 class InputFastqFile(InputJobTask):
     _config_section = "cutadapt"
     _config_subsection = "InputFastqFile"
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
+    parent_task = luigi.Parameter(default=("ratatosk.lib.files.external.FastqFile", ), is_list=True)
+    suffix = luigi.Parameter(default=(".fastq.gz", ), is_list=True)
 
 # NB: cutadapt is a non-hiearchical tool. Group under, say, utils?
 class CutadaptJobTask(JobTask):
     _config_section = "cutadapt"
     label = luigi.Parameter(default=".trimmed")
     executable = luigi.Parameter(default="cutadapt")
-    parent_task = luigi.Parameter(default="ratatosk.lib.utils.cutadapt.InputFastqFile")
+    parent_task = luigi.Parameter(default=("ratatosk.lib.utils.cutadapt.InputFastqFile", ),is_list=True)
     # Use Illumina TruSeq adapter sequences as default
     threeprime = luigi.Parameter(default="AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC")
     fiveprime = luigi.Parameter(default="AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC")
     read1_suffix = luigi.Parameter(default="_R1_001")
     read2_suffix = luigi.Parameter(default="_R2_001")
+    suffix = luigi.Parameter(default=(".fastq.gz", ".fastq.cutadapt_metrics"), is_list=True)
 
     def read1(self):
         # Assume read 2 if no match...
-        return self.input().path.find(self.read1_suffix) > 0
+        return self.input()[0].path.find(self.read1_suffix) > 0
 
     def job_runner(self):
         return CutadaptJobRunner()
 
     def args(self):
+        cls = self.parent()[0]
         seq = self.threeprime if self.read1() else self.fiveprime
-        return ["-a", seq, self.input(), "-o", self.output(), ">", rreplace(self.input().path, ".fastq.gz", ".trimmed.fastq.cutadapt_metrics", 1)]
+        return ["-a", seq, self.input()[0], "-o", self.output(), ">", rreplace(self.input()[0].path, str(cls().suffix[0]), self.label + self.suffix[1], 1)]

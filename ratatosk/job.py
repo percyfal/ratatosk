@@ -85,6 +85,7 @@ class BaseJobTask(luigi.Task):
 
     # Parent task classes
     _parent_cls = []
+    _target_iter = 0
 
     def __init__(self, *args, **kwargs):
         self._parent_cls = []
@@ -317,6 +318,7 @@ class BaseJobTask(luigi.Task):
 
     def source(self):
         """Make source file names from parent tasks in self.parent()"""
+        self._target_iter = 0
         if self.diff_label:
             assert len(self.diff_label) == len(self.parent()), "if diff_label is defined, it must have as many elements as parent_task"
             return [self._make_source_file_name(p, diff_label=dl) for p, dl in izip(self.parent(), self.diff_label)]
@@ -328,8 +330,7 @@ class BaseJobTask(luigi.Task):
             assert len(self.add_label) == len(self.parent()), "if add_label is defined, it must have as many elements as parent_task"
             return [self._make_source_file_name(p, diff_label=dl, add_label=al) for p, dl, al in izip(self.parent(), self.diff_label, self.add_label)]
         else:
-            print "Making source"
-            print self.parent()
+            print "Making source from parent " + str(self.parent())
             return [self._make_source_file_name(p) for p in self.parent()]
 
     def _make_source_file_name(self, parent_cls, diff_label=None, add_label=None):
@@ -348,17 +349,22 @@ class BaseJobTask(luigi.Task):
         src_label = parent_cls().label
         tgt_suffix = self.suffix
         src_suffix = parent_cls().suffix
+        target = self.target
+        if isinstance(self.target, tuple) or isinstance(self.target, list):
+            target = self.target[self._target_iter]
+            self._target_iter += 1
         if isinstance(tgt_suffix, tuple) or isinstance(tgt_suffix, list):
             tgt_suffix = tgt_suffix[0]
         if isinstance(src_suffix, tuple) or isinstance(src_suffix, list):
             src_suffix = src_suffix[0]
         # Start by stripping tgt_suffix
         if tgt_suffix:
-            source = rreplace(self.target, tgt_suffix, "", 1)
+            source = rreplace(target, tgt_suffix, "", 1)
         else:
-            source = self.target
+            source = target
         # Then remove the target label and optional diff_label
-        source = rreplace(source, self.label, "", 1)
+        if self.label:
+            source = rreplace(source, self.label, "", 1)
         if diff_label:
             source = rreplace(source, str(diff_label), "", 1)
         if add_label:

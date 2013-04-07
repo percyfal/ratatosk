@@ -30,10 +30,11 @@ class FastqFileLink(JobTask):
     # know where the link came from; hence, we need an indir parameter
     # for downstream tasks.
     indir = luigi.Parameter(default=os.curdir)
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
+    parent_task = luigi.Parameter(default=("ratatosk.lib.files.external.FastqFile", ), is_list=True)
+    suffix = luigi.Parameter(default=("",), is_list=True)
 
     def requires(self):
-        cls = self.set_parent_task()
+        cls = self.parent()[0]
         return cls(target=os.path.join(self.indir, os.path.basename(self.target)))
 
     def output(self):

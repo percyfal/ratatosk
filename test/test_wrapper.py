@@ -127,7 +127,7 @@ class TestMiscWrappers(unittest.TestCase):
         # Needed in order to override pipeconf.yaml. This is a bug;
         # setting it in class instantiation should override config
         # file settings
-        task.parent_task="ratatosk.lib.utils.cutadapt.InputFastqFile"
+        task._parent_cls=[ratatosk.lib.utils.cutadapt.InputFastqFile]
         self.assertEqual(['cutadapt', '-a', 'AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC', 'data/sample1_1.fastq.gz', '-o', 'data/sample1_1.trimmed.fastq.gz', '>', 'data/sample1_1.trimmed.fastq.cutadapt_metrics'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
@@ -143,8 +143,8 @@ class TestMiscWrappers(unittest.TestCase):
     def test_resyncmates_after_trim(self):
         task = ratatosk.lib.utils.misc.ResyncMatesJobTask(target=[fastq1.replace(".fastq.gz", ".trimmed.sync.fastq.gz"),
                                                           fastq2.replace(".fastq.gz", ".trimmed.sync.fastq.gz")],
-                                                          parent_task='ratatosk.lib.utils.cutadapt.CutadaptJobTask',
-                                                          executable="resyncMates.pl")
+                                                          parent_task=('ratatosk.lib.utils.cutadapt.CutadaptJobTask','ratatosk.lib.utils.cutadapt.CutadaptJobTask',),
+                                                         executable="resyncMates.pl")
         self.assertEqual(['resyncMates.pl', '-i', 'data/sample1_1.trimmed.fastq.gz', '-j', 'data/sample1_2.trimmed.fastq.gz', '-o', 'data/sample1_1.trimmed.sync.fastq.gz', '-p', 'data/sample1_2.trimmed.sync.fastq.gz'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
