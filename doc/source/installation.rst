@@ -15,6 +15,8 @@ Installation
 ------------
 
 To install the development version of `ratatosk`, do
+
+.. code-block:: bash
 	
 	git clone https://github.com/percyfal/ratatosk
 	python setup.py develop
@@ -23,7 +25,7 @@ Dependencies
 ------------
 
 To begin with, you may need to install
-[Tornado](http://www.tornadoweb.org/) and
+`Tornado <http://www.tornadoweb.org/>`_ and
 [Pygraphviz](http://networkx.lanl.gov/pygraphviz/) (see
 [Luigi](https://github.com/spotify/luigi/blob/master/README.md) for
 further information).
@@ -56,8 +58,12 @@ Running the tests
 
 Cd to the luigi test directory (`tests`) and run
 
+.. code-block:: bash
+
 	nosetests -v -s test_commands.py
 	
 To run a given task (e.g. TestCommand.test_bwaaln), do
+
+.. code-block:: bash
 
 	nosetests -v -s test_commands.py:TestCommand.test_bwaaln

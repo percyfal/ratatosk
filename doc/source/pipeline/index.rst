@@ -1,5 +1,5 @@
-Documentation
-=============
+Pipelines
+=========
 
 This page documents the *ratatosk* pipelines.
 
