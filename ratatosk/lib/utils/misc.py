@@ -16,6 +16,7 @@ import luigi
 import time
 import shutil
 import logging
+from itertools import izip
 from ratatosk.job import InputJobTask, JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner, DefaultGzShellJobRunner
 from ratatosk.utils import rreplace
@@ -32,6 +33,7 @@ class InputFastqFile(InputJobTask):
     _config_section = "misc"
     _config_subsection = "InputFastqFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
+    suffix = luigi.Parameter(default=".fastq.gz")
 
 class ResyncMatesJobTask(JobTask):
     _config_section = "misc"

@@ -317,6 +317,8 @@ class BaseJobTask(luigi.Task):
         """Make source file names from parent tasks in self.parent()"""
         self._target_iter = 0
         if self.diff_label:
+            print self.diff_label
+            print self.parent()
             assert len(self.diff_label) == len(self.parent()), "if diff_label is defined, it must have as many elements as parent_task"
             return [self._make_source_file_name(p, diff_label=dl) for p, dl in izip(self.parent(), self.diff_label)]
         elif self.add_label:
@@ -327,7 +329,6 @@ class BaseJobTask(luigi.Task):
             assert len(self.add_label) == len(self.parent()), "if add_label is defined, it must have as many elements as parent_task"
             return [self._make_source_file_name(p, diff_label=dl, add_label=al) for p, dl, al in izip(self.parent(), self.diff_label, self.add_label)]
         else:
-            print "Making source from parent " + str(self.parent())
             return [self._make_source_file_name(p) for p in self.parent()]
 
     def _make_source_file_name(self, parent_cls, diff_label=None, add_label=None):

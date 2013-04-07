@@ -78,8 +78,8 @@ class SortBam(SamtoolsJobTask):
         return [self.input()[0], output_prefix]
 
 class Index(SamtoolsJobTask):
-    _config_subsection = "indexbam"
-    sub_executable = "Index"
+    _config_subsection = "Index"
+    sub_executable = "index"
     suffix = luigi.Parameter(default=".bai")
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.samtools.InputBamFile")
 

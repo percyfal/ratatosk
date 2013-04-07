@@ -136,7 +136,7 @@ class Sampe(BwaJobTask):
     def args(self):
         cls = self.parent()[0]
         parent_cls = cls().parent()[0]
-        (fastq1, fastq2) = [luigi.LocalTarget(rreplace(sai.path, cls().suffix, parent_cls().suffix, 1)) for sai in self.input()]
+        (fastq1, fastq2) = [luigi.LocalTarget(rreplace(sai.path, cls().suffix, parent_cls().suffix[0], 1)) for sai in self.input()]
         return ["-r", self._get_read_group(), self.bwaref, self.input()[0].path, self.input()[1].path, fastq1, fastq2, ">", self.output()]
 
 class Bampe(PipedTask):
