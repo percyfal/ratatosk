@@ -207,8 +207,11 @@ def setup_global_handlers(hlist=["target_generator_handler"]):
     section. 
     
     """
+    if backend.__global_config__["settings"] is None:
+        return
     if not "settings" in backend.__global_config__:
         return
+
     for key in hlist:
         if key in backend.__global_config__["settings"]:
             h = RatatoskHandler(label=key, mod=backend.__global_config__["settings"][key])

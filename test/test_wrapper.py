@@ -412,7 +412,7 @@ class TestTabixWrappers(unittest.TestCase):
 
     def test_bgzip(self):
         task = ratatosk.lib.variation.tabix.Bgzip(target=self.bam.replace(".bam", ".vcf.gz"))
-        self.assertEqual(['bgzip', 'data/sample.sort.vcf'], _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
+        self.assertEqual(['bgzip', '-f', 'data/sample.sort.vcf'], _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
     def test_bgunzip(self):
         """Test bgunzip via three different function calls (Bgzip currently not working)"""
@@ -426,3 +426,4 @@ class TestTabixWrappers(unittest.TestCase):
     def test_tabix(self):
         task = ratatosk.lib.variation.tabix.Tabix(target=self.bam.replace(".bam", ".vcf.gz.tbi"))
         self.assertEqual(['tabix', 'data/sample.sort.vcf.gz'], _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
+

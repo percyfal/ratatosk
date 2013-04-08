@@ -1,4 +1,9 @@
 # Main configuration file
+
+# Global settings
+settings:
+  target_generator_handler: ratatosk.ext.scilife.sample.target_generator
+
 samtools:
   SamToBam:
     parent_task: ratatosk.lib.align.bwa.Sampe

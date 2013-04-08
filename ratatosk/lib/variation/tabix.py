@@ -15,8 +15,9 @@ import os
 import luigi
 import logging
 import ratatosk.lib.files.external
-from ratatosk.job import InputJobTask, JobTask
+from ratatosk.job import InputJobTask, JobTask, JobWrapperTask
 from ratatosk.jobrunner import DefaultShellJobRunner
+from ratatosk.utils import rreplace, fullclassname
 
 class TabixJobRunner(DefaultShellJobRunner):
     pass
@@ -45,6 +46,7 @@ class Bgzip(TabixJobTask):
     sub_executable = luigi.Parameter(default="bgzip")
     parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.InputVcfFile")
     suffix = luigi.Parameter(default=".vcf.gz")
+    options = luigi.Parameter(default=("-f",))
 
     def args(self):
         return [self.input()[0]]
@@ -74,3 +76,17 @@ class Tabix(TabixJobTask):
     def args(self):
         return [self.input()[0]]
     
+
+class IndexedBgzip(JobWrapperTask):
+    _config_section = "tabix"
+    _config_subsection = "IndexedBgzip"
+    suffix = luigi.Parameter(default=(".vcf.gz", ".vcf.gz.tbi"), is_list=True)
+    parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.Bgzip")
+
+    def requires(self):
+        zipcls = ratatosk.lib.variation.tabix.Bgzip
+        indexcls = ratatosk.lib.variation.tabix.Tabix
+        return [zipcls(target=self.source()[0]), 
+                       indexcls(target=rreplace(self.source()[0], zipcls().sfx(), indexcls().sfx(), 1),
+                                parent_task=fullclassname(zipcls))]
+

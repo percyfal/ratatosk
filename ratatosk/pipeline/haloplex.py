@@ -13,18 +13,11 @@
 # the License.
 import luigi
 import os
-import glob
-import csv
 import logging
-import ratatosk
 from ratatosk import backend
 from ratatosk.job import PipelineTask, JobTask, JobWrapperTask, PrintConfig
-from ratatosk.utils import rreplace, fullclassname, make_fastq_links
-from ratatosk.lib.align.bwa import Sampe, Aln
-from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, RealignerTargetCreator, IndelRealigner, VariantFiltration
-from ratatosk.lib.tools.picard import PicardMetrics, MergeSamFiles
-from ratatosk.lib.tools.fastqc import FastQCJobTask
-from ratatosk.lib.variation.htslib import VcfMerge
+from ratatosk.utils import make_fastq_links
+from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, VariantFiltration
 from ratatosk.lib.variation.tabix import Bgzip
 
 logger = logging.getLogger('luigi-interface')
@@ -51,6 +44,7 @@ class HaloPipeline(PipelineTask):
     # here throws an incomprehensible error
     indir = luigi.Parameter(description="Where raw data lives", default=None)
     outdir = luigi.Parameter(description="Where analysis takes place", default=None)
+    target_generator_file = luigi.Parameter(description="Target generator file name", default=None, is_global=True)
     sample = luigi.Parameter(default=[], description="Samples to process.", is_list=True)
     flowcell = luigi.Parameter(default=[], description="Flowcells to process.", is_list=True)
     lane = luigi.Parameter(default=[], description="Lanes to process.", is_list=True)
@@ -67,7 +61,8 @@ class HaloPipeline(PipelineTask):
         if self.outdir is None:
             self.outdir = self.indir
         self.targets = [tgt for tgt in self.target_iterator()]
-        if self.outdir != self.indir:
+        
+        if self.outdir != self.indir and self.targets:
             self.targets = make_fastq_links(self.targets, self.indir, self.outdir)
         # Finally register targets in backend
         backend.__global_vars__["targets"] = self.targets
@@ -75,16 +70,17 @@ class HaloPipeline(PipelineTask):
 class HaloPlex(HaloPipeline):
     def requires(self):
         self._setup()
+        if not self.targets:
+            return []
         variant_targets = ["{}.{}".format(x[1], self.final_target_suffix) for x in self.targets]
-        picard_metrics_targets = ["{}.{}".format(x[1], "trimmed.sync.sort.merge") for x in self.targets]
-        #return [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_targets] + [VariantEval(target=tgt) for tgt in variant_targets]
         return [VariantEval(target=tgt) for tgt in variant_targets]
 
 class HaloBgzip(Bgzip):
     _config_subsection = "HaloBgzip"
-    parent_task = luigi.Parameter(default="ratatosk.lib.variation.htslib.VcfMerge")
+    parent_task = luigi.Parameter(default=("ratatosk.lib.variation.htslib.VcfMerge", ), is_list=True)
 
 class HaloPlexSummary(HaloPipeline):
     def requires(self):
         self._setup()
         return [HaloBgzip(target=os.path.join(self.outdir, "all.vcfmerge.vcf.gz"))]
+    #label=self.final_target_suffix.replace(".eval_metrics", ""))]

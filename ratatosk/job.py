@@ -239,6 +239,25 @@ class BaseJobTask(luigi.Task):
         else:
             return self.suffix
 
+    # TODO: make into properties/fix naming
+    def adl(self, index=0):
+        """Get add label"""
+        if isinstance(self.add_label, tuple) or isinstance(self.add_label, list):
+            return self.add_label[index]
+        else:
+            return self.add_label
+
+    def dil(self, index=0):
+        """Get diff label"""
+        if isinstance(self.diff_label, tuple) or isinstance(self.diff_label, list):
+            return self.diff_label[index]
+        else:
+            return self.diff_label
+
+    def lab(self):
+        """Get the label"""
+        return str(self.label)
+
     def max_memory(self):
         """Get the maximum memory (in Gb) that the task may use"""
         return self.max_memory_gb
@@ -332,6 +351,8 @@ class BaseJobTask(luigi.Task):
     def source(self):
         """Make source file names from parent tasks in self.parent()"""
         self._target_iter = 0
+        # print "Add Label in source {} for class {}".format(str(self.add_label), self.__class__)
+        # print "Label in source {} for class {}".format(str(self.label), self.__class__)
         if self.diff_label:
             assert len(self.diff_label) == len(self.parent()), "if diff_label is defined, it must have as many elements as parent_task"
             return [self._make_source_file_name(p, diff_label=dl) for p, dl in izip(self.parent(), self.diff_label)]
@@ -371,11 +392,10 @@ class BaseJobTask(luigi.Task):
         if isinstance(src_suffix, tuple) or isinstance(src_suffix, list):
             if len(src_suffix) > 0:
                 src_suffix = src_suffix[0]
-        # Start by stripping tgt_suffix
+        # Start by setting source, stripping tgt_suffix if present
+        source = target
         if tgt_suffix:
             source = rreplace(target, tgt_suffix, "", 1)
-        else:
-            source = target
         # Then remove the target label and optional diff_label
         if self.label:
             source = rreplace(source, self.label, "", 1)
@@ -527,3 +547,17 @@ def name_prefix():
 
     pass
 
+# Generic target generator functions and classes TODO:
+# JobTask.target_iterator takes a task as input, but this function
+# does not take arguments. How pass on to generic_target_generator?
+# Something along the lines of the backend or **kwargs
+def generic_target_generator(target_generator_infile=None, **kwargs):
+    """Generic target generator. Should take as input a file name, read and return contents"""
+    if not target_generator_infile:
+        return (None, None, None)
+    else:
+        with open(target_generator_infile) as fh:
+            lines = [x for x in fh.readlines() if not x.startswith("#")]
+        if not len(lines[0], split()):
+            raise ValueError, "target generator input file must consist of 3-tuple (sample, merge-prefix, read-prefix)"
+        return lines
