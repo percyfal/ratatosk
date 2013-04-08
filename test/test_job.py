@@ -23,20 +23,14 @@ def _luigi_args(args):
 
 class TestWrapper(unittest.TestCase):
     def test_generic_wrapper_luigi(self):
-        """Test Generic wrapper called from luigi"""
+        """Test Generic wrapper called from luigi. The idea is to pass a task name that is called from GenericWrapperTask."""
         luigi.run(_luigi_args(['--config-file', localconf, '--parent-task', 'ratatosk.lib.tools.gatk.IndelRealigner']), main_task_cls=ratatosk.job.GenericWrapperTask)
 
 class TestJobTask(unittest.TestCase):
     def test_job_init(self):
         """Test initialization of job"""
-        # task = ratatosk.job.JobTask(target="data/sample.bam")
-        # print task
         cnf = get_config()
         cnf.add_config_path(localconf)
         task = ratatosk.lib.align.bwa.Aln(target="data/sample1_1.sai", parent_task=('ratatosk.lib.align.bwa.InputFastqFile', ))
-        #luigi.build([task])
-        print task.parent()
-        print task
         task = ratatosk.lib.tools.gatk.UnifiedGenotyper(target="data/sample1_1.sai")
-        print task
         

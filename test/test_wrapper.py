@@ -30,6 +30,7 @@ import ratatosk.lib.utils.cutadapt
 import ratatosk.lib.utils.misc
 import ratatosk.lib.annotation.snpeff
 import ratatosk.lib.annotation.annovar
+import ratatosk.lib.align.bwa
 from ratatosk.config import get_config, get_custom_config
 
 File = MockFile

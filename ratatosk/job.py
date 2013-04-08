@@ -122,6 +122,12 @@ class BaseJobTask(luigi.Task):
     def _register_parent_task(self, parents):
         """Register parent task class(es) to task. Uses
         RatatoskHandler to register class to _parent_cls placeholder.
+        If the task cannot be found, falls back on the default class.
+
+        It is also possible to supply more tasks than there are
+        default parent tasks. In case the extra parent task cannot be
+        found, the default fallback task in this case is a NullJobTask
+        that always passes.
 
         :param parents: list of python classes represented as strings in option parent_task
 
@@ -131,13 +137,9 @@ class BaseJobTask(luigi.Task):
             default_parents = [default_parents]
         if len(parents) != len(default_parents):
             logger.warn("length of parent list ({}) differs from length of default_parents list ({}); this may result in unpredicted behaviour".format(len(parents), len(default_parents)))
-        # When adding extra dependencies, replicate the first
-        # default_parent, even though falling back on this task
-        # probably will fail. TODO: implement a dummy task that just
-        # succeeds
         if len(parents) > len(default_parents):
             len_diff = len(parents) - len(default_parents)
-            default_parents = list(default_parents) + [default_parents[0] for i in range(0, len_diff)]
+            default_parents = list(default_parents) + ["ratatosk.job.NullJobTask" for i in range(0, len_diff)]
         for p,d in izip(parents, default_parents):
             h = RatatoskHandler(label="_parent_cls", mod=p)
             register_attr(self, h, default_handler=d)
@@ -229,6 +231,13 @@ class BaseJobTask(luigi.Task):
             return self.num_threads
         else:
             return 1
+
+    def sfx(self, index=0):
+        """Get suffix"""
+        if isinstance(self.suffix, tuple) or isinstance(self.suffix, list):
+            return self.suffix[index]
+        else:
+            return self.suffix
 
     def max_memory(self):
         """Get the maximum memory (in Gb) that the task may use"""
@@ -414,8 +423,20 @@ class JobWrapperTask(JobTask):
     def run(self):
         pass
 
+class NullJobTask(JobTask):
+    """Task that always completes"""
+    def run(self):
+        pass
+
 class GenericWrapperTask(JobWrapperTask):
-    """Generic task wrapper"""
+    """Generic task wrapper.
+
+    NOTE: Still under development
+
+    The idea is to create a dependency to any task, so that the
+    calling script effectively works as a make file.
+    """
+    parent_task = luigi.Parameter(default=("NullJobTask",), is_list=True)
     generic_wrapper_target = luigi.Parameter(default=(), is_list=True)
     task = luigi.Parameter(default=None)
 
@@ -506,7 +527,3 @@ def name_prefix():
 
     pass
 
-
-def get_source_path(target_cls,_cls, label):
-    """Construct source file name"""
-    pass
