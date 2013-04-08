@@ -16,7 +16,7 @@ import luigi
 import logging
 import ratatosk.lib.files.external
 from ratatosk.utils import rreplace, fullclassname
-from ratatosk.job import InputJobTask, JobTask
+from ratatosk.job import InputJobTask, JobTask, JobWrapperTask
 from ratatosk.jobrunner import  DefaultShellJobRunner
 import ratatosk.shell as shell
 
@@ -101,7 +101,7 @@ class snpEffDownload(snpEffJobTask):
     pass
     
 class snpEff(snpEffJobTask):
-    _config_subsection = "eff"
+    _config_subsection = "snpEff"
     sub_executable = "eff"
     label = luigi.Parameter(default="-effects")
     options = luigi.Parameter(default=("-1",))
@@ -110,11 +110,23 @@ class snpEff(snpEffJobTask):
         
     def args(self):
         pcls = self.parent()[0]
-        retval = ["-i", pcls().suffix[0].strip("."),
-                  "-o", self.suffix[0].strip("."),
+        retval = ["-i", pcls().sfx().strip("."),
+                  "-o", self.sfx().strip("."),
                   "-c", self.snpeff_config,
                   self.genome,
                   self.input()[0],
                   ">", self.output()
                   ]
         return retval
+
+class snpEffWrapper(JobWrapperTask):
+    _config_section = "snpeff"
+    _config_subsection = "snpEffWrapper"
+    parent_task = luigi.Parameter(default=("ratatosk.lib.annotation.snpeff.InputVcfFile", ), is_list=True)
+    suffix = luigi.Parameter(default="")
+    label = luigi.Parameter(default="-effects")
+
+    def requires(self):
+        return [snpEff(target=self.target + ".txt", suffix=".txt"), snpEff(target=self.target + ".vcf", suffix=".vcf")]
+
+

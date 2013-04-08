@@ -351,8 +351,6 @@ class BaseJobTask(luigi.Task):
     def source(self):
         """Make source file names from parent tasks in self.parent()"""
         self._target_iter = 0
-        # print "Add Label in source {} for class {}".format(str(self.add_label), self.__class__)
-        # print "Label in source {} for class {}".format(str(self.label), self.__class__)
         if self.diff_label:
             assert len(self.diff_label) == len(self.parent()), "if diff_label is defined, it must have as many elements as parent_task"
             return [self._make_source_file_name(p, diff_label=dl) for p, dl in izip(self.parent(), self.diff_label)]

@@ -120,7 +120,7 @@ class GATKIndexedJobTask(GATKJobTask):
         therefore doesn't need reimplementation in the subclasses."""
         bamcls = self.parent()[0]
         indexcls = ratatosk.lib.tools.samtools.Index
-        return [cls(target=source) for cls, source in izip(self.parent(), self.source())] + [indexcls(target=rreplace(self.source()[0], bamcls().suffix, indexcls().suffix, 1), parent_task=fullclassname(bamcls))]
+        return [cls(target=source) for cls, source in izip(self.parent(), self.source())] + [indexcls(target=rreplace(self.source()[0], bamcls().sfx(), indexcls().sfx(), 1), parent_task=fullclassname(bamcls))]
 
 
 class RealignerTargetCreator(GATKIndexedJobTask):
@@ -327,32 +327,35 @@ class UnifiedGenotyper(GATKIndexedJobTask):
 class SplitUnifiedGenotyper(UnifiedGenotyper):
     # Label should be same as calling function (often CombineVariants)
     label = luigi.Parameter(default="-variants")
+    suffix = luigi.Parameter(default=(".vcf", ), is_list=True)
     
-    def _make_source_file_name(self):
+    def _make_source_file_name(self, parent_cls):
         """Assume pattern is {base}-split/{base}-{ref}{ext}, as in
         CombineVariants.
 
         FIX ME: well, generalize
         """
         base = rreplace(os.path.join(os.path.dirname(os.path.dirname(self.target)), os.path.basename(self.target)), self.label, "", 1).split("-")
-        return "".join(base[0:-1]) + self.source_suffix
+        return "".join(base[0:-1]) + parent_cls().sfx()
 
 class CombineVariants(GATKJobTask):
     _config_subsection = "CombineVariants"
     sub_executable = "CombineVariants"
     suffix = luigi.Parameter(default=".vcf")
     label = luigi.Parameter(default="-variants")
-    parent_task = luigi.Parameter(default=("ratatosk.lib.tools.gatk.SplitUnifiedGenotyper", ), is_list=True)
+    parent_task = luigi.Parameter(default=("ratatosk.lib.tools.gatk.SplitUnifiedGenotyper", "ratatosk.lib.tools.gatk.InputBamFile",), is_list=True)
     split = luigi.BooleanParameter(default=True)
     by_chromosome = luigi.BooleanParameter(default=True)
 
     def requires(self):
         cls = self.parent()[0]
+        bamcls = self.parent()[1]
         source = self.source()[0]
         if self.split:
-            # Partition sources by chromosome
-            # Need to get the references from the source bam file
-            bamfile = rreplace(source, self.suffix, cls().suffix, 1)
+            # Partition sources by chromosome. Need to get the
+            # references from the source bam file, i.e. the source to
+            # the parent task
+            bamfile = rreplace(source, self.sfx(), bamcls().sfx(), 1)
             if os.path.exists(bamfile):
                 samfile = pysam.Samfile(bamfile, "rb")
                 refs = samfile.references
@@ -369,7 +372,7 @@ class CombineVariants(GATKJobTask):
             if not os.path.exists(outdir):
                 os.makedirs(outdir)
             split_targets = [os.path.join("{base}-split".format(base=os.path.splitext(self.target)[0]), 
-                                          "{base}-{ref}{ext}".format(base=os.path.splitext(os.path.basename(self.target))[0], ref=chr_ref, ext=self.suffix)) for chr_ref in refs]
+                                          "{base}-{ref}{ext}".format(base=os.path.splitext(os.path.basename(self.target))[0], ref=chr_ref, ext=self.sfx())) for chr_ref in refs]
             return [cls(target=tgt, target_region=chr_ref) for tgt in split_targets]
         else:
             return [cls(target=source)]

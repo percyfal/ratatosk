@@ -83,4 +83,3 @@ class HaloPlexSummary(HaloPipeline):
     def requires(self):
         self._setup()
         return [HaloBgzip(target=os.path.join(self.outdir, "all.vcfmerge.vcf.gz"))]
-    #label=self.final_target_suffix.replace(".eval_metrics", ""))]

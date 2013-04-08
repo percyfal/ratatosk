@@ -207,9 +207,9 @@ def setup_global_handlers(hlist=["target_generator_handler"]):
     section. 
     
     """
-    if backend.__global_config__["settings"] is None:
-        return
     if not "settings" in backend.__global_config__:
+        return
+    if backend.__global_config__["settings"] is None:
         return
 
     for key in hlist:
