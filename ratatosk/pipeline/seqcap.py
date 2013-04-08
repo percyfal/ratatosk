@@ -12,51 +12,27 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 import luigi
-import os
-import glob
 import logging
-import ratatosk
 from ratatosk import backend
-from ratatosk.job import PipelineTask, JobTask, JobWrapperTask
-from ratatosk.lib.tools.picard import PicardMetrics
-from ratatosk.lib.tools.fastqc import FastQCJobTask
-from ratatosk.lib.tools.gatk import UnifiedGenotyper, CombineVariants, SelectSnpVariants, SelectIndelVariants, VariantSnpRecalibrator, VariantIndelRecalibrator, VariantSnpRecalibrator, VariantIndelRecalibrator, VariantSnpFiltrationExp, VariantIndelFiltrationExp
-from ratatosk.utils import rreplace, fullclassname, make_fastq_links
-from ratatosk.lib.annotation.snpeff import snpEff
+from ratatosk.job import PipelineTask, JobWrapperTask
+from ratatosk.lib.tools.gatk import  CombineVariants, SelectSnpVariants, SelectIndelVariants, VariantSnpRecalibrator, VariantIndelRecalibrator, VariantSnpRecalibrator, VariantIndelRecalibrator, VariantSnpFiltrationExp, VariantIndelFiltrationExp, VariantSnpEffAnnotator
+from ratatosk.utils import make_fastq_links
 
 logger = logging.getLogger('luigi-interface')
 
-class SeqCapReadBackedPhasing(ratatosk.lib.tools.gatk.ReadBackedPhasing):
-    # TODO: fix this mess where we have a dependency on a bam file
-    # generated waaay back, lacking -variants-combined label. See
-    # ratatosk.lib.tools.gatk.ReadBackedPhasing
-    parent_task = luigi.Parameter(default="ratatosk.pipeline.seqcap.CombineFilteredVariants")
-    source_suffix = ".vcf"
-    label = "-phased"
-
-    def requires(self):
-        cls = self.set_parent_task()
-        source = self._make_source_file_name()
-        base = source.split("-")[0]
-        ext = ratatosk.lib.tools.gatk.PrintReads(target=source).target_suffix
-        return [ratatosk.lib.tools.gatk.PrintReads(target=base + ext), cls(target=source)]
-
 class CombineFilteredVariants(CombineVariants):
-    parent_task = luigi.Parameter(default="ratatosk.pipeline.seqcap.FiltrationWrapper")
+    _config_section = "gatk"
+    _config_subsection = "CombineFilteredVariants"
+    parent_task = luigi.Parameter(default=("ratatosk.pipeline.seqcap.FiltrationWrapper",
+                                           "ratatosk.lib.tools.gatk.InputBamFile",), is_list=True)
     label = "-combined"
-    source_suffix = ""
-
-    # Need to override since CombineVariants expects splitting on chromosome
-    def requires(self):
-        cls = self.set_parent_task()
-        source = self._make_source_file_name()
-        return [cls(target=source)]
+    suffix = ".vcf"
+    split = False
 
     def args(self):
-        cls = self.set_parent_task()
-        source = self._make_source_file_name()
+        cls = self.parent()[0]
         retval = []
-        for x in cls(target=source).input():
+        for x in cls(target=self.source()).input():
             retval += ["-V", x]
         retval += ["-o", self.output()]
         if not self.ref:
@@ -64,40 +40,38 @@ class CombineFilteredVariants(CombineVariants):
         retval += ["-R", self.ref]
         return retval
 
-class snpEffWrapper(JobWrapperTask):
-    label = "-effects"
-    def requires(self):
-        return [snpEff(target=self.target + ".txt", target_suffix=".txt"), snpEff(target=self.target + ".vcf", target_suffix=".vcf")]
-
-
 class FiltrationWrapper(JobWrapperTask):
     _config_section = "SeqCapPipeline"
     _config_subsection = "FiltrationWrapper"
     label = None
+    suffix = ""
 
     # TODO: this does not take care of the freebayes case
     def requires(self):
+        target = self.target
+        if isinstance(self.target, tuple) or isinstance(self.target, list):
+            target = self.target[0]
         if backend.__global_vars__["cov_interval"] == "regional":
             # Use JEXL filtering
-            return [VariantSnpFiltrationExp(target=self.target + SelectSnpVariants().label + VariantSnpFiltrationExp().label + VariantSnpFiltrationExp().target_suffix),
-                    VariantIndelFiltrationExp(target=self.target + SelectIndelVariants().label + VariantIndelFiltrationExp().label + VariantIndelFiltrationExp().target_suffix)]
+            return [VariantSnpFiltrationExp(target=target + SelectSnpVariants().label + VariantSnpFiltrationExp().label + VariantSnpFiltrationExp().parent()[0]().sfx()),
+                    VariantIndelFiltrationExp(target=target + SelectIndelVariants().label + VariantIndelFiltrationExp().label + VariantIndelFiltrationExp().parent()[0]().sfx())]
         else:
             if backend.__global_vars__["cov_interval"] == "exome":
                 # Use recalibrator for exome
-                return [VariantSnpRecalibratorExome(target=self.target + SelectSnpVariants().label + VariantSnpRecalibratorExome().label + VariantSnpRecalibratorExome().target_suffix[0]),
-                        VariantIndelRecalibrator(target=self.target + SelectIndelVariants().label + VariantIndelRecalibrator().label + VariantIndelRecalibrator().target_suffix[0])]
+                return [VariantSnpRecalibratorExome(target=target + SelectSnpVariants().label + VariantSnpRecalibratorExome().label + VariantSnpRecalibratorExome().parent()[0]().sfx()),
+                        VariantIndelRecalibrator(target=target + SelectIndelVariants().label + VariantIndelRecalibrator().label + VariantIndelRecalibrator().parent()[0]().sfx())]
             else:
                 # use whole-genome recalibration
-                return [VariantSnpRecalibrator(target=self.target + SelectSnpVariants().label + VariantSnpRecalibrator().label + VariantSnpRecalibrator().target_suffix[0]),
-                        VariantIndelRecalibrator(target=self.target + SelectIndelVariants().label + VariantIndelRecalibrator().label + VariantIndelRecalibrator().target_suffix[0])]
+                return [VariantSnpRecalibrator(target=target + SelectSnpVariants().label + VariantSnpRecalibrator().label + VariantSnpRecalibrator().parent()[0]().sfx()),
+                        VariantIndelRecalibrator(target=target + SelectIndelVariants().label + VariantIndelRecalibrator().label + VariantIndelRecalibrator().parent()[0]().sfx())]
 
     def output(self):
         return self.input()
 
 class SelectVariantsWrapper(JobWrapperTask):
     def requires(self):
-        return [SelectSnpVariants(target=self.target + SelectSnpVariants().label + SelectSnpVariants().target_suffix),
-                SelectIndelVariants(target=self.target + SelectIndelVariants().label + SelectIndelVariants().target_suffix)]
+        return [SelectSnpVariants(target=self.target + SelectSnpVariants().label + SelectSnpVariants().parent()[0]().sfx()),
+                SelectIndelVariants(target=self.target + SelectIndelVariants().label + SelectIndelVariants().parent()[0]().sfx())]
 
 class SeqCapPipeline(PipelineTask):
     _config_section = "pipeline"
@@ -107,7 +81,7 @@ class SeqCapPipeline(PipelineTask):
     sample = luigi.Parameter(default=[], description="Samples to process.", is_list=True)
     flowcell = luigi.Parameter(default=[], description="Flowcells to process.", is_list=True)
     lane = luigi.Parameter(default=[], description="Lanes to process.", is_list=True)
-    cov_interval = luigi.Parameter(default=None, description="If set, determines whether VQSR is run, and governs filtering rules. One of 'exome' or 'regional'. 'exome' uses a modified version of VQSR for small-sample exome sets, 'regional' uses JEXL-based filtering and does not run VQSR.")
+    cov_interval = luigi.Parameter(default="regional", description="If set, determines whether VQSR is run, and governs filtering rules. One of 'exome' or 'regional'. 'exome' uses a modified version of VQSR for small-sample exome sets, 'regional' uses JEXL-based filtering and does not run VQSR.")
     # Hard-code this for now - would like to calculate on the fly so that
     # implicit naming is unnecessary
     final_target_suffix = ".sort.merge.dup.realign.recal.bam"#realign.recal.filtered.eval_metrics"    
@@ -131,24 +105,9 @@ class SeqCapPipeline(PipelineTask):
 class SeqCap(SeqCapPipeline):
     def requires(self):
         self._setup()
-        fastqc_targets = ["{}_R1_001_fastqc".format(x[2]) for x in self.targets] +  ["{}_R2_001_fastqc".format(x[2]) for x in self.targets]
-        picard_metrics_targets = ["{}.{}".format(x[1], "sort.merge.dup") for x in self.targets]
-        out_targets = ["{}.{}".format(x[1], "sort.merge.dup.realign.recal-variants-combined-phased.vcf") for x in self.targets]
-        #out_targets = ["{}.{}".format(x[1], "sort.merge.dup.realign.recal.vcf") for x in self.targets]
-        print fastqc_targets
-        print picard_metrics_targets
-        print out_targets
-        return [PicardMetrics(target=tgt) for tgt in picard_metrics_targets]  + [FastQCJobTask(target=tgt) for tgt in fastqc_targets] + [SeqCapReadBackedPhasing(target=tgt) for tgt in out_targets]
-
-    # + [snpEffWrapper]
-
-    # + [CombineFilteredVariants(target=tgt) for tgt in out_targets]
-
-# + [FiltrationWrapper(target=tgt, cov_interval=self.cov_interval) for tgt in out_targets]
-
-    # + [SelectVariantsWrapper(target=tgt) for tgt in out_targets]
-
-    #+ [UnifiedGenotyper(target=tgt) for tgt in out_targets]
+        out_targets = ["{}.{}".format(x[1], "sort.merge.dup.realign.recal-variants-combined-phased-effects") for x in self.targets]
+        out_targets = ["{}.{}".format(x[1], "sort.merge.dup.realign.recal-variants-combined-phased-annotated.vcf") for x in self.targets]
+        return [VariantSnpEffAnnotator(target=tgt) for tgt in out_targets]
 
 class SeqCapSummary(SeqCapPipeline):
     def requires(self):

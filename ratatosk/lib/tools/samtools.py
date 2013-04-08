@@ -15,7 +15,9 @@ import os
 import luigi
 import logging
 import ratatosk.lib.files.external
-from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner
+from ratatosk.job import InputJobTask, JobTask
+from ratatosk.utils import rreplace
+from ratatosk.jobrunner import DefaultShellJobRunner
 
 logger = logging.getLogger('luigi-interface')
 
@@ -27,39 +29,34 @@ class InputSamFile(InputJobTask):
     _config_section = "samtools"
     _config_subsection = "InputSamFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.SamFile")
+    suffix = luigi.Parameter(default=".sam")
 
 class InputBamFile(InputJobTask):
     """Wrapper task that serves as entry point for samtools tasks that take bam file as input"""
     _config_section = "samtools"
     _config_subsection = "InputBamFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
+    suffix = luigi.Parameter(default=".bam")
     
 class SamtoolsJobTask(JobTask):
     """Main samtools job task"""
     _config_section = "samtools"
     executable = luigi.Parameter(default="samtools")
-    parent_task = luigi.Parameter(default="ratatosk.lib.tools.samtools.InputSamFile")
-    target_suffix = luigi.Parameter(default=".bam")
-    source_suffix = luigi.Parameter(default=".bam")
+    parent_task = luigi.Parameter(default=("ratatosk.lib.tools.samtools.InputSamFile", ), is_list=True)
+    suffix = luigi.Parameter(default=".bam")
 
     def job_runner(self):
         return SamtoolsJobRunner()
-
-    def requires(self):
-        cls = self.set_parent_task()
-        source = self._make_source_file_name()
-        return cls(target=source)
 
 class SamToBam(SamtoolsJobTask):
     _config_subsection = "SamToBam"
     sub_executable = "view"
     options = luigi.Parameter(default=("-bSh",), is_list=True)
-    parent_task = luigi.Parameter(default="ratatosk.lib.tools.samtools.InputSamFile")
-    target_suffix = luigi.Parameter(default=".bam")
-    source_suffix = luigi.Parameter(default=".sam")
+    parent_task = luigi.Parameter(default=("ratatosk.lib.tools.samtools.InputSamFile", ), is_list=True)
+    suffix = luigi.Parameter(default=".bam")
 
     def args(self):
-        retval = [self.input(), ">", self.output()]
+        retval = [self.input()[0], ">", self.output()]
         if self.pipe:
             return retval + ["-"]
         return retval
@@ -67,33 +64,31 @@ class SamToBam(SamtoolsJobTask):
 class SortBam(SamtoolsJobTask):
     _config_subsection = "sortbam"
     sub_executable = "sort"
-    target_suffix = luigi.Parameter(default=".bam")
-    source_suffix = luigi.Parameter(default=".bam")
+    suffix = luigi.Parameter(default=".bam")
     label = luigi.Parameter(default=".sort")
-    parent_task = luigi.Parameter(default="ratatosk.lib.tools.samtools.SamToBam")
+    parent_task = luigi.Parameter(default=("ratatosk.lib.tools.samtools.SamToBam", ), is_list=True)
 
     def add_suffix(self):
         """samtools sort generates its output based on a prefix, hence
         we need to add a suffix here"""
-        return self.target_suffix
+        return self.suffix
 
     def args(self):
-        output_prefix = luigi.LocalTarget(self.output().fn.replace(".bam", ""))
-        return [self.input(), output_prefix]
+        output_prefix = luigi.LocalTarget(rreplace(self.output().path, self.suffix, "", 1))
+        return [self.input()[0], output_prefix]
 
-class IndexBam(SamtoolsJobTask):
-    _config_subsection = "indexbam"
+class Index(SamtoolsJobTask):
+    _config_subsection = "Index"
     sub_executable = "index"
-    target_suffix = luigi.Parameter(default=".bai")
-    source_suffix = luigi.Parameter(default=".bam")
+    suffix = luigi.Parameter(default=".bai")
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.samtools.InputBamFile")
 
     def args(self):
-        return [self.input(), self.output()]
+        return [self.input()[0], self.output()]
 
 # "Connection" tasks
-import ratatosk.lib.align.bwa 
-class SampeToSamtools(SamToBam):
-    def requires(self):
-        source = self._make_source_file_name()
-        return ratatosk.lib.align.bwa.BwaSampe(target=source)
+# import ratatosk.lib.align.bwa 
+# class SampeToSamtools(SamToBam):
+#     def requires(self):
+#         source = self._make_source_file_name()
+#         return ratatosk.lib.align.bwa.BwaSampe(target=source)

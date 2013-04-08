@@ -11,14 +11,14 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
-import os
 import luigi
 import logging
 import ratatosk.lib.files.external
 import ratatosk.lib.variation.tabix
 from ratatosk.handler import RatatoskHandler, register_task_handler
-from ratatosk import backend
-from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner
+from ratatosk.job import InputJobTask, JobTask
+from ratatosk.jobrunner import  DefaultShellJobRunner
+from ratatosk.utils import rreplace, fullclassname
 
 class HtslibJobRunner(DefaultShellJobRunner):
     pass
@@ -27,29 +27,37 @@ class InputVcfFile(InputJobTask):
     _config_section = "htslib"
     _config_subsection = "InputVcfFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
-    target_suffix = luigi.Parameter(default=".vcf")
+    suffix = luigi.Parameter(default=(".vcf", ), is_list=True)
 
 class HtslibVcfJobTask(JobTask):
     _config_section = "htslib"
     executable = luigi.Parameter(default="vcf")
-    parent_task = luigi.Parameter(default="ratatosk.lib.variation.tabix.Tabix")
+    parent_task = luigi.Parameter(default=("ratatosk.lib.variation.htslib.InputVcfFile", ), is_list=True)
 
     def job_runner(self):
         return HtslibJobRunner()
 
-class VcfMerge(HtslibVcfJobTask):
+class HtslibIndexedVcfJobTask(HtslibVcfJobTask):
+    _config_section = "htslib"
+
+    def requires(self):
+        vcfcls = self.parent()[0]
+        indexcls = ratatosk.lib.variation.tabix.Tabix
+        return [cls(target=source) for cls, source in izip(self.parent(), self.source())] + [indexcls(target=rreplace(self.source()[0], vcfcls().suffix, indexcls().suffix, 1), parent_task=fullclassname(vcfcls))]
+
+class VcfMerge(HtslibIndexedVcfJobTask):
     _config_subsection = "VcfMerge"
     sub_executable = luigi.Parameter(default="merge")
     target_generator_handler = luigi.Parameter(default=None)
     label = luigi.Parameter(default=".vcfmerge")
-    target_suffix = luigi.Parameter(default=".vcf")
-    source_suffix = luigi.Parameter(default=".vcf.gz")
+    suffix = luigi.Parameter(default=".vcf")
+    parent_task = luigi.Parameter(default=("ratatosk.lib.variation.tabix.IndexedBgzip", ), is_list=True)
 
     def args(self):
         return [x for x in self.input()] + [">", self.output()]
     
     def requires(self):
-        cls = self.set_parent_task()
+        cls = self.parent()[0]
         sources = []
         if self.target_generator_handler and "target_generator_handler" not in self._handlers.keys():
             tgf = RatatoskHandler(label="target_generator_handler", mod=self.target_generator_handler)
@@ -59,4 +67,3 @@ class VcfMerge(HtslibVcfJobTask):
             return []
         sources = self._handlers["target_generator_handler"](self)
         return [cls(target=src) for src in sources]
-

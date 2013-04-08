@@ -1,7 +1,12 @@
 # Main configuration file
+
+# Global settings
+settings:
+  target_generator_handler: ratatosk.ext.scilife.sample.target_generator
+
 samtools:
   SamToBam:
-    parent_task: ratatosk.lib.align.bwa.BwaSampe
+    parent_task: ratatosk.lib.align.bwa.Sampe
 
 picard:
   DuplicationMetrics:
@@ -21,11 +26,16 @@ gatk:
   RealignerTargetCreator:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   IndelRealigner:
-    parent_task: ratatosk.lib.tools.gatk.RealignerTargetCreator
+    parent_task:
+    - ratatosk.lib.tools.picard.MergeSamFiles
+    - ratatosk.lib.tools.gatk.RealignerTargetCreator
+    - ratatosk.lib.tools.gatk.UnifiedGenotyper
   BaseRecalibrator:
     parent_task: ratatosk.lib.tools.gatk.IndelRealigner
   PrintReads:
-    parent_task: ratatosk.lib.tools.gatk.BaseRecalibrator
+    parent_task:
+      - ratatosk.lib.tools.gatk.InputBamFile
+      - ratatosk.lib.tools.gatk.BaseRecalibrator
   ClipReads:
     parent_task: ratatosk.lib.tools.gatk.PrintReads
   UnifiedGenotyper:
@@ -34,3 +44,10 @@ gatk:
     parent_task: ratatosk.lib.tools.gatk.UnifiedGenotyper
   VariantEval:
     parent_task: ratatosk.lib.tools.gatk.VariantFiltration
+  ReadBackedPhasing:
+    diff_label:
+      - -variants-combined
+      - 
+    parent_task:
+      - ratatosk.lib.tools.picard.MergeSamFiles
+      - ratatosk.lib.tools.gatk.UnifiedGenotyper

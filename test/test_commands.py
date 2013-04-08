@@ -23,8 +23,9 @@ import logging
 import ratatosk
 from ratatosk.config import get_config
 from subprocess import Popen, PIPE
-from ratatosk.job import JobTask, DefaultShellJobRunner, InputJobTask
-from ratatosk.lib.align.bwa import BwaIndex, Bampe
+from ratatosk.job import JobTask, InputJobTask
+from ratatosk.jobrunner import DefaultShellJobRunner
+from ratatosk.lib.align.bwa import Index, Bampe
 import ratatosk.lib.tools.picard
 from nose.plugins.attrib import attr
 
@@ -44,8 +45,8 @@ def _luigi_args(args):
     return args
 
 ref = "data/chr11.fa"
-read1 = "data/read1.fastq.gz"
-read2 = "data/read2.fastq.gz"
+read1 = "data/sample1_1.fastq.gz"
+read2 = "data/sample1_2.fastq.gz"
 localconf = "mock.yaml"
 
 def setUpModule():
@@ -57,10 +58,10 @@ def setUpModule():
                     'bwa' :{
                         'InputFastqFile': {'target_suffix':'.fastq.gz'},
                         'bwaref': 'data/chr11.fa',
-                        'sampe':{'read1_suffix':"1",
-                                 'read2_suffix':"2"},
-                        'Bampe':{'read1_suffix':"1",
-                                 'read2_suffix':"2"},
+                        'Sampe':{'read1_suffix':"_1",
+                                 'read2_suffix':"_2"},
+                        'Bampe':{'read1_suffix':"_1",
+                                 'read2_suffix':"_2"},
                         },
                     'picard' : {
                         'InputBamFile' :
@@ -95,7 +96,7 @@ def tearDownModule():
 class TestCommand(unittest.TestCase):
     @classmethod 
     def setUpClass(cls):
-        luigi.build([BwaIndex(target=ref + ".bwt")])
+        luigi.build([Index(target=ref + ".bwt")])
 
     @classmethod
     def tearDownClass(cls):
@@ -104,19 +105,19 @@ class TestCommand(unittest.TestCase):
 
     def tearDown(self):
         files = [x for x in os.listdir("data") if os.path.isfile(x)]
-        [os.unlink(os.path.join("data", x)) for x in files if x.startswith("read.")]
+        [os.unlink(os.path.join("data", x)) for x in files if x.startswith("sample1.")]
         [os.unlink(os.path.join("data", x)) for x in files if x.endswith(".sai")]
 
     def test_bwaaln(self):
         luigi.run(_luigi_args(['--target', read1.replace(".fastq.gz", ".sai"), '--config-file', localconf]),
-                  main_task_cls=ratatosk.lib.align.bwa.BwaAln)
+                  main_task_cls=ratatosk.lib.align.bwa.Aln)
 
     def test_bwasampe(self):
         from ratatosk.handler import register, RatatoskHandler
         key = "target_generator_handler"
         h = RatatoskHandler(label=key, mod="test.site_functions.target_generator")
         register(h)
-        luigi.run(_luigi_args(['--target', read1.replace("1.fastq.gz", ".sam"), '--config-file', localconf, '--use-long-names']), main_task_cls=ratatosk.lib.align.bwa.BwaSampe)
+        luigi.run(_luigi_args(['--target', read1.replace("1.fastq.gz", ".sam"), '--config-file', localconf, '--use-long-names']), main_task_cls=ratatosk.lib.align.bwa.Sampe)
 
     def test_sortbam(self):
         luigi.run(_luigi_args(['--target', read1.replace("1.fastq.gz", ".sort.bam"), '--config-file', localconf]), main_task_cls=ratatosk.lib.tools.picard.SortSam)

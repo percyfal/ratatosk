@@ -1,21 +1,47 @@
 # Main configuration file for HaloPlex analysis
+settings:
+  target_generator_handler: ratatosk.job.generic_target_generator
+  
 misc:
   ResyncMates:
-    parent_task: ratatosk.lib.utils.cutadapt.CutadaptJobTask
+    parent_task: 
+      - ratatosk.lib.utils.cutadapt.CutadaptJobTask
+      - ratatosk.lib.utils.cutadapt.CutadaptJobTask
+cutadapt:
+  Cutadapt:
+    parent_task:
+      - ratatosk.lib.utils.cutadapt.InputFastqFile
+      - ratatosk.lib.tools.fastqc.FastQCJobTask
+
+fastqc:
+  parent_task: ratatosk.lib.utils.cutadapt.InputFastqFile
 
 bwa:
-  aln:
+  Aln:
     parent_task: ratatosk.lib.utils.misc.ResyncMatesJobTask
+  Sampe:
+    label: .trimmed.sync
+    add_label:
+      - _R1_001.trimmed.sync
+      - _R2_001.trimmed.sync
+  Bampe:
+    label: .trimmed.sync
+    add_label:
+      - _R1_001.trimmed.sync
+      - _R2_001.trimmed.sync
 
 samtools:
   SamToBam:
-    parent_task: ratatosk.pipeline.haloplex.HaloBwaSampe
+    parent_task: ratatosk.lib.align.bwa.Sampe
 
 picard:
   SortSam:
     parent_task: ratatosk.lib.tools.samtools.SamToBam
+    #parent_task: ratatosk.lib.align.bwa.Bampe
   MergeSamFiles:
     parent_task: ratatosk.lib.tools.picard.SortSam
+    # target_generator_handler: implement generator here that returns
+    # a list of bam files based on the global target generator
   DuplicationMetrics:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   AlignmentMetrics:
@@ -26,34 +52,39 @@ picard:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
 
 gatk:
-  # These are all subclassed for Halo, see dependencies below
-  # RealignerTargetCreator:
-  #   parent_task: ratatosk.lib.tools.picard.MergeSamFiles
-  # IndelRealigner:
-  #   parent_task: ratatosk.lib.tools.gatk.RealignerTargetCreator
-  # BaseRecalibrator:
-  #   parent_task: ratatosk.lib.tools.gatk.IndelRealigner
+  RealignerTargetCreator:
+    parent_task: ratatosk.lib.tools.picard.MergeSamFiles
+  IndelRealigner:
+    parent_task:
+    - ratatosk.lib.tools.picard.MergeSamFiles
+    - ratatosk.lib.tools.gatk.RealignerTargetCreator
+    - ratatosk.pipeline.haloplex.RawUnifiedGenotyper
+  BaseRecalibrator:
+    parent_task: ratatosk.lib.tools.gatk.IndelRealigner
   PrintReads:
-    parent_task: ratatosk.lib.tools.gatk.BaseRecalibrator
+    diff_label:
+      - .realign
+      - 
+    parent_task:
+      - ratatosk.lib.tools.picard.MergeSamFiles
+      - ratatosk.lib.tools.gatk.BaseRecalibrator
   ClipReads:
     parent_task: ratatosk.lib.tools.gatk.PrintReads
   UnifiedGenotyper:
     parent_task: ratatosk.lib.tools.gatk.ClipReads
-  VariantFiltration:
+  VariantHaloFiltration:
     parent_task: ratatosk.lib.tools.gatk.UnifiedGenotyper
   VariantEval:
+    parent_task: ratatosk.pipeline.haloplex.VariantHaloFiltration
+  BaseRecalibrator:
+    parent_task: ratatosk.pipeline.haloplex.IndelRealigner
+
+htslib:
+  VcfMerge:
+    # target_generator_handler: implement generator here that returns
+    # a list of bam files based on the global target generator
+
+tabix:
+  Bgzip:
     parent_task: ratatosk.lib.tools.gatk.VariantFiltration
 
-  # Addon tasks needed for HaloPlex
-  RawUnifiedGenotyper:
-    parent_task: ratatosk.lib.tools.picard.MergeSamFiles
-  RawRealignerTargetCreator:
-    parent_task: ratatosk.lib.tools.picard.MergeSamFiles
-  RawIndelRealigner:
-    parent_task: ratatosk.lib.tools.picard.MergeSamFiles
-  # Finally, make BaseRecalibrator depend on RawIndelRealigner
-  BaseRecalibrator:
-    parent_task: ratatosk.pipeline.haloplex.RawIndelRealigner
-
-fastqc:
-  parent_task: ratatosk.lib.align.bwa.InputFastqFile

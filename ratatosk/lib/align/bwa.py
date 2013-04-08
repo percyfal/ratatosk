@@ -28,13 +28,13 @@ class InputFastqFile(InputJobTask):
     _config_section = "bwa"
     _config_subsection = "InputFastqFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
-    target_suffix = luigi.Parameter(default=".fastq")
+    suffix = luigi.Parameter(default=".fastq.gz")
 
 class InputFastaFile(InputJobTask):
     _config_section = "bwa"
     _config_subsection = "InputFastaFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastaFile")
-    target_suffix = luigi.Parameter(default=".fa")
+    suffix = luigi.Parameter(default=".fa")
 
 class BwaJobTask(JobTask):
     """Main bwa class with parameters necessary for all bwa classes"""
@@ -50,12 +50,11 @@ class BwaJobTask(JobTask):
         return luigi.LocalTarget(self.target)
 
 
-class BwaAln(BwaJobTask):
-    _config_subsection = "aln"
+class Aln(BwaJobTask):
+    _config_subsection = "Aln"
     sub_executable = "aln"
-    parent_task = luigi.Parameter(default="ratatosk.lib.align.bwa.InputFastqFile")
-    target_suffix = luigi.Parameter(default=".sai")
-    source_suffix = luigi.Parameter(default=".fastq.gz")
+    parent_task = luigi.Parameter(default=("ratatosk.lib.align.bwa.InputFastqFile",))
+    suffix = luigi.Parameter(default=".sai")
     read1_suffix = luigi.Parameter(default="_R1_001")
     read2_suffix = luigi.Parameter(default="_R2_001")
     is_read1 = True
@@ -67,8 +66,8 @@ class BwaAln(BwaJobTask):
         return retval + ['-t {}'.format(str(self.threads()))]
 
     def requires(self):
-        cls = self.set_parent_task()
-        source = self._make_source_file_name()
+        cls = self.parent()[0]
+        source = self.source()[0]
         # Ugly hack for 1 -> 2 dependency: works but should be dealt with otherwise
         if str(fullclassname(cls)) in ["ratatosk.lib.utils.misc.ResyncMatesJobTask"]:
             if re.search(self.read1_suffix, source):
@@ -96,32 +95,26 @@ class BwaAln(BwaJobTask):
 class BwaAlnWrapperTask(JobWrapperTask):
     fastqfiles = luigi.Parameter(default=[], is_list=True)
     def requires(self):
-        return [BwaAln(target=x) for x in self.fastqfiles]
+        return [Aln(target=x) for x in self.fastqfiles]
 
-class BwaSampe(BwaJobTask):
-    _config_subsection = "sampe"
+class Sampe(BwaJobTask):
+    _config_subsection = "Sampe"
     sub_executable = "sampe"
     # Get these with static methods
-    read1_suffix = luigi.Parameter(default="_R1_001")
-    read2_suffix = luigi.Parameter(default="_R2_001")
-    source_suffix = luigi.Parameter(default=".sai")
-    target_suffix = luigi.Parameter(default=".sam")
+    add_label = luigi.Parameter(default=("_R1_001", "_R2_001"), is_list=True)
+    suffix = luigi.Parameter(default=".sam")
     read_group = luigi.Parameter(default=None)
     platform = luigi.Parameter(default="Illumina")
+    parent_task = luigi.Parameter(default=("ratatosk.lib.align.bwa.Aln", "ratatosk.lib.align.bwa.Aln"), is_list=True)
     can_multi_thread = False
     max_memory_gb = 6 # bwa documentation says ~5.4 for human genome
-
-    def requires(self):
-        # From target name, generate sai1, sai2, fastq1, fastq2
-        sai1 = rreplace(self._make_source_file_name(), self.source_suffix, self.read1_suffix + self.source_suffix, 1)
-        sai2 = rreplace(self._make_source_file_name(), self.source_suffix, self.read2_suffix + self.source_suffix, 1)
-        return [BwaAln(target=sai1), BwaAln(target=sai2)]
 
     def _get_read_group(self):
         if not self.read_group:
             from ratatosk import backend
+            cls = self.parent()[0]
             sai1 = self.input()[0]
-            rgid = rreplace(rreplace(sai1.path, self.source_suffix, "", 1), self.read1_suffix, "", 1)
+            rgid = rreplace(rreplace(sai1.path, cls().suffix, "", 1), self.add_label[0], "", 1)
             smid = rgid
             # Get sample information if present in global vars. Note
             # that this requires the
@@ -141,39 +134,30 @@ class BwaSampe(BwaJobTask):
             return self.read_group
 
     def args(self):
-        sai1 = self.input()[0]
-        sai2 = self.input()[1]
-        fastq1 = luigi.LocalTarget(rreplace(sai1.fn, self.source_suffix, ".fastq.gz", 1))
-        fastq2 = luigi.LocalTarget(rreplace(sai2.fn, self.source_suffix, ".fastq.gz", 1))
-        return ["-r", self._get_read_group(), self.bwaref, sai1, sai2, fastq1, fastq2, ">", self.output()]
+        cls = self.parent()[0]
+        parent_cls = cls().parent()[0]
+        (fastq1, fastq2) = [luigi.LocalTarget(rreplace(sai.path, cls().suffix, parent_cls().sfx(), 1)) for sai in self.input()]
+        return ["-r", self._get_read_group(), self.bwaref, self.input()[0].path, self.input()[1].path, fastq1, fastq2, ">", self.output()]
 
 class Bampe(PipedTask):
     _config_section = "bwa"
     _config_subsection = "Bampe"
-    read1_suffix = luigi.Parameter(default="_R1_001")
-    read2_suffix = luigi.Parameter(default="_R2_001")
-    source_suffix = luigi.Parameter(default=".sai")
-    target_suffix = luigi.Parameter(default=".bam")
+    add_label = luigi.Parameter(default=("_R1_001", "_R2_001"), is_list=True)
+    parent_task = luigi.Parameter(default=("ratatosk.lib.align.bwa.Aln", "ratatosk.lib.align.bwa.Aln"), is_list=True)
+    suffix = luigi.Parameter(default=".bam")
     read_group = luigi.Parameter(default=None)
     platform = luigi.Parameter(default="Illumina")
     can_multi_thread = False
     max_memory_gb = 6 # bwa documentation says ~5.4 for human genome
 
-    def requires(self):
-        # From target name, generate sai1, sai2, fastq1, fastq2
-        sai1 = rreplace(self._make_source_file_name(), self.source_suffix, self.read1_suffix + self.source_suffix, 1)
-        sai2 = rreplace(self._make_source_file_name(), self.source_suffix, self.read2_suffix + self.source_suffix, 1)
-        return [BwaAln(target=sai1), BwaAln(target=sai2)]
-
     def args(self):
-        return [BwaSampe(target=self.target.replace(".bam", ".sam"), pipe=True), SamToBam(target=self.target, pipe=True)]
+        return [Sampe(target=self.target.replace(".bam", ".sam"), pipe=True), SamToBam(target=self.target, pipe=True)]
 
-class BwaIndex(BwaJobTask):
+class Index(BwaJobTask):
     _config_subsection = "index"
     sub_executable = "index"
-    source_suffix = luigi.Parameter(default=".fa")
-    target_suffix = luigi.Parameter(default=".fa.bwt")
-    parent_task = luigi.Parameter(default="ratatosk.lib.align.bwa.InputFastaFile")
+    suffix = luigi.Parameter(default=".fa.bwt")
+    parent_task = luigi.Parameter(default=("ratatosk.lib.align.bwa.InputFastaFile", ), is_list=True)
     
     def args(self):
-        return [self.input()]
+        return [self.input()[0]]

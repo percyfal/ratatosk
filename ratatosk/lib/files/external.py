@@ -27,6 +27,7 @@ logger = logging.getLogger('luigi-interface')
 class BamFile(luigi.ExternalTask):
     target = luigi.Parameter(default=None)
     label = luigi.Parameter(default=None)
+    suffix = luigi.Parameter(default=".bam")
 
     def output(self):
         if not self.target:
@@ -36,6 +37,7 @@ class BamFile(luigi.ExternalTask):
 class SamFile(luigi.ExternalTask):
     target = luigi.Parameter(default=None)
     label = luigi.Parameter(default="")
+    suffix = luigi.Parameter(default=".sam")
 
     def output(self):
         logger.debug("Got target '{}' in {}".format(self.target, self.__class__))
@@ -46,6 +48,7 @@ class SamFile(luigi.ExternalTask):
 class FastqFile(luigi.ExternalTask):
     target = luigi.Parameter(default=None)
     label = luigi.Parameter(default=None)
+    suffix = luigi.Parameter(default=".fastq.gz")
 
     def output(self):
         if not self.target:
@@ -55,6 +58,7 @@ class FastqFile(luigi.ExternalTask):
 class FastaFile(luigi.ExternalTask):
     target = luigi.Parameter(default=None)
     label = luigi.Parameter(default=None)
+    suffix = luigi.Parameter(default=".fa")
 
     def output(self):
         if not self.target:
@@ -64,6 +68,7 @@ class FastaFile(luigi.ExternalTask):
 class VcfFile(luigi.ExternalTask):
     target = luigi.Parameter(default=None)
     label = luigi.Parameter(default=None)
+    suffix = luigi.Parameter(default=".vcf")
 
     def output(self):
         if not self.target:
@@ -73,6 +78,7 @@ class VcfFile(luigi.ExternalTask):
 class TxtFile(luigi.ExternalTask):
     target = luigi.Parameter(default=None)
     label = luigi.Parameter(default=None)
+    suffix = luigi.Parameter(default=".txt")
 
     def output(self):
         if not self.target:
