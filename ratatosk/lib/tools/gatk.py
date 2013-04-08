@@ -120,7 +120,7 @@ class GATKIndexedJobTask(GATKJobTask):
         therefore doesn't need reimplementation in the subclasses."""
         bamcls = self.parent()[0]
         indexcls = ratatosk.lib.tools.samtools.Index
-        return [cls(target=source) for cls, source in izip(self.parent(), self.source())] + [indexcls(target=rreplace(self.source()[0], bamcls().suffix, indexcls().suffix, 1))]
+        return [cls(target=source) for cls, source in izip(self.parent(), self.source())] + [indexcls(target=rreplace(self.source()[0], bamcls().suffix, indexcls().suffix, 1), parent_task=fullclassname(bamcls))]
 
 
 class RealignerTargetCreator(GATKIndexedJobTask):

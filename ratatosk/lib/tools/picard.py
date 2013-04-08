@@ -188,6 +188,7 @@ class HsMetricsNonDup(HsMetrics):
     parent_task = luigi.Parameter(default=("ratatosk.lib.tools.picard.MergeSamFiles", ), is_list=True)
 
 class PicardMetrics(JobWrapperTask):
+    suffix = luigi.Parameter(default=("", ), is_list=True)
     def requires(self):
         return [InsertMetrics(target=self.target + str(InsertMetrics().suffix[0])),
                 HsMetrics(target=self.target + str(HsMetrics().suffix)),

@@ -131,6 +131,13 @@ class BaseJobTask(luigi.Task):
             default_parents = [default_parents]
         if len(parents) != len(default_parents):
             logger.warn("length of parent list ({}) differs from length of default_parents list ({}); this may result in unpredicted behaviour".format(len(parents), len(default_parents)))
+        # When adding extra dependencies, replicate the first
+        # default_parent, even though falling back on this task
+        # probably will fail. TODO: implement a dummy task that just
+        # succeeds
+        if len(parents) > len(default_parents):
+            len_diff = len(parents) - len(default_parents)
+            default_parents = list(default_parents) + [default_parents[0] for i in range(0, len_diff)]
         for p,d in izip(parents, default_parents):
             h = RatatoskHandler(label="_parent_cls", mod=p)
             register_attr(self, h, default_handler=d)
@@ -317,8 +324,6 @@ class BaseJobTask(luigi.Task):
         """Make source file names from parent tasks in self.parent()"""
         self._target_iter = 0
         if self.diff_label:
-            print self.diff_label
-            print self.parent()
             assert len(self.diff_label) == len(self.parent()), "if diff_label is defined, it must have as many elements as parent_task"
             return [self._make_source_file_name(p, diff_label=dl) for p, dl in izip(self.parent(), self.diff_label)]
         elif self.add_label:

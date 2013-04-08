@@ -37,6 +37,7 @@ class InputFastqFile(InputJobTask):
 # NB: cutadapt is a non-hiearchical tool. Group under, say, utils?
 class CutadaptJobTask(JobTask):
     _config_section = "cutadapt"
+    _config_subsection = "Cutadapt"
     label = luigi.Parameter(default=".trimmed")
     executable = luigi.Parameter(default="cutadapt")
     parent_task = luigi.Parameter(default=("ratatosk.lib.utils.cutadapt.InputFastqFile", ),is_list=True)

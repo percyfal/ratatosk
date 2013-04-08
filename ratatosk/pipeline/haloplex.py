@@ -33,51 +33,9 @@ logger = logging.getLogger('luigi-interface')
 # raw candidates around which realignment is done.
 class RawUnifiedGenotyper(UnifiedGenotyper):
     _config_subsection = "RawUnifiedGenotyper"
-    parent_task = luigi.Parameter(default=("ratatosk.lib.tools.picard.MergeSamFiles", ), is_list=True)
+    parent_task = luigi.Parameter(default=("ratatosk.lib.tools.picard.MergeSamFiles", "ratatosk.lib.tools.picard.PicardMetrics"), is_list=True)
     options = luigi.Parameter(default=("-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH",), is_list=True)
     label = luigi.Parameter(default=".BOTH.raw")
-
-# Override RealignerTargetCreator and IndelRealigner to use
-# RawUnifiedGenotyper vcf as input for known sites
-# class RawRealignerTargetCreator(RealignerTargetCreator):
-#     _config_subsection = "RawRealignerTargetCreator"
-#     parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.MergeSamFiles")
-#     target_suffix = luigi.Parameter(default=".intervals")
-    
-#     # def requires(self):
-#     #     cls = self.set_parent_task()
-#     #     source = self._make_source_file_name()
-#     #     return [cls(target=source), ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task=fullclassname(cls)), ratatosk.pipeline.haloplex.RawUnifiedGenotyper(target=rreplace(source, ".bam", ".BOTH.raw.vcf", 1))]
-
-#     # def args(self):
-#     #     retval = ["-I", self.input()[0], "-o", self.output(), "-known", self.input()[2]]
-#     #     if not self.ref:
-#     #         raise Exception("need reference for Realignment")
-#     #     retval.append(" -R {}".format(self.ref))
-#     #     return retval
-
-# # NOTE: Here I redefine target dependencies for IndelRealigner, the way I believe it should be
-# class RawIndelRealigner(IndelRealigner):
-#     _config_subsection = "RawIndelRealigner"
-#     parent_task = luigi.Parameter(default="ratatosk.lib.tools.picard.MergeSamFiles")
-#     source_suffix = luigi.Parameter(default=".bam")
-    
-#     def requires(self):
-#         cls = self.set_parent_task()
-#         source = self._make_source_file_name()
-#         return [cls(target=source), 
-#                 ratatosk.lib.tools.samtools.IndexBam(target=rreplace(source, self.source_suffix, ".bai", 1), parent_task="ratatosk.lib.tools.picard.MergeSamFiles"), 
-#                 ratatosk.pipeline.haloplex.RawRealignerTargetCreator(target=rreplace(source, ".bam", ".intervals", 1)),
-#                 ratatosk.pipeline.haloplex.RawUnifiedGenotyper(target=rreplace(source, ".bam", ".BOTH.raw.vcf", 1))]
-    
-#     def args(self):
-#         retval = ["-I", self.input()[0], "-o", self.output(),
-#                   "--targetIntervals", self.input()[2],
-#                   "-known", self.input()[3]]
-#         if not self.ref:
-#             raise Exception("need reference for Realignment")
-#         retval.append(" -R {}".format(self.ref))
-#         return retval
 
 class VariantHaloFiltration(VariantFiltration):
     """Settings for filtering haloplex variant calls"""
@@ -117,12 +75,10 @@ class HaloPipeline(PipelineTask):
 class HaloPlex(HaloPipeline):
     def requires(self):
         self._setup()
-        fastqc_targets = ["{}_R1_001_fastqc".format(x[2]) for x in self.targets] +  ["{}_R2_001_fastqc".format(x[2]) for x in self.targets]
         variant_targets = ["{}.{}".format(x[1], self.final_target_suffix) for x in self.targets]
         picard_metrics_targets = ["{}.{}".format(x[1], "trimmed.sync.sort.merge") for x in self.targets]
-
-        return [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_targets] + [VariantEval(target=tgt) for tgt in variant_targets]
-        #return [VariantEval(target=tgt) for tgt in variant_targets] + [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_targets] + [PrintConfig()] + [FastQCJobTask(target=tgt) for tgt in fastqc_targets]
+        #return [PicardMetrics(target=tgt2) for tgt2 in picard_metrics_targets] + [VariantEval(target=tgt) for tgt in variant_targets]
+        return [VariantEval(target=tgt) for tgt in variant_targets]
 
 class HaloBgzip(Bgzip):
     _config_subsection = "HaloBgzip"
