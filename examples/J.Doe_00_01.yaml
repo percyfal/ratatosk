@@ -3,7 +3,7 @@ settings:
   target_generator_handler: test.site_functions.target_generator
 
 bwa:
-  aln:
+  Aln:
     # NB: shouldn't work since this is a custom config file
     parent_task: ratatosk.lib.align.bwa.BwaSampe
     # However this should work

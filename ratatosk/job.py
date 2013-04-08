@@ -38,6 +38,9 @@ logger = logging.getLogger('luigi-interface')
 # Job tasks
 ##############################
 class BaseJobTask(luigi.Task):
+    """Main job task from which all ratatosk tasks should inherit.
+    
+    """
     config_file = luigi.Parameter(is_global=True, default=os.path.join(os.path.join(ratatosk.__path__[0], os.pardir, "config", "ratatosk.yaml")), description="Main configuration file.")
     custom_config = luigi.Parameter(is_global=True, default=None, description="Custom configuration file for tuning options in predefined pipelines in which workflow may not be altered.")
     dry_run = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="Generate pipeline graph/flow without running any commands")
@@ -468,9 +471,16 @@ class GenericWrapperTask(JobWrapperTask):
             return [cls(target=x) for x in self.generic_wrapper_target]
 
 class InputPath(InputJobTask):
+    """Helper task for PipedTask"""
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.Path")
 
 class PipedTask(JobTask):
+    """A piped task takes as input a set of tasks and uses the
+    standard python module subprocess.Popen to communicate output
+    between the tasks.
+
+    """
+
     tasks = luigi.Parameter(default=[], is_list=True)
 
     def requires(self):
