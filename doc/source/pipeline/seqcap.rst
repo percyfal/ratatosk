@@ -1,8 +1,6 @@
 Sequence capture/resequencing pipeline
 ======================================
 
-ratatosk.pipeline.seqcap.main_
-
 .. todo:: Add docs on pipeline
 
 .. figure:: ../../grf/ratatosk_pipeline_seqcap.png

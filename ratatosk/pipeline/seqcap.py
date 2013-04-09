@@ -12,6 +12,9 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 """
+Sequence capture pipeline
+--------------------------
+
 The sequence capture pipeline implements the `best practice
 recommended by BROAD
 <http://www.broadinstitute.org/gatk/guide/topic?name=best-practices>`_.
