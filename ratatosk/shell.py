@@ -17,7 +17,7 @@ def exec_cmd(cmd_args, shell=False):
     
     .. code-block:: python
     
-        from cement.utils import shell
+        from ratatosk import shell
         
         stdout, stderr, exitcode = shell.exec_cmd(['echo', 'helloworld'])
         

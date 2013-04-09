@@ -24,7 +24,10 @@ import tornado.httpclient
 import tornado.httpserver
 import luigi.scheduler as scheduler
 import pkg_resources
-import pygraphviz
+try:
+    import pygraphviz
+except:
+    pass
 import signal
 from cStringIO import StringIO
 from luigi.rpc import RemoteSchedulerResponder
