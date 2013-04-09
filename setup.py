@@ -30,6 +30,7 @@ setup(name = "ratatosk",
         # Currently works with luigi version 1.0, commit hash tag
         # da20852fa10a60a388 - would want to put this here in master
         # in case something breaks in the future
+        "simplejson",
         "luigi",
         "nose",
         "nose-timer",
