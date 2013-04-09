@@ -79,6 +79,7 @@ class TableVisualizeHandler(tornado.web.RequestHandler):
                      RUNNING: ('blue', 'white'),
                      'BROKEN': ('orange', 'black'),  # external task, can't run
                      }
+
             label = task.replace('(', '\\n(').replace(',', ',\\n')  # force GraphViz to break lines
             taskname = task.split("(")[0]
             task_header.append(taskname)
@@ -135,6 +136,7 @@ class VisualizeHandler(tornado.web.RequestHandler):
             fillcolor = colors[selector][0]
             fontcolor = colors[selector][1]
             shape = 'box'
+            w = None
             # Task is a unicode object representing the task_id
             if re.search('use_long_names=True', task):
                 label = task.replace('(', '\\n(').replace(',', ',\\n')  # force GraphViz to break lines
@@ -142,16 +144,33 @@ class VisualizeHandler(tornado.web.RequestHandler):
                 label = task.replace('(', '\\n(').replace(',', ',\\n').split('\\n')[0]
                 m = re.search('target=([0-9a-zA-Z_\./\-]*),', task)
                 if m and re.search('use_target_names=True', task):
-                    label = label + "\\n({})".format(os.path.basename(m.group(1)))
+                    label = os.path.basename(m.group(1))
+                    # FIXME: this is arbitrary; cannot get the width to work properly in GraphViz
+                    w = len(label.encode('utf-8'))/72*12
+                    colors = {PENDING: ('white', 'black'),
+                              DONE: ('white', 'black'),
+                              FAILED: ('white', 'black'),
+                              RUNNING: ('white', 'black'),
+                              'BROKEN': ('organge', 'black'),  # external task, can't run
+                              }
+                    fillcolor = colors[selector][0]
+                    fontcolor = colors[selector][1]
+
 
             # TODO: if the ( or , is a part of the argument we shouldn't really break it
             # TODO: FIXME: encoding strings is not compatible with newer pygraphviz
-            graphviz.add_node(task.encode('utf-8'), label=label.encode('utf-8'), style='filled', fillcolor=fillcolor, fontcolor=fontcolor, shape=shape, fontname='Helvetica', fontsize=11)
+            if w:
+                graphviz.add_node(task.encode('utf-8'), label=label.encode('utf-8'), style='filled', fillcolor=fillcolor, fontcolor=fontcolor, shape=shape, fontname='Helvetica', fontsize=11, width=w, fixedsize=True)
+            else:
+                graphviz.add_node(task.encode('utf-8'), label=label.encode('utf-8'), style='filled', fillcolor=fillcolor, fontcolor=fontcolor, shape=shape, fontname='Helvetica', fontsize=11)
             n_nodes += 1
 
         for task, p in tasks.iteritems():
             for dep in p['deps']:
-                graphviz.add_edge(dep, task)
+                label = ""
+                if re.search('use_target_names=True', task):
+                    label = task.replace('(', '\\n(').replace(',', ',\\n').split('\\n')[0]
+                graphviz.add_edge(dep, task, label=label)
 
         if n_nodes < 200:
             graphviz.layout('dot')

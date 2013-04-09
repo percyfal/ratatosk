@@ -101,8 +101,9 @@ visualize the dependency graph. Below, I've shown an excerpt from one
 of the implemented pipelines
 
 .. figure:: ../../grf/dupmetrics_to_printreads_targets.png
-   :scale: 50%
+   :scale: 70%
    :align: center
    :alt: dupmetrics_to_printreads_targets
    
    **Figure 2.** Excerpt from variant calling pipeline
+
