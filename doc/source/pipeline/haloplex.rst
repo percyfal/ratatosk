@@ -1,12 +1,14 @@
 HaloPlex pipeline
 =================
 
-Here's an example of a variant calling pipeline defined for analysis of HaloPlex data.
+.. todo:: Add docs here
 
-.. figure:: ../../ratatosk_pipeline_haloplex.png
+.. figure:: ../../grf/ratatosk_pipeline_haloplex.png
    :alt: HaloPlex pipeline
+   :scale: 80%
+   :align: center
    
-   HaloPlex pipeline
+   **Figure 1.** HaloPlex pipeline
 
 Blue boxes mean active processes (the command was run with `--workers
 4`). Note that we need to know what labels are applied to the file

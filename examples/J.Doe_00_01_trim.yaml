@@ -11,7 +11,7 @@ bwa:
   
 samtools:
   SamToBam:
-    parent_task: ratatosk.lib.align.bwa.BwaSampe
+    parent_task: ratatosk.lib.align.bwa.Sampe
 
 picard:
   HsMetrics:

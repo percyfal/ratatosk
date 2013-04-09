@@ -5,13 +5,13 @@ settings:
 bwa:
   Aln:
     # NB: shouldn't work since this is a custom config file
-    parent_task: ratatosk.lib.align.bwa.BwaSampe
+    parent_task: ratatosk.lib.align.bwa.Sampe
     # However this should work
     options: [-e 2 -l 40]
   
 samtools:
   SamToBam:
-    parent_task: ratatosk.lib.align.bwa.BwaSampe
+    parent_task: ratatosk.lib.align.bwa.Sampe
 
 picard:
   MergeSamFiles:

@@ -5,6 +5,7 @@ Developer Documentation
    :maxdepth: 20 
 
    installation
+   introduction
    quickstart
    tasks
    configuration

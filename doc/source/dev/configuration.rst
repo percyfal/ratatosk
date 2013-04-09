@@ -89,5 +89,7 @@ Resolving dependencies
 
 .. figure:: ../../grf/dupmetrics_to_printreads.png
    :alt: dupmetrics_to_printreads
-   
+   :scale: 50%
+   :align: center
+
    **Figure 1.** Excerpt from variant calling pipeline

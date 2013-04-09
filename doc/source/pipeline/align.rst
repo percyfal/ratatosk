@@ -1,10 +1,12 @@
 Basic alignment pipeline
 ========================
 
-Here is an example of a basic align seqcap pipeline.
+.. todo:: Add docs
 
-.. figure:: ../../example_align_seqcap.png
+.. figure:: ../../grf/ratatosk_pipeline_align.png
    :alt: Align pipeline
+   :scale: 70%
+   :align: center
    
-   Align pipeline
+   **Figure 1.** Align pipeline
 
