@@ -84,3 +84,10 @@ Note also that `InputBamFile` has been changed to depend on
 `ratatosk.lib.tools.samtools.SamToBam` (default value is
 `ratatosk.lib.files.external.BamFile`). 
 
+Resolving dependencies
+======================
+
+.. figure:: ../../grf/dupmetrics_to_printreads.png
+   :alt: dupmetrics_to_printreads
+   
+   **Figure 1.** Excerpt from variant calling pipeline

@@ -14,26 +14,7 @@ ratatosk module
 Library modules
 ----------------
 
-bwa
----
-
-.. toctree::
-   :maxdepth: 1
-   
-   lib/align/bwa
-
-gatk
-----
-
 .. toctree::
    :maxdepth: 1
 
-   lib/tools/gatk
-
-files
------
-
-.. toctree::
-   :maxdepth: 1
-
-   lib/files/external
+   lib/index
