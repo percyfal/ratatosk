@@ -140,6 +140,10 @@ class VisualizeHandler(tornado.web.RequestHandler):
                 label = task.replace('(', '\\n(').replace(',', ',\\n')  # force GraphViz to break lines
             else:
                 label = task.replace('(', '\\n(').replace(',', ',\\n').split('\\n')[0]
+                m = re.search('target=([0-9a-zA-Z_\./\-]*),', task)
+                if m and re.search('use_target_names=True', task):
+                    label = label + "\\n({})".format(os.path.basename(m.group(1)))
+
             # TODO: if the ( or , is a part of the argument we shouldn't really break it
             # TODO: FIXME: encoding strings is not compatible with newer pygraphviz
             graphviz.add_node(task.encode('utf-8'), label=label.encode('utf-8'), style='filled', fillcolor=fillcolor, fontcolor=fontcolor, shape=shape, fontname='Helvetica', fontsize=11)

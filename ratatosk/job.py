@@ -58,6 +58,8 @@ class BaseJobTask(luigi.Task):
     #source_suffix = luigi.Parameter(default=None, description="File suffix for source")
     # Use for changing labels in graph visualization
     use_long_names = luigi.Parameter(default=False, description="Use long names (including all options) in graph vizualization", is_boolean=True, is_global=True)
+    # Use for changing labels in graph visualization
+    use_target_names = luigi.Parameter(default=False, description="Use target names in graph vizualization", is_boolean=True, is_global=True)
 
     # Labels ("tag") for output file name; not all tasks are allowed
     # to "label" their output
