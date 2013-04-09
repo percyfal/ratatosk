@@ -7,3 +7,4 @@ HOWTOs
    :maxdepth: 1
 
    addingtasks
+   writingpipelines
