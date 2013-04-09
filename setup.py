@@ -38,7 +38,7 @@ setup(name = "ratatosk",
         "nose-timer",
         ],
       test_suite = 'nose.collector',
-      packages=find_packages(exclude=['ez_setup', 'tests*']),
+      packages=find_packages(exclude=['ez_setup', 'test*']),
       namespace_packages = [
         'ratatosk',
         'ratatosk.ext',
