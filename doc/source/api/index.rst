@@ -1,15 +1,33 @@
 API Reference
 =============
 
-ratatosk module
+ratatosk modules
 --------------------
 
 .. toctree::
    :maxdepth: 2
 
+   backend
    config
+   fastq
+   handler
+   interface
    job
    jobrunner
+   picard
+   sample
+   server
+   shell
+   utils
+
+Pipeline modules
+-----------------
+
+.. toctree::
+   :maxdepth: 1
+
+   pipeline/index
+
 
 Library modules
 ----------------
