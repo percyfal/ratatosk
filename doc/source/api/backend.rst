@@ -1,7 +1,7 @@
 .. _ratatosk.backend:
 
 :mod:`ratatosk.backend`
-------------------------
+--------------------------------
 
 .. automodule:: ratatosk.backend
     :members:
