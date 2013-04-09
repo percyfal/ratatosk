@@ -3,6 +3,11 @@
 Library modules
 ===============
 
+The wrapper library is a collection of wrappers for all kinds of
+programs. Depending on how much is added in the future, the hierarchy
+may change. In any case, the library serves as a resource of highly
+re-usable code of task definitions.
+
 annotation
 ----------
 
@@ -36,6 +41,7 @@ files
    :maxdepth: 1
 
    files/external
+   files/fastq
 
 tools
 -----
@@ -43,8 +49,8 @@ tools
 .. toctree::
    :maxdepth: 1
 
-   tools/gatk
    tools/fastqc
+   tools/gatk
    tools/picard
    tools/samtools
 
@@ -54,8 +60,9 @@ utils
 .. toctree::
    :maxdepth: 1
 
-   utils/misc
    utils/cutadapt
+   utils/misc
+
 
 
 variation
@@ -64,6 +71,7 @@ variation
 .. toctree::
    :maxdepth: 1
 
-   variation/tabix
    variation/htslib
+   variation/tabix
+   variation/vcftools
 

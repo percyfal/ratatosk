@@ -11,6 +11,36 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
+"""
+The sequence capture pipeline implements the `best practice
+recommended by BROAD
+<http://www.broadinstitute.org/gatk/guide/topic?name=best-practices>`_.
+
+It adds the following custom tasks:
+
+1. CombineFilteredVariants
+2. FiltrationWrapper
+3. SelectVariantsWrapper
+
+The main pipeline tasks are 
+
+1. SeqCap
+2. SeqCapSummary
+
+They should be run in this order.
+
+Calling via ratatosk_run.py
+----------------------------
+
+.. code:: bash
+
+   ratatosk_run.py SeqCap --indir inputdir --custom-config custom_config_file.yaml
+   ratatosk_run.py SeqCapSummary --indir inputdir --custom-config custom_config_file.yaml
+
+
+Classes
+-------
+"""
 import luigi
 import logging
 from ratatosk import backend
@@ -21,6 +51,10 @@ from ratatosk.utils import make_fastq_links
 logger = logging.getLogger('luigi-interface')
 
 class CombineFilteredVariants(CombineVariants):
+    """
+    CombineVariants is called elsewhere in pipeline so this class is
+    needed to get its own namespace in the configuration file.
+    """
     _config_section = "gatk"
     _config_subsection = "CombineFilteredVariants"
     parent_task = luigi.Parameter(default=("ratatosk.pipeline.seqcap.FiltrationWrapper",
@@ -41,6 +75,23 @@ class CombineFilteredVariants(CombineVariants):
         return retval
 
 class FiltrationWrapper(JobWrapperTask):
+    """
+    The FiltrationWrapper wraps snp and indel variant filtration
+    tasks. It sets up different filtration tasks depending on the
+    *cov_interval* setting, which can be one of "regional", "exome",
+    or None. The effects of the different choices are as follows:
+
+    regional
+      Do filtering based on JEXL-expressions. See `section 3, subtitle Recommendations for very small data sets <http://www.broadinstitute.org/gatk/guide/topic?name=best-practices>`_
+
+    exome
+      Use VQSR with modified argument settings (`--maxGaussians 4 --percentBad 0.05`) as recommended in  `3. Notes about small whole exome projects <http://www.broadinstitute.org/gatk/guide/topic?name=best-practices>`_
+
+    None
+      Perform "standard" VQSR
+
+    
+    """
     _config_section = "SeqCapPipeline"
     _config_subsection = "FiltrationWrapper"
     label = None

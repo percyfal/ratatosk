@@ -11,6 +11,15 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
+"""
+Provide wrappers for `vcftools <http://vcftools.sourceforge.net/perl_module.html>`_
+
+Classes
+-------
+"""
+
+
+
 import os
 import luigi
 import logging
@@ -32,4 +41,6 @@ class VcfJobTask(JobTask):
     def job_runner(self):
         return VcfJobRunner()
 
-class Vcf
+class Vcf(JobTask):
+    pass
+

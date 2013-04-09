@@ -11,6 +11,16 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
+"""
+Provide wrappers for `htslib <https://github.com/samtools/htslib>`_
+
+Make a link from `vcf` to `htscmd` to use the shortcut commands.
+
+
+Classes
+-------
+"""
+
 import luigi
 import logging
 import ratatosk.lib.files.external

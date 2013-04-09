@@ -9,12 +9,10 @@ ratatosk modules
 
    backend
    config
-   fastq
    handler
    interface
    job
    jobrunner
-   picard
    sample
    server
    shell

@@ -11,12 +11,14 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
-"""ratatosk.lib.files.external
+"""
 
 External tasks. The outputs of these tasks have
 been created by some external process and therefore
 have no run method.
 
+Classes
+-------
 """
 import os
 import luigi

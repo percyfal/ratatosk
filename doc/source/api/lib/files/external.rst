@@ -1,7 +1,7 @@
 .. _ratatosk.lib.files.external:
 
 :mod:`ratatosk.lib.files.external`
-------------------------------
+-----------------------------------
 
 .. automodule:: ratatosk.lib.files.external
     :members:

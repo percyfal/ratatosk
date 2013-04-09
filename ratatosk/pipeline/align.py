@@ -11,6 +11,23 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
+"""
+The align pipeline implements an alignment pipeline that aligns reads,
+merges samples and generates picard quality statistics.
+
+Calling via ratatosk_run.py
+----------------------------
+
+.. code:: bash
+
+   ratatosk_run.py Align --indir inputdir --custom-config custom_config_file.yaml
+   ratatosk_run.py AlignSummary --indir inputdir --custom-config custom_config_file.yaml
+
+
+Classes
+-------
+"""
+
 import luigi
 import os
 import glob

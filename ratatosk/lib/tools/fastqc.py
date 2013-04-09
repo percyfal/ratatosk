@@ -11,6 +11,14 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
+"""
+Provide wrappers for `fastqc <http://www.bioinformatics.babraham.ac.uk/projects/fastqc/>`_   
+
+
+Classes
+-------
+"""
+
 import os
 import luigi
 import logging
