@@ -142,7 +142,7 @@ Job runners govern how a task is run. In practice, they do the
 following
 
 1. create argument list from the args function
-2. fixes path names for outputs, generating temporary file names so
+2. fix path names for outputs, generating temporary file names so
    that all operations are atomic
-3. submits the command string via *subprocess*
+3. submit the command string via *subprocess*
 

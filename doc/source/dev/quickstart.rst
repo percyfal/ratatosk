@@ -46,5 +46,63 @@ Of targets and make
 Central to task processing is the `target` concept. As the `luigi`
 authors point out, `luigi` is conceptually similar to GNU Make, so
 it's probably best to introduce the target concept by recalling how
-`make` does it.
+`make` does it. Let's assume you want to compress a file, `file.txt`,
+with `gzip`. The command to run would then be ```gzip file.txt```,
+producing an output file `file.txt.gz`, illustrated below.
 
+.. figure:: ../../grf/WEB.png
+   :scale: 50%
+   :align: center
+   :alt: WEB
+   
+   **Figure 1.** Zipping files with gzip
+
+With Make, you can define a rule
+
+.. code:: make
+
+   %.txt.gz: %.txt
+         gzip $<
+
+which when you run the command ```make file.txt.gz``` will look at the
+make rules to see if there is a rule defined for files with suffix
+`.txt.gz`, and if so, run the command defined for that rule. The file
+`file.txt.gz` is commonly called the *target*, and `file.txt` the
+*source* (substituted by `$<` in the make command above). One
+important thing to know is that if the target already exists, make
+only runs a command if the source is newer than the target.
+
+*ratatosk* revolves around the idea of a target, in that every task
+accepts an option `--target`. The task dynamically generates the
+*source* file name, and *luigi* resolves the underlying dependencies,
+running the task if the source file exists. *luigi* does not, however,
+rerun a task should the target exist and the source is newer than the
+target. This is important to keep in mind, as it effects what tasks
+are run. The call to *ratatosk_run.py* would actually be
+
+
+.. code:: bash
+
+   ratatosk_run.py Task --target target.out --config-file configuration.yaml
+
+Basically, then, *ratatosk* is a collection of make targets, based on
+a python framework.
+
+
+Visualizing task dependencies
+-----------------------------
+
+One thing make doesn't do is visualize task dependencies (at least not
+that I'm aware of). I chose to visualize the make tasks above in order
+to connect to the way *luigi* visualizes tasks. *luigi* uses a
+`central planner
+<https://github.com/spotify/luigi#using-the-central-planner>`_ to
+visualize the dependency graph. Below, I've shown an excerpt from one
+of the implemented pipelines
+
+.. figure:: ../../grf/dupmetrics_to_printreads_targets.png
+   :scale: 50%
+   :align: center
+   :alt: dupmetrics_to_printreads_targets
+   
+   **Figure 2.** Excerpt from variant calling pipeline
