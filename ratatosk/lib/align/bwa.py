@@ -20,6 +20,7 @@ Classes
 """
 import re
 import luigi
+from itertools import izip
 from ratatosk.job import InputJobTask, JobTask, JobWrapperTask, DefaultShellJobRunner, PipedTask
 from ratatosk.lib.tools.samtools import SamToBam
 from ratatosk.utils import rreplace, fullclassname
@@ -85,7 +86,7 @@ class Aln(BwaJobTask):
         else:
             retval = [cls(target=source)]
         if len(self.parent()) > 1:
-            retval += [cls(target=source) for cls in self.parent()[1:]]
+            retval += [cls(target=source) for cls, source in izip(self.parent()[1:], self.source()[1:])]
         return retval
 
     def args(self):
