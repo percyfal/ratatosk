@@ -1,1 +1,4 @@
-../../CONTRIBUTORS
+Contributors
+============
+
+* Per Unneberg 

@@ -17,7 +17,7 @@ from source to a target. The source in this case depends on an
 this file was created by some outside process (e.g. sequencing
 machine).
 
-.. code:: bash
+.. code:: text
 
 	nosetests -v -s test_wrapper.py:TestMiscWrappers.test_fastqln
 
@@ -43,7 +43,7 @@ Alignment with bwa sampe
 
 Here's a more useful example; paired-end alignment using `bwa`.
 
-.. code:: bash
+.. code:: text
 
 	nosetests -v -s test_commands.py:TestCommand.test_bwasampe
 
@@ -63,7 +63,7 @@ The class :ref:`ratatosk.lib.tools.picard.PicardMetrics` subclasses
 several tasks have completed. Here I've used it to group picard
 metrics tasks:
 
-.. code:: bash
+.. code:: text
 
 	nosetests -v -s test_commands.py:TestCommand.test_picard_metrics
 

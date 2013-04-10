@@ -11,7 +11,7 @@ an interface to small tasks, as well as pipeline tasks.
 Running ```ratatosk_run.py -h``` shows the main options, as well as
 the available tasks (abbreviated output for clarity):
 
-.. code:: bash
+.. code:: text
 
    usage: ratatosk_run.py [-h] [--config-file CONFIG_FILE] [--dry-run] [--lock]
 			  [--workers WORKERS] [--lock-pid-dir LOCK_PID_DIR]
@@ -64,7 +64,7 @@ dependencies based on the desired *target* file name, so you would do
 passed via the `--target` option. For instance, to run Bampe you
 would do:
 
-.. code:: bash
+.. code:: text
 
    usage: ratatosk_run.py Bampe [-h] [--options OPTIONS]
 				[--num-threads NUM_THREADS] [--pipe]
@@ -141,7 +141,7 @@ would do:
 Options specific to *Bampe* are prefixed with 'Bampe'. To actually run
 the task, provide the target name *target.bam* and run
 
-.. code:: bash
+.. code:: text
 
 	ratatosk_run.py Bampe \
 	  --target target.bam

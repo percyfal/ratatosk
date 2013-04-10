@@ -78,13 +78,13 @@ sample, project).
 
 In order to view tasks, run
 
-.. code:: bash
+.. code:: text
 
 	ratatoskd &
 	
 in the background and run the tests:
 
-.. code:: bash
+.. code:: text
 
 	nosetests -v -s test_commands.py
 	

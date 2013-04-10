@@ -31,7 +31,7 @@ that the pipeline will registor in `backend.__handlers__`. For
 instance, the corresponding configuration section in the example
 configuration file `J.Doe_00_01.yaml` is
 
-.. code:: yaml
+.. code:: text
 
    settings:
      target_generator_handler: test.site_functions.target_generator
