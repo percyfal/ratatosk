@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 """
-Provides wrappers for `bwa <http://bio-bwa.sourceforge.net/>`_.
+Wrapper library for `bwa <http://bio-bwa.sourceforge.net/>`_.
 
 
 Classes
@@ -81,9 +81,12 @@ class Aln(BwaJobTask):
                 self.is_read1 = False
                 fq1 = rreplace(source, self.read2_suffix, self.read1_suffix, 1)
                 fq2 = source
-            return cls(target=[fq1, fq2])
+            retval = [cls(target=[fq1, fq2])]
         else:
-            return cls(target=source)
+            retval = [cls(target=source)]
+        if len(self.parent()) > 1:
+            retval += [cls(target=source) for cls in self.parent()[1:]]
+        return retval
 
     def args(self):
         # bwa aln "-f" option seems to be broken!?!
@@ -103,7 +106,6 @@ class BwaAlnWrapperTask(JobWrapperTask):
 class Sampe(BwaJobTask):
     _config_subsection = "Sampe"
     sub_executable = "sampe"
-    # Get these with static methods
     add_label = luigi.Parameter(default=("_R1_001", "_R2_001"), is_list=True)
     suffix = luigi.Parameter(default=".sam")
     read_group = luigi.Parameter(default=None)
