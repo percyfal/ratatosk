@@ -8,7 +8,7 @@ currently achieved by treating some tasks differently. For instance,
 when the task `HaloPlex` is called, the following code is executed in
 `ratatosk_run.py`:
 
-.. code:: python
+.. code-block:: python
 
         if task in config_dict.keys():
             opt_dict['--config-file'] = config_dict[task]['config']
@@ -19,7 +19,7 @@ located in the `ratatosk/config` folder. Best practice pipeline
 classes are currently located in :ref:`ratatosk.pipeline`. Thereafter,
 it calls the main luigi run function
 
-.. code:: python	
+.. code-block:: python	
  
    if task_cls:
         task_args = dict_to_opt(opt_dict)
@@ -43,7 +43,7 @@ back on, so not providing this function will result in an error.
 Incidentally, this demonstrates the boilerplate code needed to add a
 new predefined pipeline. In `ratatosk.pipeline.__init__.py`, add
 
-.. code:: python
+.. code-block:: python
 
    config_dict{
        'bestpractice' : {'config' : os.path.join(ratatosk.__path__[0], os.pardir, "config", "bestpractice.yaml"),
@@ -54,7 +54,7 @@ new predefined pipeline. In `ratatosk.pipeline.__init__.py`, add
 	
 and in `ratatosk.pipeline.bestpractice`
 
-.. code:: python
+.. code-block:: python
 
    class BestPractice(PipelineTask):
 	   ...

@@ -11,7 +11,7 @@ added. Here is a short HOWTO on how to add a wrapper module
 
 Create the file `myprogram.py` (doh!), with at least the following imports:
 
-.. code:: python
+.. code-block:: python
 
    from ratatosk.job import JobTask
    from ratatosk.jobrunner import DefaultShellJobRunner
@@ -23,7 +23,7 @@ Create the file `myprogram.py` (doh!), with at least the following imports:
 
 At the very least, there should exist the following:
 
-.. code:: python
+.. code-block:: python
 
    class MyProgramJobRunner(DefaultShellJobRunner):
         pass
@@ -38,7 +38,7 @@ program group needs special handling of command construction (see e.g.
 There should be at least one input class that subclasses one of the
 :ref:`ratatosk.lib.files.external` classes. Mainly here for naming consistency.
 
-.. code:: python
+.. code-block:: python
 
    class InputFastqFile(JobTask):
        _config_section = "myprogram"
@@ -63,7 +63,7 @@ subprograms (e.g. `bwa aln`), it is advisable to create a generic
 'top' job task. In any case, a task should at least consist of the
 following:
 
-.. code:: python
+.. code-block:: python
 
    class MyProgram(JobTask):
 	   # Corresponding section and subsection in config file
