@@ -33,6 +33,7 @@ cancer
    :maxdepth: 1
 
    cancer/mutect
+   cancer/varscan
 
 files
 -----

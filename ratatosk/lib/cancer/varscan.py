@@ -12,21 +12,12 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 """
-ratatosk.sample
+Provide wrappers for `varscan <http://www.broadinstitute.org/cancer/cga/mutect>`_
 
-Organize tasks by sample. Setup global parameters for use 
+
+Classes
+-------
 """
+
 import os
-import luigi
 import logging
-import ratatosk.external
-from ratatosk.job import JobTask
-from ratatosk.jobrunner import DefaultShellJobRunner
-from cement.utils import shell
-
-logger = logging.getLogger('luigi-interface')
-
-class SampleJobRunner(DefaultShellJobRunner):
-    pass
-
-

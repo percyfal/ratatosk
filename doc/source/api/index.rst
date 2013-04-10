@@ -13,7 +13,6 @@ ratatosk modules
    interface
    job
    jobrunner
-   sample
    server
    shell
    utils

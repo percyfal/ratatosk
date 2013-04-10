@@ -29,7 +29,10 @@ from ratatosk.utils import rreplace, fullclassname
 from ratatosk.job import InputJobTask, JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner
 import ratatosk.shell as shell
-import pysam
+try:
+    import pysam
+except:
+    pass
 
 logger = logging.getLogger('luigi-interface')
 

@@ -30,20 +30,35 @@ setup(name = "ratatosk",
         # Currently works with luigi version 1.0, commit hash tag
         # da20852fa10a60a388 - would want to put this here in master
         # in case something breaks in the future
-        "luigi",
+        "simplejson",
+        "pyyaml",
+        "tornado",
+        "luigi>=1.0.1",
         "nose",
         "nose-timer",
+        "cement",
+        "pysam",
+        "pygraphviz",
         ],
       test_suite = 'nose.collector',
-      packages=[
-            'ratatosk'
-            ],
+      packages=find_packages(exclude=['ez_setup', 'test*']),
+      namespace_packages = [
+        'ratatosk',
+        'ratatosk.ext',
+        ],
+      # packages=[
+      #       'ratatosk'
+      #       ],
       package_data = {
         'ratatosk':[
             'data/grf/*',
             'data/templates/*',
             'config/*'
-            ]}
+            ]},
+      # See
+      # http://stackoverflow.com/questions/3472430/how-can-i-make-setuptools-install-a-package-thats-not-on-pypi
+      # for requiring github version
+      dependency_links = ['https://github.com/spotify/luigi/tarball/master#egg=luigi-1.0.1'],
       )
 
 os.system("git rev-parse --short --verify HEAD > ~/.ratatosk_version")

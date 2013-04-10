@@ -13,10 +13,7 @@ ratatosk - a pipeline management framework
 tasks, currently focused on, but not limited to, common
 bioinformatical tasks.
 
-Features
---------
-
-Features include
+Core features include
 
  * Simple program wrapper interface
  * Simple configuration files for defining workflows and modifying
@@ -26,10 +23,11 @@ Features include
    tasks together via the configuration file
  * Piped tasks
  * Workflow visualization
-
+ * Parallelization via the *luigi* scheduler
+ * Easy to include external library code 
 
 Documentation
-=============
+-------------
 
 .. toctree:: 
    :maxdepth: 1
@@ -44,10 +42,3 @@ Documentation
    howtos/index
    pipeline/index
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

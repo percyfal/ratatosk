@@ -85,7 +85,7 @@ Note also that `InputBamFile` has been changed to depend on
 `ratatosk.lib.files.external.BamFile`). 
 
 Resolving dependencies
-======================
+----------------------
 
 .. figure:: ../../grf/dupmetrics_to_printreads.png
    :alt: dupmetrics_to_printreads
