@@ -34,7 +34,7 @@ They should be run in this order.
 Calling via ratatosk_run.py
 ----------------------------
 
-.. code:: bash
+.. code-block:: text
 
    ratatosk_run.py SeqCap --indir inputdir --custom-config custom_config_file.yaml
    ratatosk_run.py SeqCapSummary --indir inputdir --custom-config custom_config_file.yaml

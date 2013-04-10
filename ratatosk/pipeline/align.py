@@ -18,7 +18,7 @@ merges samples and generates picard quality statistics.
 Calling via ratatosk_run.py
 ----------------------------
 
-.. code:: bash
+.. code-block:: text
 
    ratatosk_run.py Align --indir inputdir --custom-config custom_config_file.yaml
    ratatosk_run.py AlignSummary --indir inputdir --custom-config custom_config_file.yaml
