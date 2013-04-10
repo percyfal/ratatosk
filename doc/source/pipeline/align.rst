@@ -8,5 +8,7 @@ Basic alignment pipeline
    :scale: 70%
    :align: center
    
-   **Figure 1.** Align pipeline
+   **Figure 1.** Alignment pipeline. The input consists of two read
+   pairs from one sample, thus illustrating the merge operation at
+   sample level.
 

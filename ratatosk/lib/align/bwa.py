@@ -91,13 +91,13 @@ class Aln(BwaJobTask):
 
     def args(self):
         # bwa aln "-f" option seems to be broken!?!
-        if isinstance(self.input(), list):
+        if isinstance(self.input()[0], list):
             if self.is_read1:
-                return [self.bwaref, self.input()[0], ">", self.output()]
+                return [self.bwaref, self.input()[0][0], ">", self.output()]
             else:
-                return [self.bwaref, self.input()[1], ">", self.output()]
+                return [self.bwaref, self.input()[0][1], ">", self.output()]
         else:
-            return [self.bwaref, self.input(), ">", self.output()]
+            return [self.bwaref, self.input()[0], ">", self.output()]
 
 class BwaAlnWrapperTask(JobWrapperTask):
     fastqfiles = luigi.Parameter(default=[], is_list=True)
