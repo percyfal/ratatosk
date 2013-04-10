@@ -1,8 +1,3 @@
-"""
-Ratatosk seqcap pipeline module.
-
-"""
-
 # Copyright (c) 2013 Per Unneberg
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -17,6 +12,8 @@ Ratatosk seqcap pipeline module.
 # License for the specific language governing permissions and limitations under
 # the License.
 """
+Ratatosk seqcap pipeline module.
+
 The sequence capture pipeline implements the `best practice
 recommended by BROAD
 <http://www.broadinstitute.org/gatk/guide/topic?name=best-practices>`_.

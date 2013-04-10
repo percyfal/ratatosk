@@ -118,3 +118,63 @@ names, as well as coloring them by status of a task (Figure 3).
    :alt: dupmetrics_to_printreads
    
    **Figure 3.** Excerpt from variant calling pipeline showing task dependencies and task statuses.
+
+Configuration and resolution of task dependencies
+-------------------------------------------------
+
+*ratatosk* uses an internal configuration parser that parses yaml
+files in which the top two hierarchies are interpreted as sections and
+subsections:
+
+.. code:: yaml
+
+   # Main section level
+   section:
+     # Subsection level
+     subsection:
+       # Options level
+       options:
+         - -v
+       parent_task:
+         - lib.parent.task
+
+The section/subsection organization effectively provides namespaces
+for each task. The section level groups applications (e.g. *gatk*),
+whereas subsections correspond to actual programs (e.g.
+*UnifiedGenotyper*). The subsequent level corresponds to settings for
+the given task, such as program options. Consequently, it is easy to
+customize the behaviour of every program in the config file. Every key
+at the option level have defaults set for every task, so in many cases
+it is unnecessary to modify these options.
+
+In the example above, I've included the *options* key, which simply is
+the list of options passed to the program executable. The key
+*parent_task* is conceptually more interesting as it defines the tasks
+on which the current task depends. Consider figure 4.
+
+.. figure:: ../../grf/parent_task_example_intro.png
+   :scale: 40%
+   :align: center
+   :alt: parent_task_example_intro
+   
+   **Figure 4.** Resolving task dependencies
+
+This dependency graph would be defined by the following configuration
+
+.. code:: yaml
+
+   # The section TaskGrouping is defined in the python module
+   # representing the Task classes
+   TaskGrouping:
+     # Program level
+     Task:
+       parent_task:
+         - Parent
+     Parent:
+       parent_task:
+         - GrandParent1
+	 - GrandParent2
+
+Note that since *parent_task* is a list, it is possible to define
+dependencies on several parent tasks.
+
