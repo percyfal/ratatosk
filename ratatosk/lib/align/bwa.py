@@ -18,15 +18,11 @@ Provides wrappers for `bwa <http://bio-bwa.sourceforge.net/>`_.
 Classes
 --------
 """
-import os
 import re
 import luigi
-import time
-import shutil
 from ratatosk.job import InputJobTask, JobTask, JobWrapperTask, DefaultShellJobRunner, PipedTask
 from ratatosk.lib.tools.samtools import SamToBam
 from ratatosk.utils import rreplace, fullclassname
-from cement.utils import shell
 
 class BwaJobRunner(DefaultShellJobRunner):
     pass
