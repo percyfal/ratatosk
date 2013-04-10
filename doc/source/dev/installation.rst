@@ -18,7 +18,7 @@ Installation
 
 To install the development version of `ratatosk`, do
 
-.. code-block:: bash
+.. code-block:: text
 	
 	git clone https://github.com/percyfal/ratatosk
 	python setup.py develop
@@ -48,13 +48,13 @@ Running the tests
 
 Cd to the luigi test directory (`tests`) and run
 
-.. code-block:: bash
+.. code-block:: text
 
 	nosetests -v -s test_commands.py
 	
 To run a given task (e.g. TestCommand.test_bwaaln), do
 
-.. code-block:: bash
+.. code-block:: text
 
 	nosetests -v -s test_commands.py:TestCommand.test_bwaaln
 
@@ -78,13 +78,13 @@ sample, project).
 
 In order to view tasks, run
 
-.. code:: text
+.. code-block:: text
 
 	ratatoskd &
 	
 in the background and run the tests:
 
-.. code:: text
+.. code-block:: text
 
 	nosetests -v -s test_commands.py
 	

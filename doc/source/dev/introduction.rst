@@ -30,7 +30,7 @@ options, output names, and more.
 There is also a generic script, `ratatosk_run.py`, that can be used to
 call a specific task in the library:
 
-.. code:: text
+.. code-block:: text
 
    ratatosk_run.py Task --config-file configuration.yaml
 
@@ -59,7 +59,7 @@ producing an output file `file.txt.gz`, illustrated below.
 
 With Make, you can define a rule
 
-.. code:: text
+.. code-block:: text
 
    %.txt.gz: %.txt
          gzip $<
@@ -81,7 +81,7 @@ target. This is important to keep in mind, as it effects what tasks
 are run. The call to *ratatosk_run.py* would actually be
 
 
-.. code:: text
+.. code-block:: text
 
    ratatosk_run.py Task --target target.out --config-file configuration.yaml
 
@@ -126,7 +126,7 @@ Configuration and resolution of task dependencies
 files in which the top two hierarchies are interpreted as sections and
 subsections:
 
-.. code:: text
+.. code-block:: text
 
    # Main section level
    section:
@@ -161,7 +161,7 @@ on which the current task depends. Consider figure 4.
 
 This dependency graph would be defined by the following configuration
 
-.. code:: text
+.. code-block:: text
 
    # The section TaskGrouping is defined in the python module
    # representing the Task classes

@@ -8,7 +8,7 @@ Configuration parser
 subsections, treating everything below that level as
 lists/dicts/variables. An example is shown here:
 
-.. code:: text
+.. code-block:: text
 
    section:
      subsection:
@@ -29,7 +29,7 @@ section and subsection levels. For instance,
 ```_config_subsection = "Aln"```. Therefore, the following
 configuration section
 
-.. code:: text
+.. code-block:: text
 
    bwa:
      Aln:
@@ -59,7 +59,7 @@ functions have as parent class
 `ratatosk.lib.tools.picard.InputBamFile`. This can easily be modified
 in the config file to:
 
-.. code:: text
+.. code-block:: text
 
     picard:
       InputBamFile:
