@@ -33,6 +33,7 @@ Documentation
    :maxdepth: 1
 
    changes
+   contributors
    api/index
 
 .. toctree::

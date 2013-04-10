@@ -1,6 +1,8 @@
 Helper scripts
 ===============
 
+.. _ratatosk_run:
+
 ratatosk_run.py
 ---------------
 
