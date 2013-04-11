@@ -6,11 +6,11 @@ Helper scripts
 ratatosk_run.py
 ---------------
 
-*ratatosk_run.py* is a helper script that is shipped with the ratatosk
+:program:`ratatosk_run.py` is a helper script that is shipped with the ratatosk
 distribution. It collects the library wrapper tasks, thus serving as
 an interface to small tasks, as well as pipeline tasks.
 
-Running ```ratatosk_run.py -h``` shows the main options, as well as
+Running ``ratatosk_run.py -h`` shows the main options, as well as
 the available tasks (abbreviated output for clarity):
 
 .. code-block:: text
@@ -62,9 +62,9 @@ the available tasks (abbreviated output for clarity):
 To run a specific task, you use one of the positional arguments. In
 this way, it works much like a Makefile. A make command resolves
 dependencies based on the desired *target* file name, so you would do
-`make target` to generate `target`. With `ratatosk`, the target is
-passed via the `--target` option. For instance, to run Bampe you
-would do:
+``make target`` to generate ``target``. With :mod:`ratatosk`, the
+target is passed via the ``--target`` option. For instance, to run Bampe
+you would do:
 
 .. code-block:: text
 
@@ -140,8 +140,8 @@ would do:
      --restart             restart Restart pipeline from scratch. [default:
 			   False]
 
-Options specific to *Bampe* are prefixed with 'Bampe'. To actually run
-the task, provide the target name *target.bam* and run
+Options specific to :py:class:`.Bampe` are prefixed with 'Bampe'. To
+actually run the task, provide the target name *target.bam* and run
 
 .. code-block:: text
 

@@ -16,7 +16,7 @@ to create a virtual environment.
 Installation
 ------------
 
-To install the development version of `ratatosk`, do
+To install the development version of :mod:`ratatosk`, do
 
 .. code-block:: text
 	
@@ -46,13 +46,14 @@ The tests depend on the following software to run:
 Running the tests
 -----------------
 
-Cd to the luigi test directory (`tests`) and run
+Cd to the luigi test directory (``tests``) and run
 
 .. code-block:: text
 
 	nosetests -v -s test_commands.py
 	
-To run a given task (e.g. TestCommand.test_bwaaln), do
+To run a given task (e.g.
+``TestCommand.test_bwaaln``), do
 
 .. code-block:: text
 

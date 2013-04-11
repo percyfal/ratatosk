@@ -19,3 +19,5 @@ list. Some of the most pressing issues to fix include
 * Controlling the number of threads / worker
 
 * SLURM/drmaa integration 
+
+* Export configuration to Galaxy workflow

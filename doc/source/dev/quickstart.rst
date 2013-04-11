@@ -6,15 +6,16 @@ Examples in tests
 -----------------
 
 These examples are currently based on the tests in
-`ratatosk.tests.test_commands` and `ratatosk.tests.test_wrappers`.
+:py:mod:`ratatosk.tests.test_commands` and
+:py:mod:`ratatosk.tests.test_wrappers`.
 
 Creating file links
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The task :ref:`ratatosk.lib.files.fastq.FastqFileLink` creates a link
-from source to a target. The source in this case depends on an
-*external* task (:ref:`ratatosk.lib.files.external.FastqFile` meaning
-this file was created by some outside process (e.g. sequencing
+The task :py:class:`ratatosk.lib.files.fastq.FastqFileLink` creates a
+link from source to a target. The source in this case depends on an
+*external* task (:py:class:`ratatosk.lib.files.external.FastqFile`
+meaning this file was created by some outside process (e.g. sequencing
 machine).
 
 .. code-block:: text
@@ -23,25 +24,26 @@ machine).
 
 .. figure:: ../../test_fastqln.png
    :alt: Fastq link task
-   :scale: 50%
+   :scale: 30%
    :align: center
 
    **Figure 1.** Fastq link task
 
 A couple of comments are warranted. First, the boxes shows tasks,
-where the `FastqFile` is an external task. The file it points to must
-exist for the task `FastqFileLink` executes. The color of the box
-indicates status; here, green means the task has completed
-successfully. Second, every task has its own set of options that can
-be passed via the command line or in the code. In the `FastqFileLink`
-task box we can see the options that were passed to the task. For
-instance, the option `use_long_names=True` prints complete task names,
-as shown above. 
+where the :py:class:`.FastqFile` is an external task. The file it
+points to must exist for the task :py:class:`.FastqFileLink` executes.
+The color of the box indicates status; here, green means the task has
+completed successfully. Second, every task has its own set of options
+that can be passed via the command line or in the code. In the
+:py:class:`.FastqFileLink` task box we can see the options that were
+passed to the task. For instance, the option ``use_long_names=True``
+prints complete task names, as shown above.
 	
 Alignment with bwa sampe
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Here's a more useful example; paired-end alignment using `bwa`.
+Here's a more useful example; paired-end alignment using
+:program:`bwa`.
 
 .. code-block:: text
 
@@ -58,10 +60,10 @@ Here's a more useful example; paired-end alignment using `bwa`.
 Wrapping up metrics tasks
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The class :ref:`ratatosk.lib.tools.picard.PicardMetrics` subclasses
-:ref:`ratatosk.job.JobWrapperTask` that can be used to require that
-several tasks have completed. Here I've used it to group picard
-metrics tasks:
+The class :py:class:`ratatosk.lib.tools.picard.PicardMetrics`
+subclasses :py:class:`ratatosk.job.JobWrapperTask` that can be used to
+require that several tasks have completed. Here I've used it to group
+picard metrics tasks:
 
 .. code-block:: text
 
@@ -74,7 +76,7 @@ metrics tasks:
 
    **Figure 3.** Summarizing metrics with a wrapper task
 
-Here, I've set the option `--use-long-names` to `False`, which changes
+Here, I've set the option ``--use-long-names=False``, which changes
 the output to show only the class names for each task. This example
 utilizes a configuration file that links tasks together. More about
 that in the next example.

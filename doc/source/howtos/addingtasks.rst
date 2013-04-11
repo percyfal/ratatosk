@@ -4,12 +4,12 @@ Adding task wrappers
 In essence, ratatosk is a library of program wrappers. There are
 already a couple of wrappers available, but many more could easily be
 added. Here is a short HOWTO on how to add a wrapper module
-``myprogram``.
+:mod:`myprogram`.
 
 1. Create the file
 ------------------
 
-Create the file ``myprogram.py``, with at least the following imports:
+Create the file :mod:`myprogram.py`, with at least the following imports:
 
 .. code-block:: python
 
@@ -28,15 +28,17 @@ At the very least, there should exist the following:
    class MyProgramJobRunner(DefaultShellJobRunner):
         pass
 
-This is in part for consistency, in part in case the ``myprogram``
+This is in part for consistency, in part in case the :program:`myprogram`
 program group needs special handling of command construction (see e.g.
-:ref:`ratatosk.lib.tools.gatk`).
+:ref:`ratatosk.lib.tools.gatk <ratatosk.lib.tools.gatk>`).
 
 3. Add default inputs
 ----------------------------
 
-There should be at least one input class that has as ``parent_task`` one of the
-:ref:`ratatosk.lib.files.external` classes. Mainly here for naming consistency.
+There should be at least one input class that has as ``parent_task``
+one of the :ref:`ratatosk.lib.files.external
+<ratatosk.lib.files.external>` classes. Mainly here for naming
+consistency.
 
 .. code-block:: python
 
@@ -51,9 +53,10 @@ There should be at least one input class that has as ``parent_task`` one of the
 --------------------
 
 Once steps 1-3 are done, tasks can be added. If the program has
-subprograms (e.g. ``bwa aln``), it is advisable to create a generic
-'top' job task; see for instance how :ref:`ratatosk.lib.align.bwa` is
-set up). In any case, a task should at least consist of the following:
+subprograms (e.g. :program:`bwa aln`), it is advisable to create a
+generic 'top' job task; see for instance how
+:ref:`ratatosk.lib.align.bwa <ratatosk.lib.align.bwa>` is set up). In
+any case, a task should at least consist of the following:
 
 .. code-block:: python
 
@@ -124,9 +127,11 @@ set up). In any case, a task should at least consist of the following:
 	   # def output(self):
 	   #     return luigi.LocalTarget(self.target)
 
-Note that in many cases you only have to reimplement ``job_runner``
-and ``args``, and in some cases the ``requires`` function.
+Note that in many cases you only have to reimplement
+:meth:`job_runner() <ratatosk.job.JobTask.job_runner>` and
+:meth:`args() <ratatosk.job.BaseJobTask.args>`, and in some cases the
+:meth:`requires() <ratatosk.job.BaseJobTask.requires>` function.
 
 To actually run the task, you need to import the module in your
-script, and ``luigi`` will automagically add the task ``MyProgram``
-and its options.
+script, and :mod:`luigi` will automagically add the task
+:class:`MyProgram` and its options.
