@@ -38,8 +38,8 @@ class TestConfigParser(unittest.TestCase):
         os.environ["GATK_HOME_MOCK"] = os.path.abspath(os.curdir)
         os.environ["PICARD_HOME_MOCK"] = os.path.abspath(os.curdir)
         with open("mock.yaml", "w") as fp:
-            fp.write(yaml.safe_dump({'gatk':{'java':'java', 'path': '$GATK_HOME_MOCK'},
-                                     'picard':{'java':'java', 'path': '$PICARD_HOME_MOCK/test'}}, default_flow_style=False))
+            fp.write(yaml.safe_dump({'ratatosk.lib.tools.gatk':{'java':'java', 'path': '$GATK_HOME_MOCK'},
+                                     'ratatosk.lib.tools.picard':{'java':'java', 'path': '$PICARD_HOME_MOCK/test'}}, default_flow_style=False))
 
     @classmethod
     def tearDownClass(cls):
@@ -66,8 +66,8 @@ class TestConfigParser(unittest.TestCase):
     def test_get_list(self):
         """Make sure list parsing ok"""
         cnf.add_config_path(configfile)
-        self.assertIsInstance(cnf.get(section="gatk", option="knownSites"), list)
-        self.assertListEqual(sorted(os.path.basename(x) for x in cnf.get(section="gatk", option="knownSites")), 
+        self.assertIsInstance(cnf.get(section="ratatosk.lib.tools.gatk", option="knownSites"), list)
+        self.assertListEqual(sorted(os.path.basename(x) for x in cnf.get(section="ratatosk.lib.tools.gatk", option="knownSites")), 
                              ['knownSites1.vcf', 'knownSites2.vcf'])
         cnf.del_config_path(configfile)
 
@@ -86,15 +86,15 @@ class TestConfigParser(unittest.TestCase):
     def test_expand_vars(self):
         cnf = get_config()
         cnf.add_config_path("mock.yaml")
-        self.assertEqual(os.getenv("GATK_HOME_MOCK"), cnf._sections['gatk']['path'])
-        self.assertEqual(os.path.join(os.getenv("PICARD_HOME_MOCK"), "test"), cnf._sections['picard']['path'])
+        self.assertEqual(os.getenv("GATK_HOME_MOCK"), cnf._sections['ratatosk.lib.tools.gatk']['path'])
+        self.assertEqual(os.path.join(os.getenv("PICARD_HOME_MOCK"), "test"), cnf._sections['ratatosk.lib.tools.picard']['path'])
         cnf.del_config_path("mock.yaml")
 
 class TestConfigUpdate(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         with open("mock.yaml", "w") as fp:
-            fp.write(yaml.safe_dump({'gatk':{'parent_task':'another.class', 'UnifiedGenotyper':{'parent_task': 'no.such.class'}}}, default_flow_style=False))
+            fp.write(yaml.safe_dump({'ratatosk.lib.tools.gatk':{'parent_task':'another.class', 'UnifiedGenotyper':{'parent_task': 'no.such.class'}}}, default_flow_style=False))
 
     @classmethod
     def tearDownClass(self):
@@ -146,7 +146,7 @@ class TestGlobalConfig(unittest.TestCase):
         cnf.add_config_path(ratatosk_file)
         ug = ratatosk.lib.tools.gatk.UnifiedGenotyper()
         ug._update_config(cnf)
-        self.assertEqual(backend.__global_config__['picard'], self.ratatosk['picard'])
-        self.assertEqual(backend.__global_config__['gatk'].get('UnifiedGenotyper').get('options'),
+        self.assertEqual(backend.__global_config__['ratatosk.lib.tools.picard'], self.ratatosk['ratatosk.lib.tools.picard'])
+        self.assertEqual(backend.__global_config__['ratatosk.lib.tools.gatk'].get('UnifiedGenotyper').get('options'),
                          ('-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH',))
         cnf.clear()

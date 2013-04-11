@@ -81,12 +81,11 @@ class BaseJobTask(luigi.Task):
     can_multi_thread = False
     max_memory_gb = 3
 
-    # Configuration sections
-    _config_section = None
-    _config_subsection = None
-
     # Handlers attached to a task
     _handlers = {}
+
+    # Configuration, main section
+    _config_section = None
 
     # Parent task classes
     _parent_cls = []
@@ -160,9 +159,16 @@ class BaseJobTask(luigi.Task):
 
         :returns: an updated parameter list for the task.
         """
+        # Update global configuration here for printing everything in PrintConfig task
+        backend.__global_config__ = update(backend.__global_config__, vars(config)["_sections"])
         # Set section to module name and subsection to class name
+        # unless _config_section and _config_subsection set. The
+        # latter are needed for classes that live outside their
+        # namespace, e.g. subclasses in pipelines
         _section = self.__module__
         _subsection =  self.__class__.__name__
+        if self._config_section:
+            _section = self._config_section
         if not config:
             return kwargs
         if not config.has_section(_section):

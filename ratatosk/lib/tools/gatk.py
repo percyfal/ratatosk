@@ -77,19 +77,14 @@ class GATKJobRunner(DefaultShellJobRunner):
             raise Exception("Job '{}' failed: \n{}".format(cmd, " ".join([stderr])))
 
 class InputBamFile(InputJobTask):
-    _config_section = "gatk"
-    _config_subsection = "InputBamFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
     suffix = luigi.Parameter(default=".bam")
 
 class InputVcfFile(InputJobTask):
-    _config_section = "gatk"
-    _config_subsection = "input_vcf_file"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
     suffix = luigi.Parameter(default=".vcf")
 
 class GATKJobTask(JobTask):
-    _config_section = "gatk"
     exe_path = luigi.Parameter(default=os.getenv("GATK_HOME") if os.getenv("GATK_HOME") else os.curdir)
     executable = luigi.Parameter(default="GenomeAnalysisTK.jar")
     suffix = luigi.Parameter(default=".bam")
@@ -134,7 +129,6 @@ class GATKIndexedJobTask(GATKJobTask):
 
 
 class RealignerTargetCreator(GATKIndexedJobTask):
-    _config_subsection = "RealignerTargetCreator"
     sub_executable = "RealignerTargetCreator"
     known = luigi.Parameter(default=(), is_list=True)
     suffix = luigi.Parameter(default=".intervals")
@@ -156,7 +150,6 @@ class RealignerTargetCreator(GATKIndexedJobTask):
         return retval
 
 class IndelRealigner(GATKIndexedJobTask):
-    _config_subsection = "IndelRealigner"
     sub_executable = "IndelRealigner"
     known = luigi.Parameter(default=(), is_list=True)
     label = luigi.Parameter(default=".realign")
@@ -182,7 +175,6 @@ class IndelRealigner(GATKIndexedJobTask):
         return retval
 
 class BaseRecalibrator(GATKIndexedJobTask):
-    _config_subsection = "BaseRecalibrator"
     sub_executable = "BaseRecalibrator"
     knownSites = luigi.Parameter(default=(), is_list=True)
     suffix = luigi.Parameter(default=".recal_data.grp")
@@ -204,7 +196,6 @@ class BaseRecalibrator(GATKIndexedJobTask):
         return retval
 
 class PrintReads(GATKJobTask):
-    _config_subsection = "PrintReads"
     sub_executable = "PrintReads"
     parent_task = luigi.Parameter(default=('ratatosk.lib.tools.gatk.InputBamFile',
                                            'ratatosk.lib.tools.gatk.BaseRecalibrator'), is_list=True)
@@ -221,7 +212,6 @@ class PrintReads(GATKJobTask):
         return retval
 
 class ClipReads(GATKJobTask):
-    _config_subsection = "ClipReads"
     sub_executable = "ClipReads"
     # Tailored for HaloPlex
     options = luigi.Parameter(default=("--cyclesToTrim 1-5 --clipRepresentation WRITE_NS",), is_list=True)
@@ -236,7 +226,6 @@ class ClipReads(GATKJobTask):
         return retval
 
 class VariantEval(GATKJobTask):
-    _config_subsection = "VariantEval"
     sub_executable = "VariantEval"
     options = luigi.Parameter(default=("-ST Filter -l INFO --doNotUseAllStandardModules --evalModule CompOverlap --evalModule CountVariants --evalModule GenotypeConcordance --evalModule TiTvVariantEvaluator --evalModule ValidationReport --stratificationModule Filter",), is_list=True)
     dbsnp = luigi.Parameter(default=None)
@@ -262,7 +251,6 @@ class VariantEval(GATKJobTask):
         return retval
 
 class VariantAnnotator(GATKJobTask):
-    _config_subsection = "VariantAnnotator"
     sub_executable = "VariantAnnotator"
     options = luigi.Parameter(default=("",), is_list=True)
     dbsnp = luigi.Parameter(default=None)
@@ -295,13 +283,14 @@ class VariantAnnotator(GATKJobTask):
 # would be convenient to "lock" this version for this task, meaning
 # ratatosk.lib.annotation.snpeff.snpEff must be version 2.0.5
 class VariantSnpEffAnnotator(VariantAnnotator):
-    _config_subsection = "VariantSnpEffAnnotator"
     label = luigi.Parameter(default="-annotated")
     parent_task = luigi.Parameter(default=("ratatosk.lib.tools.gatk.InputVcfFile",
                                            "ratatosk.lib.annotation.snpeff.snpEff"), is_list=True)
     suffix = luigi.Parameter(default=(".vcf",), is_list=True)
 
     def args(self):
+        print [x.path for x in self.input()]
+        print [x for x in self.input()]
         retval = ["--variant", self.input()[0], "--out", self.output(), "--snpEffFile", self.input()[1]]
         if not self.ref:
             raise Exception("need reference for VariantAnnotator")
@@ -310,7 +299,6 @@ class VariantSnpEffAnnotator(VariantAnnotator):
         return retval
         
 class UnifiedGenotyper(GATKIndexedJobTask):
-    _config_subsection = "UnifiedGenotyper"
     sub_executable = "UnifiedGenotyper"
     options = luigi.Parameter(default=("-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH",), is_list=True)
     suffix = luigi.Parameter(default=".vcf")
@@ -349,7 +337,6 @@ class SplitUnifiedGenotyper(UnifiedGenotyper):
         return "".join(base[0:-1]) + parent_cls().sfx()
 
 class CombineVariants(GATKJobTask):
-    _config_subsection = "CombineVariants"
     sub_executable = "CombineVariants"
     suffix = luigi.Parameter(default=".vcf")
     label = luigi.Parameter(default="-variants")
@@ -398,7 +385,6 @@ class CombineVariants(GATKJobTask):
         return retval
 
 class SelectVariants(GATKJobTask):
-    _config_subsection = "SelectVariants"
     sub_executable = "SelectVariants"
     suffix = luigi.Parameter(default=".vcf")
     label = luigi.Parameter(default="-all")
@@ -419,12 +405,10 @@ class SelectVariants(GATKJobTask):
         return retval
 
 class SelectSnpVariants(SelectVariants):
-    _config_subsection = "SelectSnpVariants"
     label = luigi.Parameter(default="-snp")
     selectType = luigi.Parameter(default=("--selectTypeToInclude", "SNP"), is_list=True)
 
 class SelectIndelVariants(SelectVariants):
-    _config_subsection = "SelectIndelVariants"
     label = luigi.Parameter(default="-indel")
     selectType = luigi.Parameter(default=("--selectTypeToInclude", "INDEL",
                                           "--selectTypeToInclude", "MIXED",
@@ -439,7 +423,6 @@ class SelectIndelVariants(SelectVariants):
 class VariantRecalibrator(GATKJobTask):
     """Generic VariantRecalibrator task from which specialized
     recalibration tasks inherit"""
-    _config_subsection = "VariantRecalibrator"
     sub_executable = "VariantRecalibrator"
     label = luigi.Parameter(default=None)
     mode = luigi.Parameter(default="BOTH")
@@ -465,7 +448,6 @@ class VariantRecalibrator(GATKJobTask):
         return retval
 
 class VariantSnpRecalibrator(VariantRecalibrator):
-    _config_subsection = "VariantSnpRecalibrator"
     label = luigi.Parameter(default=None)
     mode = luigi.Parameter(default="SNP")
     suffix = luigi.Parameter(default=(".tranches", ".recal"))
@@ -507,7 +489,6 @@ class VariantSnpRecalibratorExome(VariantSnpRecalibrator):
     to your command line, for example)
     """
 
-    _config_subsection = "VariantSnpRecalibratorRegional"
     options = luigi.Parameter(default=( 
                               "-an", "QD",
                               "-an", "HaplotypeScore",
@@ -527,7 +508,6 @@ class VariantIndelRecalibrator(VariantRecalibrator):
     more than the recommended 30 samples in your exome sequencing
     project
     """
-    _config_subsection = "VariantIndelRecalibrator"
     label = luigi.Parameter(default=None)
     mode = luigi.Parameter(default="INDEL")
     train_indels = luigi.Parameter(default=None)
@@ -550,7 +530,6 @@ class VariantIndelRecalibrator(VariantRecalibrator):
 #
 class VariantFiltration(GATKJobTask):
     """Generic VariantFiltration class"""
-    _config_subsection = "VariantFiltration"
     sub_executable = "VariantFiltration"
     parent_task = luigi.Parameter(default="ratatosk.lib.tools.gatk.InputVcfFile")
     label = luigi.Parameter(default=".filtered")
@@ -565,7 +544,6 @@ class VariantFiltration(GATKJobTask):
 
 class VariantFiltrationExp(VariantFiltration):
     """Perform hard filtering using JEXL expressions"""
-    _config_subsection = "VariantFiltrationExp"
     expressions = luigi.Parameter(default=(), is_list=True)
 
     def opts(self):
@@ -577,7 +555,6 @@ class VariantFiltrationExp(VariantFiltration):
 
 class VariantSnpFiltrationExp(VariantFiltrationExp):
     """Perform hard filtering using JEXL expressions"""
-    _config_subsection = "VariantSnpFiltrationExp"
     label = luigi.Parameter(default="-filterSNP")
     expressions = luigi.Parameter(default=("QD < 2.0", "MQ < 40.0", "FS > 60.0",
                                            "HaplotypeScore > 13.0",
@@ -586,7 +563,6 @@ class VariantSnpFiltrationExp(VariantFiltrationExp):
 
 class VariantIndelFiltrationExp(VariantFiltrationExp):
     """Perform hard filtering using JEXL expressions"""
-    _config_subsection = "VariantIndelFiltrationExp"
     label = luigi.Parameter(default="-filterINDEL")
     expressions = luigi.Parameter(default=("QD < 2.0", "ReadPosRankSum < -20.0", "FS > 200.0"), is_list=True)
 
@@ -595,7 +571,6 @@ class VariantIndelFiltrationExp(VariantFiltrationExp):
 # ApplyRecalibration
 #
 class ApplyRecalibration(GATKJobTask):
-    _config_subsection = "ApplyRecalibration"
     sub_executable = "ApplyRecalibration"
     label = luigi.Parameter(default="-filter")
     mode = luigi.Parameter(default="SNP")
@@ -619,7 +594,6 @@ class ApplyRecalibration(GATKJobTask):
     
     
 class ReadBackedPhasing(GATKJobTask):
-    _config_subsection = "ReadBackedPhasing"
     sub_executable = "ReadBackedPhasing"
     label = luigi.Parameter(default="-phased")
     parent_task = luigi.Parameter(default=('ratatosk.lib.tools.gatk.InputBamFile',

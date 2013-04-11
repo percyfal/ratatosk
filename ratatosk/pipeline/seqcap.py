@@ -57,8 +57,8 @@ class CombineFilteredVariants(CombineVariants):
     CombineVariants is called elsewhere in pipeline so this class is
     needed to get its own namespace in the configuration file.
     """
-    _config_section = "gatk"
-    _config_subsection = "CombineFilteredVariants"
+    _config_section = "ratatosk.lib.tools.gatk"
+
     parent_task = luigi.Parameter(default=("ratatosk.pipeline.seqcap.FiltrationWrapper",
                                            "ratatosk.lib.tools.gatk.InputBamFile",), is_list=True)
     label = "-combined"
@@ -94,8 +94,7 @@ class FiltrationWrapper(JobWrapperTask):
 
     
     """
-    _config_section = "SeqCapPipeline"
-    _config_subsection = "FiltrationWrapper"
+    _config_section = "ratatosk.pipeline.seqcap"
     label = None
     suffix = ""
 
@@ -127,8 +126,6 @@ class SelectVariantsWrapper(JobWrapperTask):
                 SelectIndelVariants(target=self.target + SelectIndelVariants().label + SelectIndelVariants().parent()[0]().sfx())]
 
 class SeqCapPipeline(PipelineTask):
-    _config_section = "pipeline"
-    _config_subsection = "SeqCap"
     indir = luigi.Parameter(description="Where raw data lives", default=None)
     outdir = luigi.Parameter(description="Where analysis takes place", default=None)
     sample = luigi.Parameter(default=[], description="Samples to process.", is_list=True)

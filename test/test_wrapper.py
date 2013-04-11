@@ -124,7 +124,7 @@ class TestMiscWrappers(unittest.TestCase):
         os.unlink(outfile)
 
     def test_cutadapt(self):
-        task = ratatosk.lib.utils.cutadapt.CutadaptJobTask(target=fastq1.replace(".fastq.gz", ".trimmed.fastq.gz"), read1_suffix="_1")
+        task = ratatosk.lib.utils.cutadapt.Cutadapt(target=fastq1.replace(".fastq.gz", ".trimmed.fastq.gz"), read1_suffix="_1")
         # Needed in order to override pipeconf.yaml. This is a bug;
         # setting it in class instantiation should override config
         # file settings
@@ -137,14 +137,14 @@ class TestMiscWrappers(unittest.TestCase):
     # since the output directory exists. This shouldn't affect the
     # behaviour of fastqc job tasks though
     def test_fastqc(self):
-        task = ratatosk.lib.tools.fastqc.FastQCJobTask(target='data/sample1_1_fastqc')
+        task = ratatosk.lib.tools.fastqc.FastQC(target='data/sample1_1_fastqc')
         self.assertEqual(['fastqc', '-o', 'data/sample1_1_fastqc', 'data/sample1_1.fastq.gz'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
         
     def test_resyncmates_after_trim(self):
-        task = ratatosk.lib.utils.misc.ResyncMatesJobTask(target=[fastq1.replace(".fastq.gz", ".trimmed.sync.fastq.gz"),
+        task = ratatosk.lib.utils.misc.ResyncMates(target=[fastq1.replace(".fastq.gz", ".trimmed.sync.fastq.gz"),
                                                           fastq2.replace(".fastq.gz", ".trimmed.sync.fastq.gz")],
-                                                          parent_task=('ratatosk.lib.utils.cutadapt.CutadaptJobTask','ratatosk.lib.utils.cutadapt.CutadaptJobTask',),
+                                                          parent_task=('ratatosk.lib.utils.cutadapt.Cutadapt','ratatosk.lib.utils.cutadapt.Cutadapt',),
                                                          executable="resyncMates.pl")
         self.assertEqual(['resyncMates.pl', '-i', 'data/sample1_1.trimmed.fastq.gz', '-j', 'data/sample1_2.trimmed.fastq.gz', '-o', 'data/sample1_1.trimmed.sync.fastq.gz', '-p', 'data/sample1_2.trimmed.sync.fastq.gz'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))

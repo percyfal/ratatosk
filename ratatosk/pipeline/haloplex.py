@@ -56,8 +56,7 @@ class RawUnifiedGenotyper(UnifiedGenotyper):
     to generate a list of raw candidates around which realignment is
     done.
     """
-
-    _config_subsection = "RawUnifiedGenotyper"
+    _config_section = "ratatosk.lib.tools.gatk"
     parent_task = luigi.Parameter(default=("ratatosk.lib.tools.picard.MergeSamFiles", "ratatosk.lib.tools.picard.PicardMetrics"), is_list=True)
     options = luigi.Parameter(default=("-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH",), is_list=True)
     label = luigi.Parameter(default=".BOTH.raw")
@@ -67,15 +66,12 @@ class VariantHaloFiltration(VariantFiltration):
     filtering haloplex variant calls
 
     """
-
-    _config_subsection = "VariantHaloFiltration"
+    _config_section = "ratatosk.lib.tools.gatk"
     # Options from Halo
     options = luigi.Parameter(default=('--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL > 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 1.5" --filterName "LowQD"',), is_list=True)
 
 
 class HaloPipeline(PipelineTask):
-    _config_section = "pipeline"
-    _config_subsection = "HaloPlex"
     # Weird: after subclassing job.PipelineTask, not having a default
     # here throws an incomprehensible error
     indir = luigi.Parameter(description="Where raw data lives", default=None)
@@ -110,10 +106,8 @@ class HaloPlex(HaloPipeline):
         variant_targets = ["{}.{}".format(x[1], self.final_target_suffix) for x in self.targets]
         return [VariantEval(target=tgt) for tgt in variant_targets]
 
-
-
 class HaloBgzip(Bgzip):
-    _config_subsection = "HaloBgzip"
+    _config_section = "ratatosk.lib.variation.tabix"
     parent_task = luigi.Parameter(default=("ratatosk.lib.variation.htslib.VcfMerge", ), is_list=True)
 
 class HaloPlexSummary(HaloPipeline):
