@@ -454,7 +454,7 @@ class NullJobTask(JobTask):
 class GenericWrapperTask(JobWrapperTask):
     """Generic task wrapper.
 
-    NOTE: Still under development
+    .. note:: Still under development
 
     The idea is to create a dependency to any task, so that the
     calling script effectively works as a make file.

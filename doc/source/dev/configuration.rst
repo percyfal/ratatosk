@@ -4,7 +4,7 @@ Ratatosk configuration
 Configuration parser
 --------------------
 
-*ratatosk* uses a yaml config parser that enforces section and
+ratatosk uses a yaml config parser that enforces section and
 subsections, treating everything below that level as
 lists/dicts/variables. An example is shown here:
 
@@ -18,16 +18,17 @@ lists/dicts/variables. An example is shown here:
 
 The parser maps everything below 'options' to regular python objects
 (list in this case). An option is retrieved via the function
-`config_obj.get(section=section, subsection=subsection,
-option=options)`.
+:py:meth:`.RatatoskConfigParser.get`
 
 The reason for this is best explained by looking at the tasks.
-Remember that every task by default has a *_config_section* and a
-*_config_subsection* attribute. These attributes are mapped to the
+Remember that every task by default has a ``_config_section`` and a
+``_config_subsection`` attribute. These attributes are mapped to the
 section and subsection levels. For instance,
-`ratatosk.lib.align.bwa.Aln` has ```_config_section = "bwa"``` and
-```_config_subsection = "Aln"```. Therefore, the following
-configuration section
+``ratatosk.lib.align.bwa.Aln`` has ``_config_section = "bwa"`` and
+``_config_subsection = "Aln"``. Therefore, the following
+configuration section :program:`bwa`
+
+
 
 .. code-block:: text
 
@@ -37,27 +38,28 @@ configuration section
 	 - -e 2
 	 - -l 40
 
-will run the command ```bwa aln -e 2 -l 40 ...```.
+will run the command ``bwa aln -e 2 -l 40 ...``.
 
 
 Working with parent tasks
 -------------------------
 
-All tasks have a default requirement, which I call `parent_task`. In
-the current implementation, all tasks subclass `ratatosk.job.JobTask`,
-which provides a `parent_task` class variable. This variable can be
-changed, either at the command line (option `--parent-task`) or in a
-configuration file. The `parent_task` variable is a string
-representing a class in a python module, and could therefore be any
-python code of choice. In addition to the `parent_task` variable,
-`JobTask` provides variables `_config_section` and
-`_config_subsection` that point to sections and subsections in the
-config file, which should be in yaml format (see
-`google app` <https://developers.google.com/appengine/docs/python/config/appconfig>`_
-for nicely structured config files). By default, all `metrics`
+All tasks have a default requirement, which I call ``parent_task``. In
+the current implementation, all tasks subclass
+``ratatosk.job.JobTask``, which provides a ``parent_task`` class
+variable. This variable can be changed, either at the command line
+(option ``--parent-task``) or in a configuration file. The
+``parent_task`` variable is a string representing a class in a python
+module, and could therefore be any python code of choice. In addition
+to the ``parent_task`` variable, ``JobTask`` provides variables
+``_config_section`` and ``_config_subsection`` that point to sections
+and subsections in the config file, which should be in yaml format
+(see `google app
+<https://developers.google.com/appengine/docs/python/config/appconfig>`_
+for nicely structured config files). By default, all ``metrics``
 functions have as parent class
-`ratatosk.lib.tools.picard.InputBamFile`. This can easily be modified
-in the config file to:
+``ratatosk.lib.tools.picard.InputBamFile``. This can easily be
+modified in the config file to:
 
 .. code-block:: text
 
@@ -80,12 +82,15 @@ in the config file to:
         parent_task: ratatosk.lib.align.BwaSampe
 
 
-Note also that `InputBamFile` has been changed to depend on
-`ratatosk.lib.tools.samtools.SamToBam` (default value is
-`ratatosk.lib.files.external.BamFile`). 
+Note also that ``InputBamFile`` has been changed to depend on
+``ratatosk.lib.tools.samtools.SamToBam`` (default value is
+``ratatosk.lib.files.external.BamFile``). 
 
 Resolving dependencies
 ----------------------
+
+The previous examples have assumed that tasks have one parent task.
+However, many applications depend on more than one input (Figure 1).
 
 .. figure:: ../../grf/dupmetrics_to_printreads.png
    :alt: dupmetrics_to_printreads
@@ -93,3 +98,40 @@ Resolving dependencies
    :align: center
 
    **Figure 1.** Excerpt from variant calling pipeline
+
+Therefore, the ``parent_task`` variable can also be a list of tasks.
+For instance, in Figure 1, the dependencies for ``gatk PrintReads``
+would be defined by the following configuration:
+
+.. code-block:: text
+
+   gatk:
+     PrintReads:
+       parent_task:
+	 - ratatosk.lib.tools.gatk.DuplicationMetrics
+	 - ratatosk.lib.tools.gatk.BaseRecalibrator
+	 - ratatosk.lib.tools.gatk.PicardMetrics
+
+The order is important here. For gatk tasks, the first argument should
+be a bam/sam file. Since ``gatk PrintReads`` also requires output from
+``gatk BaseRecalibrator``, the second parent task is
+``ratatosk.lib.tools.gatk.BaseRecalibrator``. These are also the
+default parent tasks. In addition, the task
+``ratatosk.lib.tools.gatk.PicardMetrics`` has been set as a parent
+task. Whenever you add more dependencies than defaults, ratatosk will
+try to load the additional parent, and if that fails, fall back on
+:class:`ratatosk.job.NullJobTask`, a task that always succeeds. 
+
+
+.. note:: Setting additional parent tasks only work if 1) it is a
+   wrapper task that generates its targets only from it's own parents
+   or 2) it uses the same target as the first default task
+
+Generating source names
+-----------------------
+
+.. warning:: The current implementation is confusing and will have to
+   be reimplemented. See issue ...
+
+
+

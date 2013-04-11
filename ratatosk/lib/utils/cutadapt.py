@@ -30,7 +30,6 @@ import logging
 from ratatosk.job import InputJobTask, JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner, DefaultGzShellJobRunner
 from ratatosk.utils import rreplace
-from cement.utils import shell
 
 logger = logging.getLogger('luigi-interface')
 

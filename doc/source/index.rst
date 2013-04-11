@@ -9,7 +9,7 @@ ratatosk - a pipeline management framework
 .. warning:: ratatosk is currently in pre-release status and is under
    very active development. Use it at your own risk.
 
-`ratatosk` is a library of `luigi <https://github.com/spotify/luigi>`_
+``ratatosk`` is a library of `luigi <https://github.com/spotify/luigi>`_
 tasks, currently focused on, but not limited to, common
 bioinformatical tasks.
 

@@ -1,15 +1,15 @@
 Adding task wrappers
 ====================
 
-In essence, `ratatosk` is a library of program wrappers. There are
+In essence, ratatosk is a library of program wrappers. There are
 already a couple of wrappers available, but many more could easily be
 added. Here is a short HOWTO on how to add a wrapper module
-`myprogram`.
+``myprogram``.
 
 1. Create the file
 ------------------
 
-Create the file `myprogram.py` (doh!), with at least the following imports:
+Create the file ``myprogram.py``, with at least the following imports:
 
 .. code-block:: python
 
@@ -28,14 +28,14 @@ At the very least, there should exist the following:
    class MyProgramJobRunner(DefaultShellJobRunner):
         pass
 
-This is in part for consistency, in part in case the `myprogram`
+This is in part for consistency, in part in case the ``myprogram``
 program group needs special handling of command construction (see e.g.
 :ref:`ratatosk.lib.tools.gatk`).
 
 3. Add default inputs
 ----------------------------
 
-There should be at least one input class that subclasses one of the
+There should be at least one input class that has as ``parent_task`` one of the
 :ref:`ratatosk.lib.files.external` classes. Mainly here for naming consistency.
 
 .. code-block:: python
@@ -46,22 +46,14 @@ There should be at least one input class that subclasses one of the
        target = luigi.Parameter(default=None)
        parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
 
-       def requires(self):
-	   cls = self.set_parent_task()
-	   return cls(target=self.target)
-       def output(self):
-	   return luigi.LocalTarget(self.target)
-       def run(self):
-	   pass
-
 
 4. Add wrapper tasks
 --------------------
 
 Once steps 1-3 are done, tasks can be added. If the program has
-subprograms (e.g. `bwa aln`), it is advisable to create a generic
-'top' job task. In any case, a task should at least consist of the
-following:
+subprograms (e.g. ``bwa aln``), it is advisable to create a generic
+'top' job task; see for instance how :ref:`ratatosk.lib.align.bwa` is
+set up). In any case, a task should at least consist of the following:
 
 .. code-block:: python
 
@@ -94,24 +86,22 @@ following:
 	   # Adds a label to parent_task target
 	   add_label = luigi.Parameter(default=())
 
-
 	   # Must be present
 	   def job_runner(self):
-	   return MyProgramJobRunner()
+	       return MyProgramJobRunner()
 
 	   # Here gather the *required* arguments to 'myprogram'. Often input
 	   # redirected to output suffices
 	   def args(self):
 	       return [self.input(), ">", self.output()]
 
-
 	   # The following functions are inherited from JobTask and changing
 	   # their behaviour is often not necessary
 
 	   # For single requirements, the BaseJobTask function often
 	   # suffices. For more complex requirements, a reimplementation is
-	   # needed. Idea is to generate the source name of the parent class
-	   # that was used to generate the target
+	   # needed. Idea is to generate the target name of the parent class
+	   # as source to the current task
 	   # def requires(self):
 	   #     cls = self.parent()[0]
 	   #     return cls(target=self.source()[0])
@@ -134,9 +124,9 @@ following:
 	   # def output(self):
 	   #     return luigi.LocalTarget(self.target)
 
-Note that in many cases you only have to reimplement `job_runner` and
-`args`, and in some cases the `requires` function.
+Note that in many cases you only have to reimplement ``job_runner``
+and ``args``, and in some cases the ``requires`` function.
 
 To actually run the task, you need to import the module in your
-script, and `luigi` will automagically add the task `MyProgram` and
-its options.
+script, and ``luigi`` will automagically add the task ``MyProgram``
+and its options.
