@@ -97,7 +97,6 @@ class HaloPipeline(PipelineTask):
         if self.outdir is None:
             self.outdir = self.indir
         self.targets = [tgt for tgt in self.target_iterator()]
-        
         if self.outdir != self.indir and self.targets:
             self.targets = make_fastq_links(self.targets, self.indir, self.outdir)
         # Finally register targets in backend
@@ -110,6 +109,8 @@ class HaloPlex(HaloPipeline):
             return []
         variant_targets = ["{}.{}".format(x[1], self.final_target_suffix) for x in self.targets]
         return [VariantEval(target=tgt) for tgt in variant_targets]
+
+
 
 class HaloBgzip(Bgzip):
     _config_subsection = "HaloBgzip"
