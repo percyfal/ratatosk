@@ -379,6 +379,8 @@ class BaseJobTask(luigi.Task):
 
         :param parent_cls: parent class
         :param diff_label: the "difference" in labels between self and parent.  E.g. if self.target=file.merge.sort.recal.bam depends on task with output file.merge.bam, and self.label=.recal, we would need to set the difference (.sort) here.
+        :param add_label: label that should be added to parent source, e.g. read suffix 
+
 
         :return: parent task target name (source)
         """
