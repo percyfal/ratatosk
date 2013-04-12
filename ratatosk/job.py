@@ -81,12 +81,11 @@ class BaseJobTask(luigi.Task):
     can_multi_thread = False
     max_memory_gb = 3
 
-    # Configuration sections
-    _config_section = None
-    _config_subsection = None
-
     # Handlers attached to a task
     _handlers = {}
+
+    # Configuration, main section
+    _config_section = None
 
     # Parent task classes
     _parent_cls = []
@@ -114,7 +113,6 @@ class BaseJobTask(luigi.Task):
                 custom_config.add_config_path(custom_config_file)
                 kwargs = self._update_config(custom_config, disable_parent_task_update=True, *args, **kwargs)
         super(BaseJobTask, self).__init__(*args, **kwargs)
-
         # Register parent tasks
         parents = [v for k, v in self.get_param_values(params, args, kwargs) if k == "parent_task"].pop()
         # In case parent_task is defined as a string, not a list
@@ -163,16 +161,24 @@ class BaseJobTask(luigi.Task):
         """
         # Update global configuration here for printing everything in PrintConfig task
         backend.__global_config__ = update(backend.__global_config__, vars(config)["_sections"])
+        # Set section to module name and subsection to class name
+        # unless _config_section and _config_subsection set. The
+        # latter are needed for classes that live outside their
+        # namespace, e.g. subclasses in pipelines
+        _section = self.__module__
+        _subsection =  self.__class__.__name__
+        if self._config_section:
+            _section = self._config_section
         if not config:
             return kwargs
-        if not config.has_section(self._config_section):
+        if not config.has_section(_section):
             return kwargs
         params = self.get_params()
         param_values = {x[0]:x[1] for x in self.get_param_values(params, args, kwargs)}
-        if not self._config_subsection:
-            d = {self._config_section:param_values}
+        if not _subsection:
+            d = {_section:param_values}
         else:
-            d = {self._config_section:{self._config_subsection:param_values}}
+            d = {_section:{_subsection:param_values}}
         backend.__global_config__ = update(backend.__global_config__, d)
         for key, value in self.get_params():
             new_value = None
@@ -181,11 +187,11 @@ class BaseJobTask(luigi.Task):
                 new_value = param_values.get(key, None)
                 logger.debug("option '{0}'; got value '{1}' from command line, overriding configuration file setting default '{2}' for task class '{3}'".format(key, new_value, value.default, self.__class__))
             else:
-                if config.has_key(self._config_section, key):
-                    new_value = config.get(self._config_section, key)
-                if config.has_section(self._config_section, self._config_subsection):
-                    if config.has_key(self._config_section, key, self._config_subsection):
-                        new_value = config.get(self._config_section, key, self._config_subsection)
+                if config.has_key(_section, key):
+                    new_value = config.get(_section, key)
+                if config.has_section(_section, _subsection):
+                    if config.has_key(_section, key, _subsection):
+                        new_value = config.get(_section, key, _subsection)
                         logger.debug("Reading config file, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__))
 
             if new_value:
@@ -195,8 +201,8 @@ class BaseJobTask(luigi.Task):
                     kwargs[key] = new_value
                     logger.debug("Updating config, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__))
             else:
+                logger.debug("Using default value '{0}' for '{1}' for task class '{2}'".format(value.default, key, self.__class__))
                 pass
-            logger.debug("Using default value '{0}' for '{1}' for task class '{2}'".format(value.default, key, self.__class__))
         return kwargs
 
     def path(self):

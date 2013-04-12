@@ -38,15 +38,11 @@ class CutadaptJobRunner(DefaultGzShellJobRunner):
     pass
 
 class InputFastqFile(InputJobTask):
-    _config_section = "cutadapt"
-    _config_subsection = "InputFastqFile"
     parent_task = luigi.Parameter(default=("ratatosk.lib.files.external.FastqFile", ), is_list=True)
     suffix = luigi.Parameter(default=(".fastq.gz", ), is_list=True)
 
 # NB: cutadapt is a non-hiearchical tool. Group under, say, utils?
-class CutadaptJobTask(JobTask):
-    _config_section = "cutadapt"
-    _config_subsection = "Cutadapt"
+class Cutadapt(JobTask):
     label = luigi.Parameter(default=".trimmed")
     executable = luigi.Parameter(default="cutadapt")
     parent_task = luigi.Parameter(default=("ratatosk.lib.utils.cutadapt.InputFastqFile", ),is_list=True)

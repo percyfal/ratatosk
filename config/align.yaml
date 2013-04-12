@@ -1,22 +1,29 @@
-picard:
-  InputBamFile:
-    parent_task: ratatosk.lib.tools.samtools.SamToBam
+# Note: currently you need to set the reference path manually. Look
+# for folder data/genomes in your ngstestdata installation location
+#settings:
+  # 
+  # target_generator_handler: 
+
+ratatosk.lib.tools.picard:
   SortSam:
     parent_task: ratatosk.lib.tools.samtools.SamToBam
   MergeSamFiles:
     parent_task: ratatosk.lib.tools.picard.SortSam
+    #target_generator_handler: ratatosk.ext.scilife.sample.collect_sample_runs
+  InputBamFile:
+    parent_task: ratatosk.lib.tools.samtools.SamToBam
+  HsMetrics:
+    parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
   DuplicationMetrics:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   AlignmentMetrics:
     parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
   InsertMetrics:
     parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
-  HsMetrics:
-    parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
 
-samtools:
+ratatosk.lib.tools.samtools:
   SamToBam:
     parent_task: ratatosk.lib.align.bwa.Sampe
 
-fastqc:
+ratatosk.lib.tools.fastqc:
   parent_task: ratatosk.lib.align.bwa.InputFastqFile

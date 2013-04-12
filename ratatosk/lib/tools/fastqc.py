@@ -60,19 +60,14 @@ class FastQCJobRunner(DefaultShellJobRunner):
             raise Exception("Job '{}' failed: \n{}".format(cmd.replace("= ", "="), " ".join([stderr])))
 
 class InputBamFile(InputJobTask):
-    _config_section = "fastqc"
-    _config_subsection = "InputBamFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
     suffix = luigi.Parameter(default=(".bam", ), is_list=True)
 
 class InputFastqFile(InputJobTask):
-    _config_section = "fastqc"
-    _config_subsection = "input_fastq_file"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
     suffix = luigi.Parameter(default=(".fastq.gz", ), is_list=True)
 
-class FastQCJobTask(JobTask):
-    _config_section = "fastqc"
+class FastQC(JobTask):
     executable = luigi.Parameter(default="fastqc")
     parent_task = luigi.Parameter(default = "ratatosk.lib.tools.fastqc.InputFastqFile")
     suffix = luigi.Parameter(default="_fastqc")

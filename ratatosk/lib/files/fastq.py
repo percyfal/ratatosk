@@ -28,8 +28,6 @@ from ratatosk.job import JobTask
 logger = logging.getLogger('luigi-interface')
 
 class FastqFileLink(JobTask):
-    _config_section = "fastq"
-    _config_subsection = "link"
     outdir = luigi.Parameter(default=os.curdir)
     # This is tricky: it is easy enough to make links based on
     # absolute file names. The problem is that the information about
