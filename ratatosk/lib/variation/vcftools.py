@@ -30,14 +30,10 @@ class VcfJobRunner(DefaultShellJobRunner):
     pass
 
 class InputVcfFile(InputJobTask):
-    _config_section = "vcftools"
-    _config_subsection = "InputVcfFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
     target_suffix = luigi.Parameter(default=".vcf")
 
 class VcfJobTask(JobTask):
-    _config_section = "vcftools"
-    
     def job_runner(self):
         return VcfJobRunner()
 

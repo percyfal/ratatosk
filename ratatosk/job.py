@@ -201,8 +201,8 @@ class BaseJobTask(luigi.Task):
                     kwargs[key] = new_value
                     logger.debug("Updating config, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__))
             else:
+                logger.debug("Using default value '{0}' for '{1}' for task class '{2}'".format(value.default, key, self.__class__))
                 pass
-            logger.debug("Using default value '{0}' for '{1}' for task class '{2}'".format(value.default, key, self.__class__))
         return kwargs
 
     def path(self):

@@ -67,7 +67,7 @@ class Aln(BwaJobTask):
         cls = self.parent()[0]
         source = self.source()[0]
         # Ugly hack for 1 -> 2 dependency: works but should be dealt with otherwise
-        if str(fullclassname(cls)) in ["ratatosk.lib.utils.misc.ResyncMatesJobTask"]:
+        if str(fullclassname(cls)) in ["ratatosk.lib.utils.misc.ResyncMates"]:
             if re.search(self.read1_suffix, source):
                 self.is_read1 = True
                 fq1 = source
@@ -136,8 +136,6 @@ class Sampe(BwaJobTask):
         cls = self.parent()[0]
         parent_cls = cls().parent()[0]
         (fastq1, fastq2) = [luigi.LocalTarget(rreplace(sai.path, cls().suffix, parent_cls().sfx(), 1)) for sai in self.input()]
-        print [x.path for x in self.input()]
-        print ["-r", self._get_read_group(), self.bwaref, self.input()[0], self.input()[1].path, fastq1, fastq2, ">", self.output()]
         return ["-r", self._get_read_group(), self.bwaref, self.input()[0].path, self.input()[1].path, fastq1, fastq2, ">", self.output()]
 
 class Bampe(PipedTask):
