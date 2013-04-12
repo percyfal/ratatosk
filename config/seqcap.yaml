@@ -1,22 +1,98 @@
-picard:
-  InputBamFile:
-    parent_task: ratatosk.lib.tools.samtools.SamToBam
+#settings:
+#  target_generator_handler:
+
+ratatosk.lib.tools.picard:
   SortSam:
-    parent_task: ratatosk.lib.tools.samtools.SamToBam
+    #parent_task: ratatosk.lib.align.bwa.Bampe
+    parent_task: ratatosk.lib.align.bwa.Sampe
   MergeSamFiles:
     parent_task: ratatosk.lib.tools.picard.SortSam
+    #target_generator_handler: ratatosk.ext.scilife.sample.collect_sample_runs
+  InputBamFile:
+    #parent_task: ratatosk.lib.align.bwa.Bampe
+    parent_task: ratatosk.lib.align.bwa.Sampe
+  HsMetrics:
+    parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
   DuplicationMetrics:
     parent_task: ratatosk.lib.tools.picard.MergeSamFiles
   AlignmentMetrics:
     parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
   InsertMetrics:
     parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
-  HsMetrics:
+
+ratatosk.lib.tools.gatk:
+  RealignerTargetCreator:
     parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
+  IndelRealigner:
+    parent_task:
+      - ratatosk.lib.tools.picard.DuplicationMetrics
+      - ratatosk.lib.tools.gatk.RealignerTargetCreator
+  BaseRecalibrator:
+    options: 
+      - --covariate CycleCovariate
+      - --covariate ContextCovariate
+    parent_task: ratatosk.lib.tools.gatk.IndelRealigner
+  PrintReads:
+    diff_label:
+      - .realign
+      - 
+      - .realign
+    parent_task:
+      - ratatosk.lib.tools.picard.DuplicationMetrics
+      - ratatosk.lib.tools.gatk.BaseRecalibrator
+      - ratatosk.lib.tools.picard.PicardMetrics
+  UnifiedGenotyper:
+    parent_task: ratatosk.lib.tools.gatk.PrintReads
+  SplitUnifiedGenotyper:
+    parent_task: ratatosk.lib.tools.gatk.PrintReads
+  SelectSnpVariants:
+    parent_task: ratatosk.lib.tools.gatk.CombineVariants
+  SelectIndelVariants:
+    parent_task: ratatosk.lib.tools.gatk.CombineVariants
+  VariantSnpRecalibrator:
+    parent_task: ratatosk.lib.tools.gatk.SelectSnpVariants
+  VariantSnpRecalibratorExome:
+    parent_task: ratatosk.lib.tools.gatk.SelectSnpVariants
+  VariantIndelRecalibrator:
+    parent_task: ratatosk.lib.tools.gatk.SelectIndelVariants
+  VariantSnpFiltrationExp:
+    parent_task: ratatosk.lib.tools.gatk.SelectSnpVariants
+  VariantIndelFiltrationExp:
+    parent_task: ratatosk.lib.tools.gatk.SelectIndelVariants
+  VariantEval:
+    parent_task: ratatosk.lib.tools.gatk.VariantFiltration
+  ReadBackedPhasing:
+    diff_label:
+      - -variants-combined
+      - 
+    parent_task:
+      - ratatosk.lib.tools.gatk.PrintReads
+      - ratatosk.pipeline.seqcap.CombineFilteredVariants
+  CombineVariants:
+    parent_task:
+      - ratatosk.lib.tools.gatk.SplitUnifiedGenotyper
+      - ratatosk.lib.tools.gatk.PrintReads
 
-samtools:
-  SamToBam:
-    parent_task: ratatosk.lib.align.bwa.Sampe
+  VariantSnpEffAnnotator:
+    parent_task: 
+      - ratatosk.lib.annotation.snpeff.snpEffWrapper
+      - ratatosk.lib.annotation.snpeff.snpEffWrapper
+    add_label:
+      - -effects
+      - 
 
-fastqc:
-  parent_task: ratatosk.lib.align.bwa.InputFastqFile
+ratatosk.lib.align.bwa:
+  Aln:
+    parent_task: 
+      - ratatosk.lib.align.bwa.InputFastqFile
+      - ratatosk.lib.tools.fastqc.FastQC
+
+ratatosk.lib.tools.fastqc:
+  FastQC:
+    parent_task:
+      - ratatosk.lib.align.bwa.InputFastqFile
+
+ratatosk.lib.annotation.snpeff:
+  snpEff:
+    parent_task:
+      - ratatosk.lib.tools.gatk.ReadBackedPhasing

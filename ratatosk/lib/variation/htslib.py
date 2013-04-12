@@ -34,13 +34,10 @@ class HtslibJobRunner(DefaultShellJobRunner):
     pass
 
 class InputVcfFile(InputJobTask):
-    _config_section = "htslib"
-    _config_subsection = "InputVcfFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
     suffix = luigi.Parameter(default=(".vcf", ), is_list=True)
 
 class HtslibVcfJobTask(JobTask):
-    _config_section = "htslib"
     executable = luigi.Parameter(default="vcf")
     parent_task = luigi.Parameter(default=("ratatosk.lib.variation.htslib.InputVcfFile", ), is_list=True)
 
@@ -48,15 +45,12 @@ class HtslibVcfJobTask(JobTask):
         return HtslibJobRunner()
 
 class HtslibIndexedVcfJobTask(HtslibVcfJobTask):
-    _config_section = "htslib"
-
     def requires(self):
         vcfcls = self.parent()[0]
         indexcls = ratatosk.lib.variation.tabix.Tabix
         return [cls(target=source) for cls, source in izip(self.parent(), self.source())] + [indexcls(target=rreplace(self.source()[0], vcfcls().suffix, indexcls().suffix, 1), parent_task=fullclassname(vcfcls))]
 
 class VcfMerge(HtslibIndexedVcfJobTask):
-    _config_subsection = "VcfMerge"
     sub_executable = luigi.Parameter(default="merge")
     target_generator_handler = luigi.Parameter(default=None)
     label = luigi.Parameter(default=".vcfmerge")

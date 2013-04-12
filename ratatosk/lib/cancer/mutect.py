@@ -50,13 +50,10 @@ class MutectJobRunner(DefaultShellJobRunner):
 
 
 class InputBamFile(InputJobTask):
-    _config_section = "mutect"
-    _config_subsection = "InputBamFile"
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
     target_suffix = luigi.Parameter(default=".bam")
 
 class MutectJobTask(JobTask):
-    _config_section = "mutect"
     exe_path = luigi.Parameter(default=os.getenv("MUTECT_HOME") if os.getenv("MUTECT_HOME") else os.curdir)
     executable = luigi.Parameter(default="muTect.jar")
     source_suffix = luigi.Parameter(default=".bam")
