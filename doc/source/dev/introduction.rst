@@ -9,8 +9,8 @@ difficult-to-maintain `shell script
 <https://github.com/SciLifeLab/scilifelab/blob/master/experimental/halo_pipeline.sh>`_,
 running a couple of dozen steps. The script implements
 
-1. idempotency - i.e. if a step fails, rerunning the script will
-   resume execution from that particular step
+1. checkpointing - if a step fails, rerunning the script will resume
+   execution from that particular step
 2. parallel execution - single-threaded jobs are grouped and piped via
    `GNU parallel <http://www.gnu.org/software/parallel/>`_. HaloPlex
    projects typically deal with many samples (50-100), so running them
@@ -37,7 +37,7 @@ the attractive features of :mod:`luigi`, including:
 
 1. script-based API
 2. integrated hadoop support
-3. near-atomic file operations (idempotency)
+3. near-atomic file operations (allowing checkpointing)
 4. parallel execution via an internal scheduler
 
 What is it?
