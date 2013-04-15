@@ -4,19 +4,41 @@ Introducing ratatosk
 :mod:`ratatosk` was initiated out of the need to write an analysis
 pipeline for analysis of `HaloPlex
 <http://www.genomics.agilent.com/GenericB.aspx?pagetype=Custom&subpagetype=Custom&pageid=3081>`_
-data. Rather than writing yet another incomprehensible and
-difficult-to-maintain shell script (ref), I was basically looking for
-a more modular approach to building complex pipelines of batch jobs. A
-colleague pointed me to `luigi <https://github.com/spotify/luigi>`_,
-which lets you do just that.
+data. At first, I ended up writing yet another unwieldy and
+difficult-to-maintain `shell script
+<https://github.com/SciLifeLab/scilifelab/blob/master/experimental/halo_pipeline.sh>`_,
+running a couple of dozen steps. The script implements
 
+1. idempotency - i.e. if a step fails, rerunning the script will
+   resume execution from that particular step
+2. parallel execution - single-threaded jobs are grouped and piped via
+   `GNU parallel <http://www.gnu.org/software/parallel/>`_. HaloPlex
+   projects typically deal with many samples (50-100), so running them
+   as node jobs is a waste of resources since many tasks are
+   single-threaded. However, running samples as core jobs will fail
+   since :program:`bwa sampe` requires 5.4 GB memory, whereas our
+   8-core nodes have 24 GB memory. 
 
-There are other workflow managers (e.g. Galaxy, Taverna), but for
-various reasons, these solutions are currently inaccessible at our
-HPC. Writing :mod:`ratatosk` therefore is more of an experiment to try
-out some of the attractive features of
+I was basically looking for a more modular approach to building
+complex pipelines of batch jobs. A colleague pointed me to `luigi
+<https://github.com/spotify/luigi>`_, which lets you do just that.
+:mod:`ratatosk` is the (ever-changing) attempt to provide a
+light-weight, simple, text-based system for defining and running
+pipelines of batch jobs, adding a library of tasks that focus on
+bioinformatics applications.
 
+Of course, there are other workflow managers that provide much more
+functionality (e.g. `Galaxy <https://main.g2.bx.psu.edu/>`_ , `Taverna
+<http://www.taverna.org.uk/>`_, `Kepler
+<https://kepler-project.org/>`_), but for various reasons, these
+solutions are currently inaccessible at our HPC. Writing
+:mod:`ratatosk` therefore is more of an experiment to try out some of
+the attractive features of :mod:`luigi`, including:
 
+1. script-based API
+2. integrated hadoop support
+3. near-atomic file operations (idempotency)
+4. parallel execution via an internal scheduler
 
 What is it?
 ----------------
