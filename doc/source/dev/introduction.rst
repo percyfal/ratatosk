@@ -5,10 +5,18 @@ Introducing ratatosk
 pipeline for analysis of `HaloPlex
 <http://www.genomics.agilent.com/GenericB.aspx?pagetype=Custom&subpagetype=Custom&pageid=3081>`_
 data. Rather than writing yet another incomprehensible and
-difficult-to-maintain shell script, I was basically looking for a more
-modular approach to building complex pipelines of batch jobs. A
+difficult-to-maintain shell script (ref), I was basically looking for
+a more modular approach to building complex pipelines of batch jobs. A
 colleague pointed me to `luigi <https://github.com/spotify/luigi>`_,
 which lets you do just that.
+
+
+There are other workflow managers (e.g. Galaxy, Taverna), but for
+various reasons, these solutions are currently inaccessible at our
+HPC. Writing :mod:`ratatosk` therefore is more of an experiment to try
+out some of the attractive features of
+
+
 
 What is it?
 ----------------
@@ -144,9 +152,10 @@ subsections:
        ref: chr2.fa
 
 The section/subsection organization effectively provides namespaces
-for each task. The section level groups applications (e.g.
-:program:`GATK`), whereas subsections correspond to actual programs
-(e.g. :program:`UnifiedGenotyper`). The subsequent level corresponds to
+for each task. The section level directly maps to *modules* that group
+applications (e.g. :program:`GATK`), whereas subsections map to
+*tasks* that in turn represent actual programs (e.g.
+:program:`UnifiedGenotyper`). The subsequent level corresponds to
 settings for the given task, such as program options. Consequently, it
 is easy to customize the behaviour of every program in the config
 file. Every key at the option level have defaults set for every task,
@@ -168,10 +177,9 @@ This dependency graph would be defined by the following configuration
 
 .. code-block:: text
 
-   # The section TaskGrouping is defined in the python module
-   # representing the Task classes
-   TaskGrouping:
-     # Program level
+   # The section level names an existing python module
+   ratatosk.module.name
+     # Subsection level names a task in the ratatosk.module.name module
      Task:
        parent_task:
          - Parent

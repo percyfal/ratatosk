@@ -6,7 +6,9 @@ Configuration parser
 
 ratatosk uses a yaml config parser that enforces section and
 subsections, treating everything below that level as
-lists/dicts/variables. An example is shown here:
+lists/dicts/variables (see `google app
+<https://developers.google.com/appengine/docs/python/config/appconfig>`_
+for nicely structured config files). An example is shown here:
 
 .. code-block:: text
 
@@ -18,27 +20,22 @@ lists/dicts/variables. An example is shown here:
 
 The parser maps everything below 'options' to regular python objects
 (list in this case). An option is retrieved via the function
-:py:meth:`.RatatoskConfigParser.get`
-
-The reason for this is best explained by looking at the tasks.
-Remember that every task by default has a :attr:`_config_section
-<ratatosk.job.BaseJobTask._config_section>` and a
-:attr:`_config_subsection
-<ratatosk.job.BaseJobTask._config_subsection>` attribute. These
-attributes are mapped to the section and subsection levels. For
-instance, :class:`ratatosk.lib.align.bwa.Aln` has ``_config_section
-= "bwa"`` and ``_config_subsection = "Aln"`` . Therefore, the
-following configuration section
+:py:meth:`.RatatoskConfigParser.get`. Every section heading maps to a
+:mod:`ratatosk` module, whereas the subsection heading maps to a task
+in the module. For instance, the module :mod:`ratatosk.lib.align.bwa`
+has a task :class:`Aln <ratatosk.lib.align.bwa.Aln>` that can be
+configured as follows:
 
 .. code-block:: text
 
-   bwa:
+   ratatosk.lib.align.bwa:
      Aln:
        options:
 	 - -e 2
 	 - -l 40
 
-will run the command ``bwa aln -e 2 -l 40 ...``.
+When the task is executed, it will run the command ``bwa aln -e 2 -l
+40 ...``.
 
 
 Working with parent tasks
@@ -50,22 +47,14 @@ which provides a ``parent_task`` class variable. This variable can be
 changed, either at the command line (option ``--parent-task``) or in a
 configuration file. The ``parent_task`` variable is a string
 representing a class in a python module, and could therefore be any
-python code of choice. In addition to the ``parent_task`` variable,
-:class:`.BaseJobTask` provides variables :attr:`_config_section
-<ratatosk.job.BaseJobTask._config_section>` and
-:attr:`_config_subsection
-<ratatosk.job.BaseJobTask._config_subsection>` that point to sections
-and subsections in the config file, which should be in yaml format
-(see `google app
-<https://developers.google.com/appengine/docs/python/config/appconfig>`_
-for nicely structured config files). By default, all ``metrics``
-functions have as parent class
+python code of choice. As an example, by default all
+:mod:`ratatosk.lib.tools.picard` tasks have as parent class
 :class:`ratatosk.lib.tools.picard.InputBamFile`. This can easily be
 modified in the config file to:
 
 .. code-block:: text
 
-    picard:
+    ratatosk.lib.tools.picard:
       InputBamFile:
         parent_task: ratatosk.lib.tools.samtools.SamToBam
       HsMetrics:
@@ -79,7 +68,7 @@ modified in the config file to:
       InsertMetrics:
         parent_task: ratatosk.lib.tools.picard.SortSam
     
-    samtools:
+    ratatosk.lib.tools.samtools:
       SamToBam:
         parent_task: ratatosk.lib.align.BwaSampe
 
@@ -108,7 +97,7 @@ would be defined by the following configuration:
 
 .. code-block:: text
 
-   gatk:
+   ratatosk.lib.tools.gatk:
      PrintReads:
        parent_task:
 	 - ratatosk.lib.tools.gatk.DuplicationMetrics

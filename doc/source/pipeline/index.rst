@@ -75,8 +75,6 @@ This allows for project-specific configuration files that contain
 metadata information about the project itself, as well as allowing for
 configurations of analysis options.
 
-Pipelines
-=========
 
 .. toctree::
    :maxdepth: 20

@@ -77,12 +77,6 @@ Non-configurable attributes
 
 In addition, there are a couple of important non-configurable attributes:
 
-:attr:`_config_section <ratatosk.job.BaseJobTask._config_section>`
-  The configuration section to which this task belongs
-
-:attr:`_config_subsection <ratatosk.job.BaseJobTask._config_subsection>`
-  The configuration subsection to which this task belongs
-
 :attr:`_handlers <ratatosk.job.BaseJobTask._handlers>`
   Handlers registered to this task
 
@@ -132,7 +126,8 @@ things:
 1. read configuration files and update configuration
 2. register parent tasks
 
-That's all there is to it.
+Thereafter, the :mod:`luigi` framework resolves dependencies based on
+the :func:`requires` function, eventually running the tasks.
 
 Job runners
 ===========
