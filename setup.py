@@ -33,7 +33,7 @@ setup(name = "ratatosk",
         "simplejson",
         "pyyaml",
         "tornado",
-        "luigi>=1.0.1",
+        "luigi>=1.0",
         "nose",
         "nose-timer",
         "cement",
@@ -59,7 +59,7 @@ setup(name = "ratatosk",
       # See
       # http://stackoverflow.com/questions/3472430/how-can-i-make-setuptools-install-a-package-thats-not-on-pypi
       # for requiring github version
-      dependency_links = ['https://github.com/spotify/luigi/tarball/master#egg=luigi-1.0.1'],
+      dependency_links = ['https://github.com/spotify/luigi/tarball/master#egg=luigi-1.0'],
       )
 
 os.system("git rev-parse --short --verify HEAD > ~/.ratatosk_version")
