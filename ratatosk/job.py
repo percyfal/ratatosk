@@ -493,8 +493,9 @@ class PipedTask(JobTask):
 
     tasks = luigi.Parameter(default=[], is_list=True)
 
-    def requires(self):
-        return InputPath(target=os.curdir)
+    # TODO: Is this needed? Better is probably to do a "regular" depends
+    # def requires(self):
+    #     return InputPath(target=os.curdir)
     
     def output(self):
         return luigi.LocalTarget(self.target)

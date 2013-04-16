@@ -3,14 +3,12 @@
 
 ratatosk.lib.tools.picard:
   SortSam:
-    #parent_task: ratatosk.lib.align.bwa.Bampe
-    parent_task: ratatosk.lib.align.bwa.Sampe
+    parent_task: ratatosk.lib.align.bwa.Bampe
   MergeSamFiles:
     parent_task: ratatosk.lib.tools.picard.SortSam
     #target_generator_handler: ratatosk.ext.scilife.sample.collect_sample_runs
   InputBamFile:
-    #parent_task: ratatosk.lib.align.bwa.Bampe
-    parent_task: ratatosk.lib.align.bwa.Sampe
+    parent_task: ratatosk.lib.align.bwa.Bampe
   HsMetrics:
     parent_task: ratatosk.lib.tools.picard.DuplicationMetrics
   DuplicationMetrics:

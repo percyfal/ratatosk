@@ -20,11 +20,12 @@ running a couple of dozen steps. The script implements
    8-core nodes have 24 GB memory. 
 
 I was basically looking for a more modular approach to building
-complex pipelines of batch jobs. A colleague pointed me to `luigi
+complex pipelines of batch jobs. A `colleague
+<https://twitter.com/braincode>`_ pointed me to `luigi
 <https://github.com/spotify/luigi>`_, which lets you do just that.
 :mod:`ratatosk` is the (ever-changing) attempt to provide a
 light-weight, simple, text-based system for defining and running
-pipelines of batch jobs, adding a library of tasks that focus on
+pipelines of batch jobs, adding a library of tasks that focuses on
 bioinformatics applications.
 
 Of course, there are other workflow managers that provide much more
