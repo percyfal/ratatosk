@@ -179,3 +179,22 @@ def dict_to_opt(opt_dict):
     args = list(itertools.chain.from_iterable([(k,v) for k,v in opt_dict.iteritems()]))
     ret_args = [x for x in args if not isinstance(x, bool)]
     return ret_args
+
+# FIX ME: how define input file? Yet another option to JobTask?
+def generic_target_generator(indir, filename="targets.txt"):
+    """Generic target generator. Reads an input file in indir in which
+    every line consists of a 3-tuple (sampleid, merge_prefix,
+    read_prefix).
+
+    :param indir: input directory
+    :param filename: filename of targets
+
+    :returns: list of targets
+    """
+    infile = os.path.join(indir, filename)
+    if not os.path.exists(infile):
+        logger.error("No such file {}; generic_target_generator requires an input file named {}".format(infile, filename))
+        return
+    with open(infile) as fh:
+        targets = fh.readlines()
+    return targets

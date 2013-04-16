@@ -215,7 +215,6 @@ def setup_global_handlers(hlist=["target_generator_handler"]):
     for key in hlist:
         if key in backend.__global_config__["settings"]:
             logging.info("registering handler {}:{}".format(key, backend.__global_config__["settings"][key]))
-            print "registering handler {}:{}".format(key, backend.__global_config__["settings"][key])
             h = RatatoskHandler(label=key, mod=backend.__global_config__["settings"][key])
             register(h)
 
