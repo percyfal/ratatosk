@@ -31,14 +31,9 @@ ratatosk.lib.align.bwa:
       - _R1_001.trimmed.sync
       - _R2_001.trimmed.sync
 
-ratatosk.lib.tools.samtools:
-  SamToBam:
-    parent_task: ratatosk.lib.align.bwa.Sampe
-
 ratatosk.lib.tools.picard:
   SortSam:
-    parent_task: ratatosk.lib.tools.samtools.SamToBam
-    #parent_task: ratatosk.lib.align.bwa.Bampe
+    parent_task: ratatosk.lib.align.bwa.Bampe
   MergeSamFiles:
     parent_task: ratatosk.lib.tools.picard.SortSam
     #target_generator_handler:
