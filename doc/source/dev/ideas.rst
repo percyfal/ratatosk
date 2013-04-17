@@ -2,11 +2,8 @@ Future ideas and wishlist
 =========================
 
 See `issue list
-<https://github.com/SciLifeLab/ratatosk/issues?state=open>`_
-(`original issue list`
-<https://github.com/percyfal/ratatosk/issues?state=open>`_), these
-will eventually be transferred to the SciLifeLab repo) for a complete
-list. Some of the most pressing issues to fix include
+<https://github.com/percyfal/ratatosk/issues?state=open>`_ for a
+complete list. Some of the most pressing issues to fix include
 
 * Calculation of target names by getting the path between two nodes
 

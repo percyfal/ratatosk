@@ -23,6 +23,7 @@ To install the development version of :mod:`ratatosk`, do
 	git clone https://github.com/percyfal/ratatosk
 	python setup.py develop
 
+
 Dependencies
 ------------
 

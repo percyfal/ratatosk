@@ -5,7 +5,7 @@ Examples
    They were initially used as examples at the github site and are
    kept here for reference.
 
-Examples with :program:`ratatosk_run_scilife.py`
+Examples with :program:`ratatosk_run.py`
 ------------------------------------------------
 
 NB: these examples don't actually do anything except plot the
@@ -149,7 +149,7 @@ and a picard metrics wrapper task
 		   HsMetricsNonDup(target=rreplace(self.target, str(DuplicationMetrics.label.default), "", 1) + str(HsMetrics.target_suffix.default)),
 		   AlignmentMetrics(target=self.target + str(AlignmentMetrics.target_suffix.default))]
 
-The :mod:``picard <ratatosk.lib.tools.picard>`` configuration section
+The :mod:`picard <ratatosk.lib.tools.picard>` configuration section
 in the configuration file ``J.Doe_00_01_nondup.yaml`` now has a new
 subsection:
 
