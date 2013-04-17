@@ -179,3 +179,4 @@ def dict_to_opt(opt_dict):
     args = list(itertools.chain.from_iterable([(k,v) for k,v in opt_dict.iteritems()]))
     ret_args = [x for x in args if not isinstance(x, bool)]
     return ret_args
+

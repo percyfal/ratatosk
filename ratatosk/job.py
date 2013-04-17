@@ -92,17 +92,45 @@ class BaseJobTask(luigi.Task):
     _target_iter = 0
 
     def __init__(self, *args, **kwargs):
+        """Initializes job task. A job task can be customized via
+        configuration files. There are currently two configuration
+        files:
+
+        1. config_file, passed via option ``--config-file``
+        2. custom_config, passed via option ``--custom-config``
+
+        The reason there being two files is that updating
+        ``parent_task`` is disabled in the custom configuration,
+        thereby ensuring that predefined workflows in the regular
+        configuration cannot be tampered with. However, other options
+        can be modified.
+
+        Options are updated in the by the following order of
+        precedence:
+
+        1. reads the configuration file updating the kwargs
+        2. reads the custom configuration if present, updating relevant kwargs
+        3. checks if any command line options have been passed, and if so, update kwargs
+        4. use the default value
+
+        Once the configuration has been set, the parent tasks are
+        registered via
+        :func:`ratatosk.job.BaseJobTask._register_parent_task`.
+
+        """
         self._parent_cls = []
         self._handers = {}
         params = self.get_params()
         param_values = self.get_param_values(params, args, kwargs)
-        # Main configuration file
+        param_values_dict = {x[0]:x[1] for x in self.get_param_values(params, args, kwargs)}
+        # 1. Main configuration file
         for key, value in param_values:
             if key == "config_file":
                 config_file = value
                 config = get_config()
                 config.add_config_path(config_file)
-                kwargs = self._update_config(config, *args, **kwargs)
+                kwargs = self._update_config(config, param_values_dict, *args, **kwargs)
+        # 2. Custom configuration file
         for key, value in param_values:
             if key == "custom_config":
                 if not value:
@@ -111,8 +139,21 @@ class BaseJobTask(luigi.Task):
                 # This must be a separate instance
                 custom_config = get_custom_config()
                 custom_config.add_config_path(custom_config_file)
-                kwargs = self._update_config(custom_config, disable_parent_task_update=True, *args, **kwargs)
+                kwargs = self._update_config(custom_config, param_values_dict, disable_parent_task_update=True, *args, **kwargs)
+
+        # 3. Finally, check if options were passed via the command line 
+        for key, value in self.get_params():
+            new_value = None
+            # Got a command line option => override config file. Currently overriding parent_task *is* possible here (FIX ME?)
+            if value.default != param_values_dict.get(key, None):
+                new_value = param_values_dict.get(key, None)
+                logger.debug("option '{0}'; got value '{1}' from command line, overriding configuration file setting and default '{2}' for task class '{3}'".format(key, new_value, value.default, self.__class__))
+                kwargs[key] = new_value
         super(BaseJobTask, self).__init__(*args, **kwargs)
+        # TODO: now that all parameters have been collected, global sections should be updated here
+        # Update global configuration here for printing everything in PrintConfig task
+        # backend.__global_config__ = update(backend.__global_config__, vars(config)["_sections"])
+
         # Register parent tasks
         parents = [v for k, v in self.get_param_values(params, args, kwargs) if k == "parent_task"].pop()
         # In case parent_task is defined as a string, not a list
@@ -147,53 +188,50 @@ class BaseJobTask(luigi.Task):
             h = RatatoskHandler(label="_parent_cls", mod=p)
             register_attr(self, h, default_handler=d)
         
-    def _update_config(self, config, disable_parent_task_update=False, *args, **kwargs):
+    def _update_config(self, config, param_values_dict, disable_parent_task_update=False, *args, **kwargs):
         """Update configuration for this task. All task options should
         have a default. Order of preference:
 
-        1. if command line option encountered, override config file settings
-        2. if configuration file has a setting, override default value for task.
+        
+        1. if command line option encountered, override all config file settings
+        2. if custom config file setting, override config and default
+        3. if config file, override default
+        4. default value
 
         :param config: configuration instance
+        :param param_values_dict: task parameter dict
         :param disable_parent_task_update: disable parent task update for custom configurations (best practice pipeline execution order should stay fixed)
 
         :returns: an updated parameter list for the task.
         """
-        # Update global configuration here for printing everything in PrintConfig task
-        backend.__global_config__ = update(backend.__global_config__, vars(config)["_sections"])
         # Set section to module name and subsection to class name
         # unless _config_section and _config_subsection set. The
         # latter are needed for classes that live outside their
         # namespace, e.g. subclasses in pipelines
         _section = self.__module__
-        _subsection =  self.__class__.__name__
+        try:
+            _subsection =  self.__class__.__name__ 
+        except:
+            _subsection = None
         if self._config_section:
             _section = self._config_section
         if not config:
             return kwargs
         if not config.has_section(_section):
             return kwargs
-        params = self.get_params()
-        param_values = {x[0]:x[1] for x in self.get_param_values(params, args, kwargs)}
         if not _subsection:
-            d = {_section:param_values}
+            d = {_section:param_values_dict}
         else:
-            d = {_section:{_subsection:param_values}}
+            d = {_section:{_subsection:param_values_dict}}
         backend.__global_config__ = update(backend.__global_config__, d)
         for key, value in self.get_params():
             new_value = None
-            # Got a command line option => override config file
-            if value.default != param_values.get(key, None):
-                new_value = param_values.get(key, None)
-                logger.debug("option '{0}'; got value '{1}' from command line, overriding configuration file setting default '{2}' for task class '{3}'".format(key, new_value, value.default, self.__class__))
-            else:
-                if config.has_key(_section, key):
-                    new_value = config.get(_section, key)
-                if config.has_section(_section, _subsection):
-                    if config.has_key(_section, key, _subsection):
-                        new_value = config.get(_section, key, _subsection)
-                        logger.debug("Reading config file, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__))
-
+            if config.has_key(_section, key):
+                new_value = config.get(_section, key)
+            if config.has_section(_section, _subsection):
+                if config.has_key(_section, key, _subsection):
+                    new_value = config.get(_section, key, _subsection)
+                    logger.debug("Reading config file, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__))
             if new_value:
                 if key == "parent_task" and disable_parent_task_update:
                     logger.debug("disable_parent_task_update set; not updating '{0}' for task class '{1}'".format(key, self.__class__))
