@@ -254,5 +254,5 @@ intersphinx_mapping = {
   'python': ('http://python.readthedocs.org/en/latest/', None),
   'django': ('http://django.readthedocs.org/en/latest/', None),
   'sphinx': ('http://sphinx.readthedocs.org/en/latest/', None),
-  'ratatosk.ext.scilife' : ('https://ratatosk.readthedocs.org/projects/ratatoskextscilife/en/latest/', None),
+  'ratatoskextscilife' : ('https://ratatosk.readthedocs.org/projects/ratatoskextscilife/en/latest/', None),
     }

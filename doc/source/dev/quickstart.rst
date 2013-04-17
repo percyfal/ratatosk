@@ -22,7 +22,7 @@ machine).
 
 	nosetests -v -s test_wrapper.py:TestMiscWrappers.test_fastqln
 
-.. figure:: ../../test_fastqln.png
+.. figure:: ../../grf/test_fastqln.png
    :alt: Fastq link task
    :scale: 30%
    :align: center
@@ -49,7 +49,7 @@ Here's a more useful example; paired-end alignment using
 
 	nosetests -v -s test_commands.py:TestCommand.test_bwasampe
 
-.. figure:: ../../test_bwasampe.png
+.. figure:: ../../grf/test_bwasampe.png
    :alt: bwa sampe
    :scale: 50%
    :align: center
@@ -69,7 +69,7 @@ picard metrics tasks:
 
 	nosetests -v -s test_commands.py:TestCommand.test_picard_metrics
 
-.. figure:: ../../test_picard_metrics.png
+.. figure:: ../../grf/test_picard_metrics.png
    :alt: picard metrics
    :scale: 50%
    :align: center
