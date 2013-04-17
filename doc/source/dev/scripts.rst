@@ -28,8 +28,8 @@ the available tasks (abbreviated output for clarity):
    optional arguments:
      -h, --help            show this help message and exit
      --config-file CONFIG_FILE
-			   config_file Main configuration file. [default: /Users/
-			   peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml]
+			   config_file Main configuration file. [default:
+			   ~/opt/ratatosk/ratatosk/../config/ratatosk.yaml]
      --dry-run             dry_run Generate pipeline graph/flow without running
 			   any commands [default: False]
      --lock                lock Do not run if the task is already running
@@ -110,8 +110,8 @@ you would do:
 			   Bampe.read_group [default: None]
      --platform PLATFORM   Bampe.platform [default: Illumina]
      --config-file CONFIG_FILE
-			   config_file Main configuration file. [default: /Users/
-			   peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml]
+			   config_file Main configuration file. [default:
+			   ~/opt/ratatosk/ratatosk/../config/ratatosk.yaml]
      --dry-run             dry_run Generate pipeline graph/flow without running
 			   any commands [default: False]
      --lock                lock Do not run if the task is already running
