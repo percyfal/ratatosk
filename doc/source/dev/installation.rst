@@ -16,12 +16,54 @@ to create a virtual environment.
 Installation
 ------------
 
-To install the development version of :mod:`ratatosk`, do
+You can download and install :mod:`ratatosk` from the `Python Package
+Index <https://pypi.python.org/pypi/ratatosk>`_ with the command
+
+.. code-block:: text
+
+   pip install ratatosk
+
+Alternatively, to install the development version of :mod:`ratatosk`,
+do
 
 .. code-block:: text
 	
 	git clone https://github.com/percyfal/ratatosk
 	python setup.py develop
+
+Known installation issues
+-------------------------
+
+luigi
+^^^^^
+
+The current :mod:`luigi` `Python Package Index
+<https://pypi.python.org/pypi/luigi>`_ is out of date. You may
+therefore need to manually install the development version from
+`github <https://github.com/spotify/luigi>`_.
+
+pygraphviz
+^^^^^^^^^^
+
+Installing `Pygraphviz <http://networkx.lanl.gov/pygraphviz/>`_ with
+``pip install pygraphviz`` often fails because the installer cannot
+find the :program:`graphviz` library. One solution lies in modifying the
+``setup.py`` that comes with the :mod:`pygrahviz` package. After a failed pip
+install in virtual environment ``virtualenv`` (or whatever you called
+it), you will typically find the failed build in
+``~/.virtualenvs/virtualenv/build/pygraphviz``. In that directory,
+modify the following section in  ``setup.py``:
+
+.. code-block:: text
+
+   # If the setup script couldn't find your graphviz installation you can
+   # specify it here by uncommenting these lines or providing your own:
+   # You must set both 'library_path' and 'include_path'
+
+   # Linux, generic UNIX
+   library_path='/usr/lib64/graphviz'
+   include_path='/usr/include/graphviz'
+
 
 
 Dependencies
