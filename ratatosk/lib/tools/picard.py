@@ -120,7 +120,7 @@ class MergeSamFiles(PicardJobTask):
         if not "target_generator_handler" in self._handlers.keys():
             logging.warn("MergeSamFiles requires a target generator handler; no defaults are as of yet implemented")
             return []
-        sources = self._handlers["target_generator_handler"](self)
+        sources = list(set(self._handlers["target_generator_handler"](self)))
         return [cls(target=src) for src in sources]    
     
 class AlignmentMetrics(PicardJobTask):
