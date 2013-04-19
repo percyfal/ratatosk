@@ -93,7 +93,7 @@ class CreateSequenceDictionary(PicardJobTask):
 
 class SortSam(PicardJobTask):
     executable = "SortSam.jar"
-    options = luigi.Parameter(default=("SO=coordinate MAX_RECORDS_IN_RAM=750000",), is_list=True)
+    options = luigi.Parameter(default=("SO=coordinate MAX_RECORDS_IN_RAM=750000", "VALIDATION_STRINGENCY=SILENT"), is_list=True)
     label = luigi.Parameter(default=".sort")
 
     def args(self):
@@ -105,7 +105,7 @@ class MergeSamFiles(PicardJobTask):
     read1_suffix = luigi.Parameter(default="_R1_001")
     target_generator_handler = luigi.Parameter(default=None)
     # FIXME: TMP_DIR should not be hard-coded
-    options = luigi.Parameter(default=("SO=coordinate TMP_DIR=./tmp",), is_list=True)
+    options = luigi.Parameter(default=("SO=coordinate TMP_DIR=./tmp", "VALIDATION_STRINGENCY=SILENT"), is_list=True)
 
     def args(self):
         return ["OUTPUT=", self.output()] + [item for sublist in [["INPUT=", x] for x in self.input()] for item in sublist]
