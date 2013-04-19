@@ -24,6 +24,7 @@ import luigi
 import logging
 import time
 import glob
+import re
 import ratatosk.lib.files.external
 from ratatosk.utils import rreplace
 from ratatosk.config import get_config
@@ -66,6 +67,7 @@ class PicardJobTask(JobTask):
     parent_task = luigi.Parameter(default=("ratatosk.lib.tools.picard.InputBamFile", ), is_list=True)
     suffix = luigi.Parameter(default=".bam")
     ref = luigi.Parameter(default=None)
+    validation_stringency = luigi.Parameter(default="SILENT", description="Validation stringency to use")
 
     def jar(self):
         """Path to the jar for this Picard job"""
@@ -83,6 +85,11 @@ class PicardJobTask(JobTask):
     def java(self):
         return self.java_exe
 
+    def opts(self):
+        if not re.search("VALIDATION_STRINGENCY", " ".join(list(self.options))):
+            return list(self.options) + ["VALIDATION_STRINGENCY={}".format(self.validation_stringency)]
+        return list(self.options)
+
 class CreateSequenceDictionary(PicardJobTask):
     executable = "CreateSequenceDictionary.jar"
     suffix = luigi.Parameter(default=".dict")
@@ -93,7 +100,7 @@ class CreateSequenceDictionary(PicardJobTask):
 
 class SortSam(PicardJobTask):
     executable = "SortSam.jar"
-    options = luigi.Parameter(default=("SO=coordinate MAX_RECORDS_IN_RAM=750000", "VALIDATION_STRINGENCY=SILENT"), is_list=True)
+    options = luigi.Parameter(default=("SO=coordinate MAX_RECORDS_IN_RAM=750000",), is_list=True)
     label = luigi.Parameter(default=".sort")
 
     def args(self):
@@ -105,7 +112,7 @@ class MergeSamFiles(PicardJobTask):
     read1_suffix = luigi.Parameter(default="_R1_001")
     target_generator_handler = luigi.Parameter(default=None)
     # FIXME: TMP_DIR should not be hard-coded
-    options = luigi.Parameter(default=("SO=coordinate TMP_DIR=./tmp", "VALIDATION_STRINGENCY=SILENT"), is_list=True)
+    options = luigi.Parameter(default=("SO=coordinate TMP_DIR=./tmp", ), is_list=True)
 
     def args(self):
         return ["OUTPUT=", self.output()] + [item for sublist in [["INPUT=", x] for x in self.input()] for item in sublist]
@@ -129,6 +136,8 @@ class AlignmentMetrics(PicardJobTask):
 
     def opts(self):
         retval = list(self.options)
+        if not re.search("VALIDATION_STRINGENCY", " ".join(list(self.options))):
+            retval += ["VALIDATION_STRINGENCY={}".format(self.validation_stringency)]
         if self.ref:
             retval += [" REFERENCE_SEQUENCE={}".format(self.ref)]
         return retval
@@ -142,6 +151,8 @@ class InsertMetrics(PicardJobTask):
 
     def opts(self):
         retval = list(self.options)
+        if not re.search("VALIDATION_STRINGENCY", " ".join(list(self.options))):
+            retval += ["VALIDATION_STRINGENCY={}".format(self.validation_stringency)]
         if self.ref:
             retval += [" REFERENCE_SEQUENCE={}".format(self.ref)]
         return retval
@@ -169,6 +180,8 @@ class HsMetrics(PicardJobTask):
     
     def opts(self):
         retval = list(self.options)
+        if not re.search("VALIDATION_STRINGENCY", " ".join(list(self.options))):
+            retval += ["VALIDATION_STRINGENCY={}".format(self.validation_stringency)]
         if self.ref:
             retval += [" REFERENCE_SEQUENCE={}".format(self.ref)]
         return retval
