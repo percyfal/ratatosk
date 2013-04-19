@@ -341,14 +341,13 @@ class CombineVariants(GATKJobTask):
     suffix = luigi.Parameter(default=".vcf")
     label = luigi.Parameter(default="-variants")
     parent_task = luigi.Parameter(default=("ratatosk.lib.tools.gatk.SplitUnifiedGenotyper", "ratatosk.lib.tools.gatk.InputBamFile",), is_list=True)
-    split = luigi.BooleanParameter(default=True)
-    by_chromosome = luigi.BooleanParameter(default=True)
+    split_by = luigi.Parameter(default="chromosome", description="Splitting mode")
 
     def requires(self):
         cls = self.parent()[0]
         bamcls = self.parent()[1]
         source = self.source()[0]
-        if self.split:
+        if self.split_by == "chromosome":
             # Partition sources by chromosome. Need to get the
             # references from the source bam file, i.e. the source to
             # the parent task
@@ -370,7 +369,7 @@ class CombineVariants(GATKJobTask):
                 os.makedirs(outdir)
             split_targets = [os.path.join("{base}-split".format(base=os.path.splitext(self.target)[0]), 
                                           "{base}-{ref}{ext}".format(base=os.path.splitext(os.path.basename(self.target))[0], ref=chr_ref, ext=self.sfx())) for chr_ref in refs]
-            return [cls(target=tgt, target_region=chr_ref) for tgt in split_targets]
+            return [cls(target=tgt, target_region=chr_ref) for tgt, chr_ref in izip(split_targets, refs)]
         else:
             return [cls(target=source)]
 
