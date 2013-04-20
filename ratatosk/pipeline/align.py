@@ -30,15 +30,15 @@ Classes
 import luigi
 import os
 import glob
-import logging
 from ratatosk import backend
 from ratatosk.job import PipelineTask, JobTask, JobWrapperTask
 from ratatosk.lib.tools.picard import PicardMetrics, SortSam
 from ratatosk.lib.tools.fastqc import FastQC
 from ratatosk.lib.files.fastq import FastqFileLink
 from ratatosk.utils import make_fastq_links
+from ratatosk.log import get_logger
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger()
 
 class AlignPipeline(PipelineTask):
     _config_section = "pipeline"

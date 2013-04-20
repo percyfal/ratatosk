@@ -22,13 +22,15 @@ Classes
 """
 
 import luigi
-import logging
 import ratatosk.lib.files.external
 import ratatosk.lib.variation.tabix
 from ratatosk.handler import RatatoskHandler, register_task_handler
 from ratatosk.job import InputJobTask, JobTask
 from ratatosk.jobrunner import  DefaultShellJobRunner
 from ratatosk.utils import rreplace, fullclassname
+from ratatosk.log import get_logger
+
+logger = get_logger()
 
 class HtslibJobRunner(DefaultShellJobRunner):
     pass

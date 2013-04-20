@@ -26,9 +26,10 @@ import ratatosk.lib.files.external
 from ratatosk.utils import rreplace, fullclassname
 from ratatosk.job import InputJobTask, JobTask, JobWrapperTask
 from ratatosk.jobrunner import  DefaultShellJobRunner
+from ratatosk.log import get_logger
 import ratatosk.shell as shell
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger()
 
 class snpEffJobRunner(DefaultShellJobRunner):
     def _make_arglist(self, job):

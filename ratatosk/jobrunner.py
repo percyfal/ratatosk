@@ -31,8 +31,6 @@ from ratatosk.config import get_config, get_custom_config
 from ratatosk.utils import rreplace, update, config_to_dict
 from ratatosk.log import get_logger
 
-# Use luigi-interface for now
-# logger = logging.getLogger('luigi-interface')
 logger = get_logger()
 
 class JobRunner(object):

@@ -41,14 +41,14 @@ Classes
 
 import luigi
 import os
-import logging
 from ratatosk import backend
 from ratatosk.job import PipelineTask, JobTask, JobWrapperTask, PrintConfig
 from ratatosk.utils import make_fastq_links
 from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, VariantFiltration
 from ratatosk.lib.variation.tabix import Bgzip
+from ratatosk.log import get_logger
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger()
 
 class RawUnifiedGenotyper(UnifiedGenotyper):
     """

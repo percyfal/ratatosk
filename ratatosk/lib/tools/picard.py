@@ -21,7 +21,6 @@ Classes
 
 import os
 import luigi
-import logging
 import time
 import glob
 import re
@@ -32,9 +31,10 @@ from ratatosk.job import InputJobTask, JobWrapperTask, JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner
 from ratatosk.handler import RatatoskHandler, register, register_task_handler
 from ratatosk import backend
+from ratatosk.log import get_logger
 import ratatosk.shell as shell
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger()
 
 class PicardJobRunner(DefaultShellJobRunner):
     def _make_arglist(self, job):

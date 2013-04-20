@@ -44,13 +44,13 @@ Classes
 -------
 """
 import luigi
-import logging
 from ratatosk import backend
 from ratatosk.job import PipelineTask, JobWrapperTask
 from ratatosk.lib.tools.gatk import  CombineVariants, SelectSnpVariants, SelectIndelVariants, VariantSnpRecalibrator, VariantIndelRecalibrator, VariantSnpRecalibrator, VariantIndelRecalibrator, VariantSnpFiltrationExp, VariantIndelFiltrationExp, VariantSnpEffAnnotator
 from ratatosk.utils import make_fastq_links
+from ratatosk.log import get_logger
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger()
 
 class CombineFilteredVariants(CombineVariants):
     """

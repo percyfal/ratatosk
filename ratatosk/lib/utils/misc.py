@@ -23,13 +23,13 @@ import os
 import luigi
 import time
 import shutil
-import logging
 from itertools import izip
 from ratatosk.job import InputJobTask, JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner, DefaultGzShellJobRunner
 from ratatosk.utils import rreplace
+from ratatosk.log import get_logger
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger()
 
 class MiscJobRunner(DefaultShellJobRunner):
         pass

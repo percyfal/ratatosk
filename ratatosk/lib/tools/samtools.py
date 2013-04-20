@@ -20,13 +20,13 @@ Classes
 """
 import os
 import luigi
-import logging
 import ratatosk.lib.files.external
 from ratatosk.job import InputJobTask, JobTask
 from ratatosk.utils import rreplace
 from ratatosk.jobrunner import DefaultShellJobRunner
+from ratatosk.log import get_logger
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger
 
 class SamtoolsJobRunner(DefaultShellJobRunner):
     pass

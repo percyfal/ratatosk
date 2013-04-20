@@ -21,20 +21,21 @@ Classes
 import os
 import re
 import luigi
-import logging
 from itertools import izip
-import ratatosk.lib.files.external
+import ratatosk.lib.files.input
 import ratatosk.lib.tools.samtools
 from ratatosk.utils import rreplace, fullclassname
-from ratatosk.job import InputJobTask, JobTask
+from ratatosk.job import JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner
+from ratatosk.log import get_logger
 import ratatosk.shell as shell
+
 try:
     import pysam
 except:
     pass
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger()
 
 class GATKJobRunner(DefaultShellJobRunner):
     @staticmethod
@@ -76,13 +77,11 @@ class GATKJobRunner(DefaultShellJobRunner):
         else:
             raise Exception("Job '{}' failed: \n{}".format(cmd, " ".join([stderr])))
 
-class InputBamFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
-    suffix = luigi.Parameter(default=".bam")
+class InputBamFile(ratatosk.lib.files.input.InputBamFile):
+    pass
 
-class InputVcfFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
-    suffix = luigi.Parameter(default=".vcf")
+class InputVcfFile(ratatosk.lib.files.input.InputVcfFile):
+    pass
 
 class GATKJobTask(JobTask):
     exe_path = luigi.Parameter(default=os.getenv("GATK_HOME") if os.getenv("GATK_HOME") else os.curdir)

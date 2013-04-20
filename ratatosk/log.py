@@ -15,7 +15,7 @@ import logging
 
 def setup_logging():
     # use a variable in the function object to determine if it has run before
-    if getattr(setup_interface_logging, "has_run", False):
+    if getattr(setup_logging, "has_run", False):
         return
 
     logger = logging.getLogger('ratatosk-interface')
@@ -24,17 +24,17 @@ def setup_logging():
     streamHandler = logging.StreamHandler()
     streamHandler.setLevel(logging.DEBUG)
 
-    file_format = "%(asctime)s (%(levelname)s) %(namespace)s : " + \
+    file_format = "%(asctime)s (%(levelname)s) %(name)s : " + \
         "%(message)s"
 
     formatter = logging.Formatter(file_format)
     streamHandler.setFormatter(formatter)
 
     logger.addHandler(streamHandler)
-    setup_interface_logging.has_run = True
+    setup_logging.has_run = True
 
 def get_logger():
     logger = logging.getLogger('ratatosk-interface')
     if not logger.handlers:
-        logger = logging.getLogger()
+        setup_logging()
     return logger

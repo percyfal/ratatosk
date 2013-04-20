@@ -20,7 +20,6 @@ from ratatosk import backend
 from ratatosk.utils import update, config_to_dict
 from ratatosk.log import get_logger
 
-#logger = logging.getLogger('luigi-interface')
 logger = get_logger()
 
 try:

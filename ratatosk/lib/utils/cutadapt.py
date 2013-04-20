@@ -26,12 +26,12 @@ import luigi
 import time
 import shutil
 import random
-import logging
 from ratatosk.job import InputJobTask, JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner, DefaultGzShellJobRunner
 from ratatosk.utils import rreplace
+from ratatosk.log import get_logger
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger()
 
 # NB: Now subclass DefaultGzShellJobRunner
 class CutadaptJobRunner(DefaultGzShellJobRunner):

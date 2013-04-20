@@ -21,11 +21,12 @@ Classes
 
 import os
 import luigi
-import logging
 from ratatosk.job import InputJobTask, JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner
-logger = logging.getLogger('luigi-interface')
+from ratatosk.log import get_logger
 import ratatosk.shell as shell
+
+logger = get_logger()
 
 # This was a nightmare to get right. Temporary output is a directory,
 # so would need custom _fix_paths for cases like this
