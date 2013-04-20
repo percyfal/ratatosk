@@ -22,13 +22,16 @@ Classes
 import os
 import luigi
 import logging
-import ratatosk.lib.files.external
+import ratatosk.lib.files.input
 from ratatosk.utils import rreplace, fullclassname
-from ratatosk.job import InputJobTask, JobTask, DefaultShellJobRunner
+from ratatosk.job import JobTask, DefaultShellJobRunner
 from ratatosk.log import get_logger
 import ratatosk.shell as shell
 
 logger = get_logger()
+
+class InputBamFile(ratatosk.lib.files.input.InputBamFile):
+    pass
 
 class MutectJobRunner(DefaultShellJobRunner):
     @staticmethod
@@ -48,11 +51,6 @@ class MutectJobRunner(DefaultShellJobRunner):
         (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
         arglist += job_args
         return (arglist, tmp_files)
-
-
-class InputBamFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
-    target_suffix = luigi.Parameter(default=".bam")
 
 class MutectJobTask(JobTask):
     exe_path = luigi.Parameter(default=os.getenv("MUTECT_HOME") if os.getenv("MUTECT_HOME") else os.curdir)

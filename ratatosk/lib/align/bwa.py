@@ -21,20 +21,19 @@ Classes
 import re
 import luigi
 from itertools import izip
-from ratatosk.job import InputJobTask, JobTask, JobWrapperTask, DefaultShellJobRunner, PipedTask
+import ratatosk.lib.files.input
+from ratatosk.job import JobTask, JobWrapperTask, DefaultShellJobRunner, PipedTask
 from ratatosk.lib.tools.samtools import SamToBam
 from ratatosk.utils import rreplace, fullclassname
 
-class BwaJobRunner(DefaultShellJobRunner):
+class InputFastqFile(ratatosk.lib.files.input.InputFastqFile):
     pass
 
-class InputFastqFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
-    suffix = luigi.Parameter(default=".fastq.gz")
-
-class InputFastaFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastaFile")
+class InputFastaFile(ratatosk.lib.files.input.InputFastaFile):
     suffix = luigi.Parameter(default=".fa")
+
+class BwaJobRunner(DefaultShellJobRunner):
+    pass
 
 class BwaJobTask(JobTask):
     """Main bwa class with parameters necessary for all bwa classes"""

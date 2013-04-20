@@ -22,14 +22,17 @@ Classes
 import os
 import luigi
 import logging
-import ratatosk.lib.files.external
+import ratatosk.lib.files.files
 from ratatosk.utils import rreplace, fullclassname
-from ratatosk.job import InputJobTask, JobTask, JobWrapperTask
+from ratatosk.job import JobTask, JobWrapperTask
 from ratatosk.jobrunner import  DefaultShellJobRunner
 from ratatosk.log import get_logger
 import ratatosk.shell as shell
 
 logger = get_logger()
+
+class InputVcfFile(ratatosk.lib.files.input.InputVcfFile):
+    pass
 
 class snpEffJobRunner(DefaultShellJobRunner):
     def _make_arglist(self, job):
@@ -68,11 +71,6 @@ class snpEffJobRunner(DefaultShellJobRunner):
                 #     os.rename(a.path + ".idx", b.path + ".idx")
         else:
             raise Exception("Job '{}' failed: \n{}".format(cmd, " ".join([stderr])))
-
-
-class InputVcfFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
-    suffix = luigi.Parameter(default=(".vcf", ), is_list=True)
 
 class snpEffJobTask(JobTask):
     _snpeff_default_home = os.getenv("SNPEFF_HOME") if os.getenv("SNPEFF_HOME") else os.curdir

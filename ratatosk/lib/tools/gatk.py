@@ -37,6 +37,12 @@ except:
 
 logger = get_logger()
 
+class InputBamFile(ratatosk.lib.files.input.InputBamFile):
+    pass
+
+class InputVcfFile(ratatosk.lib.files.input.InputVcfFile):
+    pass
+
 class GATKJobRunner(DefaultShellJobRunner):
     @staticmethod
     def _get_main(job):
@@ -76,12 +82,6 @@ class GATKJobRunner(DefaultShellJobRunner):
                     os.rename(a.path + ".idx", b.path + ".idx")
         else:
             raise Exception("Job '{}' failed: \n{}".format(cmd, " ".join([stderr])))
-
-class InputBamFile(ratatosk.lib.files.input.InputBamFile):
-    pass
-
-class InputVcfFile(ratatosk.lib.files.input.InputVcfFile):
-    pass
 
 class GATKJobTask(JobTask):
     exe_path = luigi.Parameter(default=os.getenv("GATK_HOME") if os.getenv("GATK_HOME") else os.curdir)

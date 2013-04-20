@@ -43,6 +43,7 @@ files
 
    files/external
    files/fastq
+   files/input
 
 tools
 -----

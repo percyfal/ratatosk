@@ -24,22 +24,22 @@ import luigi
 import time
 import shutil
 from itertools import izip
-from ratatosk.job import InputJobTask, JobTask
+import ratatosk.lib.files.input
+from ratatosk.job import JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner, DefaultGzShellJobRunner
 from ratatosk.utils import rreplace
 from ratatosk.log import get_logger
 
 logger = get_logger()
 
+class InputFastqFile(ratatosk.lib.files.input.InputFastqFile):
+    pass
+
 class MiscJobRunner(DefaultShellJobRunner):
-        pass
+    pass
 
 class ResyncMatesJobRunner(DefaultGzShellJobRunner):
-        pass
-
-class InputFastqFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
-    suffix = luigi.Parameter(default=".fastq.gz")
+    pass
 
 class ResyncMates(JobTask):
     executable = luigi.Parameter(default="resyncMates.pl")

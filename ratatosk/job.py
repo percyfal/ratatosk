@@ -54,8 +54,6 @@ class BaseJobTask(luigi.Task):
     # need to do hacks
     target = luigi.Parameter(default=None, description="Output target name")
     suffix = luigi.Parameter(default=(), description="File suffix for target", is_list=True)
-    #target_suffix = luigi.Parameter(default=(), description="File suffix for target", is_list=True)
-    #source_suffix = luigi.Parameter(default=None, description="File suffix for source")
     # Use for changing labels in graph visualization
     use_long_names = luigi.Parameter(default=False, description="Use long names (including all options) in graph vizualization", is_boolean=True, is_global=True)
     # Use for changing labels in graph visualization
@@ -185,7 +183,7 @@ class BaseJobTask(luigi.Task):
             len_diff = len(parents) - len(default_parents)
             default_parents = list(default_parents) + ["ratatosk.job.NullJobTask" for i in range(0, len_diff)]
         for p,d in izip(parents, default_parents):
-            h = RatatoskHandler(label="_parent_cls", mod=p)
+            h = RatatoskHandler(label="_parent_cls", mod=p, load_type="class")
             register_attr(self, h, default_handler=d)
         
     def _update_config(self, config, param_values_dict, disable_parent_task_update=False, *args, **kwargs):

@@ -31,7 +31,6 @@ class IHandler(object):
     def load_type(self):
         raise NotImplementedError
 
-
 class RatatoskHandler(IHandler):
     """Ratatosk handler class. Ensures we have at least label and mod
     functions that register uses to place mod in
@@ -60,7 +59,6 @@ class RatatoskHandler(IHandler):
 
     def load_type(self):
         return self._load_type
-
 
 def _load_module_function(handler_obj):
     """Load a module function represented as a string.
@@ -95,13 +93,9 @@ def _load_module_class(handler_obj):
         ret_cls = cls
         return ret_cls
     except:
-        logger.warn("No class '{}' found: failed to register handler '{}'".format(".".join([opt_mod, opt_fn]), 
+        logger.warn("No class '{}' found: failed to register handler '{}'".format(".".join([opt_mod, opt_cls]), 
                                                                                   handler_obj.label()))
         return None
-
-        # logger.warn("No class {} found: using default class {} for task '{}'".format(".".join([opt_mod, opt_cls]), 
-        #                                                                              ".".join([default_mod, default_cls]),
-        #                                                                              self.__class__))
 
 def _load(handler_obj):
     if handler_obj.load_type() == "function":

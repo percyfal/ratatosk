@@ -25,6 +25,21 @@ The use of these classes is mainly intended for two cases:
 2. (Future work) The input file tasks implicitly defines a file type
    and could therefore be used to validate input/output
 
+Usage
+-----
+
+Import the module and subclass any of the input files:
+
+.. code-block:: python
+
+   import ratatosk.lib.files.input
+
+   class InputBamFile(ratatosk.lib.files.input.InputBamFile)
+       pass
+
+This effectively gives :class:`InputBamFile` its own namespace in the
+configuration file.
+
 Classes
 -------
 """
@@ -35,6 +50,25 @@ class InputBamFile(InputJobTask):
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
     suffix = luigi.Parameter(default=".bam")
 
+class InputSamFile(InputJobTask):
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.SamFile")
+    suffix = luigi.Parameter(default=".sam")
+
 class InputVcfFile(InputJobTask):
     parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
     suffix = luigi.Parameter(default=".vcf")
+
+class InputFastaFile(InputJobTask):
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastaFile")
+    suffix = luigi.Parameter(default=".fasta")
+
+class InputFastqFile(InputJobTask):
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
+    suffix = luigi.Parameter(default=(".fastq.gz", ), is_list=True)
+
+class InputTxtFile(InputJobTask):
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.TxtFile")
+    suffix = luigi.Parameter(default=(".txt", ), is_list=True)
+
+class InputPath(InputJobTask):
+    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.Path")

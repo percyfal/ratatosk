@@ -24,10 +24,10 @@ import luigi
 import time
 import glob
 import re
-import ratatosk.lib.files.external
+import ratatosk.lib.files.input
 from ratatosk.utils import rreplace
 from ratatosk.config import get_config
-from ratatosk.job import InputJobTask, JobWrapperTask, JobTask
+from ratatosk.job import JobWrapperTask, JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner
 from ratatosk.handler import RatatoskHandler, register, register_task_handler
 from ratatosk import backend
@@ -35,6 +35,12 @@ from ratatosk.log import get_logger
 import ratatosk.shell as shell
 
 logger = get_logger()
+
+class InputBamFile(ratatosk.lib.files.input.InputBamFile):
+    pass
+
+class InputFastaFile(ratatosk.lib.files.input.InputFastaFile):
+    pass
 
 class PicardJobRunner(DefaultShellJobRunner):
     def _make_arglist(self, job):
@@ -50,14 +56,6 @@ class PicardJobRunner(DefaultShellJobRunner):
         (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
         arglist += job_args
         return (arglist, tmp_files)
-
-class InputBamFile(JobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
-    suffix = luigi.Parameter(default=".bam")
-
-class InputFastaFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastaFile")
-    suffix = luigi.Parameter(default=".fa")
 
 class PicardJobTask(JobTask):
     java_exe = "java"
