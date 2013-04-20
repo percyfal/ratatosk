@@ -28,6 +28,7 @@ from ratatosk.utils import rreplace, fullclassname
 from ratatosk.job import JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner
 from ratatosk.log import get_logger
+from ratatosk.handler import RatatoskHandler, register_task_handler
 import ratatosk.shell as shell
 
 try:
@@ -319,6 +320,28 @@ class UnifiedGenotyper(GATKIndexedJobTask):
         retval += ["-R", self.ref]
         return retval
 
+class UnifiedGenotyperAlleles(UnifiedGenotyper):
+    """Force genotype calling at variants defined by second argument."""
+    label = luigi.Parameter(default="-genotype")
+    parent_task = luigi.Parameter(default=("ratatosk.lib.tools.gatk.InputBamFile",
+                                           "ratatosk.lib.tools.gatk.InputVcfFile"), is_list=True)
+    
+    def opts(self):
+        retval = super(UnifiedGenotyperAlleles, self).opts()
+        retval = [x.replace("EMIT_VARIANTS_ONLY", "EMIT_ALL_SITES") for x in retval]
+        if not any([re.search("--genotyping_mode", x) for x in retval]):
+            retval += ["--genotyping_mode", "GENOTYPE_GIVEN_ALLELES"]
+        if not any([re.search("--output_mode", x) for x in retval]):
+            retval += ["--output_mode", "EMIT_ALL_SITES"]
+        return retval
+
+    def args(self):
+        retval =  ["-I", self.input()[0], "-o", self.output(), '--alleles', self.input()[1]]
+        if not self.ref:
+            raise Exception("need reference for UnifiedGenotyperAlleles")
+        retval += ["-R", self.ref]
+        return retval
+
 class SplitUnifiedGenotyper(UnifiedGenotyper):
     # Label should be same as calling function (often CombineVariants)
     label = luigi.Parameter(default="-variants")
@@ -332,6 +355,26 @@ class SplitUnifiedGenotyper(UnifiedGenotyper):
         """
         base = rreplace(os.path.join(os.path.dirname(os.path.dirname(self.target)), os.path.basename(self.target)), self.label, "", 1).split("-")
         return "".join(base[0:-1]) + parent_cls().sfx()
+
+# class CombineVariantsList(GATKJobTask):
+#     sub_executable = "CombineVariants"
+#     suffix = luigi.Parameter(default=".vcf")
+#     label = luigi.Parameter(default="-variants")
+#     parent_task = luigi.Parameter(default=("ratatosk.lib.tools.gatk.InputVcfFile",), is_list=True)
+#     target_generator_handler = luigi.Parameter(default=None)
+
+#     def requires(self):
+#         cls = self.parent()[0]
+#         sources = []
+#         if self.target_generator_handler and "target_generator_handler" not in self._handlers.keys():
+#             tgf = RatatoskHandler(label="target_generator_handler", mod=self.target_generator_handler)
+#             register_task_handler(self, tgf)
+#         if not "target_generator_handler" in self._handlers.keys():
+#             logging.warn("combine variants requires a target generator handler; no defaults are as of yet implemented")
+#             return []
+#         sources = self._handlers["target_generator_handler"](self)
+#         print sources
+#         return [cls(target=src) for src in sources]
 
 class CombineVariants(GATKJobTask):
     sub_executable = "CombineVariants"
@@ -379,6 +422,7 @@ class CombineVariants(GATKJobTask):
             raise Exception("need reference for CombineVariants")
         retval += ["-R", self.ref]
         return retval
+        
 
 class SelectVariants(GATKJobTask):
     sub_executable = "SelectVariants"

@@ -221,6 +221,9 @@ class TestPicardWrappers(unittest.TestCase):
         self.assertEqual(sorted(['java', '-Xmx2g', '-jar', self._path('MergeSamFiles.jar'), 'SO=coordinate TMP_DIR=./tmp', 'VALIDATION_STRINGENCY=SILENT', 'OUTPUT=', 'data/sample.sort.merge.bam', 'INPUT=', 'data/sample1.sort.bam', 'INPUT=', 'data/sample2.sort.bam']),
                          sorted(_prune_luigi_tmp(task.job_runner()._make_arglist(task)[0])))
 
+
+def gatk_vcf_generator(task):
+    return ["vcf1.vcf", "vcf2.vcf"]
 @unittest.skipIf((os.getenv("GATK_HOME") is None or os.getenv("GATK_HOME") == ""), "No environment GATK_HOME set; skipping")
 class TestGATKWrappers(unittest.TestCase):
     def setUp(self):
@@ -259,6 +262,11 @@ class TestGATKWrappers(unittest.TestCase):
         self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T UnifiedGenotyper', '-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH', '-nt 1', '--dbsnp',  'data/dbsnp132_chr11.vcf', '-I', 'data/sample.sort.merge.realign.recal.clip.bam', '-o', 'data/sample.sort.merge.realign.recal.clip.vcf', '-R', 'data/chr11.fa'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
+    def test_unifiedgenotyper_alleles(self):
+        task = ratatosk.lib.tools.gatk.UnifiedGenotyperAlleles(target=self.mergebam.replace(".bam", ".realign.recal.clip-genotype.vcf"))
+        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T UnifiedGenotyper', '-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_ALL_SITES -glm BOTH', '-nt 1', '--dbsnp', 'data/dbsnp132_chr11.vcf', '--genotyping_mode', 'GENOTYPE_GIVEN_ALLELES', '-I', 'data/sample.sort.merge.realign.recal.clip.bam', '-o', 'data/sample.sort.merge.realign.recal.clip-genotype.vcf', '--alleles', 'data/sample.sort.merge.realign.recal.clip.vcf', '-R', 'data/chr11.fa'],
+                         _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
+
     def test_variantfiltration(self):
         task = ratatosk.lib.tools.gatk.VariantFiltration(target=self.mergebam.replace(".bam", ".realign.recal.clip.filtered.vcf"),
                                                          options=['--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL > 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 1.5" --filterName "LowQD"', '--variant', 'data/sample.sort.merge.realign.recal.clip.vcf'])
@@ -270,7 +278,6 @@ class TestGATKWrappers(unittest.TestCase):
         self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T VariantEval', '-ST Filter -l INFO --doNotUseAllStandardModules --evalModule CompOverlap --evalModule CountVariants --evalModule GenotypeConcordance --evalModule TiTvVariantEvaluator --evalModule ValidationReport --stratificationModule Filter', '--dbsnp',  'data/dbsnp132_chr11.vcf', '--eval', 'data/sample.sort.merge.realign.recal.clip.filtered.vcf', '-o', 'data/sample.sort.merge.realign.recal.clip.filtered.eval_metrics', '-R', 'data/chr11.fa'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
-
     def test_variant_annotator(self):
         task = ratatosk.lib.tools.gatk.VariantAnnotator(target=self.mergebam.replace(".bam", "-gatkann.vcf"))
         self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T VariantAnnotator', '', '--variant', 'data/sample.sort.merge.vcf', '--out', 'data/sample.sort.merge-gatkann.vcf', '-R', 'data/chr11.fa', '-A', 'BaseQualityRankSumTest', '-A', 'DepthOfCoverage', '-A', 'FisherStrand', '-A', 'GCContent', '-A', 'HaplotypeScore', '-A', 'HomopolymerRun', '-A', 'MappingQualityRankSumTest', '-A', 'MappingQualityZero', '-A', 'QualByDepth', '-A', 'ReadPosRankSumTest', '-A', 'RMSMappingQuality'], _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
@@ -280,8 +287,15 @@ class TestGATKWrappers(unittest.TestCase):
         self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T VariantAnnotator', '', '--variant', 'data/sample.sort.merge.vcf', '--out', 'data/sample.sort.merge-annotated.vcf', '--snpEffFile', 'data/sample.sort.merge-effects.vcf', '-R', 'data/chr11.fa', '-A', 'SnpEff'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
+    # def test_combine_variants(self):
+    #     task = ratatosk.lib.tools.gatk.CombineVariants(target=self.mergebam.replace(".bam", "-variants-combined.vcf"), ref='data/chr11.fa',
+    #                                                    target_generator_handler="test.test_wrapper.gatk_vcf_generator")
+    #     self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T CombineVariants', '-V', 'vcf1.vcf', '-V', 'vcf2.vcf', '-o', 'data/sample.sort.merge-variants-combined.vcf', '-R', 'data/chr11.fa'],
+    #                      _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
+
+
     def test_combine_variants(self):
-        task = ratatosk.lib.tools.gatk.CombineVariants(target=self.mergebam.replace(".bam", "-variants-combined.vcf"), ref='data/chr11.fa')
+        task = ratatosk.lib.tools.gatk.CombineSplitVariants(target=self.mergebam.replace(".bam", "-variants-combined.vcf"), ref='data/chr11.fa')
         self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T CombineVariants', '-V', 'data/sample.sort.merge-variants-combined-split/sample.sort.merge-variants-combined-chr11.vcf', '-o', 'data/sample.sort.merge-variants-combined.vcf', '-R', 'data/chr11.fa'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 

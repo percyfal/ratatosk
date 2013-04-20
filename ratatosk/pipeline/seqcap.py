@@ -162,4 +162,5 @@ class SeqCap(SeqCapPipeline):
 class SeqCapSummary(SeqCapPipeline):
     def requires(self):
         self._setup()
+        return []
         
