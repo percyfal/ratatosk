@@ -18,9 +18,11 @@ import luigi
 from types import GeneratorType
 from ratatosk import backend
 from ratatosk.utils import fullclassname
+from ratatosk.log import get_logger
 
 # Use luigi-interface for now
-logger = logging.getLogger('luigi-interface')
+# logger = logging.getLogger('luigi-interface')
+logger = get_logger()
 
 class IHandler(object):
     """A handler interface class"""

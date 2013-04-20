@@ -19,8 +19,10 @@ import luigi
 import glob
 import itertools
 import logging
+from ratatosk.log import get_logger
 
-logger = logging.getLogger('luigi-interface')
+# logger = logging.getLogger('luigi-interface')
+logger = get_logger()
 
 # http://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
 # FIX ME: make override work

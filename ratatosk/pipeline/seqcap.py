@@ -63,7 +63,7 @@ class CombineFilteredVariants(CombineVariants):
                                            "ratatosk.lib.tools.gatk.InputBamFile",), is_list=True)
     label = "-combined"
     suffix = ".vcf"
-    split = False
+    split_by = None
 
     def args(self):
         cls = self.parent()[0]

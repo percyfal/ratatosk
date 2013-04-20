@@ -18,8 +18,10 @@ import collections
 from ConfigParser import NoSectionError, NoOptionError, DuplicateSectionError
 from ratatosk import backend
 from ratatosk.utils import update, config_to_dict
+from ratatosk.log import get_logger
 
-logger = logging.getLogger('luigi-interface')
+#logger = logging.getLogger('luigi-interface')
+logger = get_logger()
 
 try:
     from collections import OrderedDict as _default_dict
@@ -317,24 +319,6 @@ class RatatoskCustomConfigParser(RatatoskConfigParser):
 
     def reload(self):
         return self._instance.read(self._instance._custom_config_paths)
-
-def setup_interface_logging():
-    # From luigi.interface - setup ratatosk-specific logging interface?
-    # use a variable in the function object to determine if it has run before
-    if getattr(setup_interface_logging, "has_run", False):
-        return
-
-    logger = logging.getLogger('luigi-interface')
-    logger.setLevel(logging.DEBUG)
-
-    streamHandler = logging.StreamHandler()
-    streamHandler.setLevel(logging.DEBUG)
-
-    formatter = logging.Formatter('%(levelname)s: %(message)s')
-    streamHandler.setFormatter(formatter)
-
-    logger.addHandler(streamHandler)
-    setup_interface_logging.has_run = True
 
 def get_config():
     return RatatoskConfigParser.instance()

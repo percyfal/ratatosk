@@ -3,6 +3,7 @@ import os
 import sys
 import itertools
 from ratatosk import backend
+from ratatosk.log import setup_logging
 from ratatosk.config import setup_config
 from ratatosk.handler import setup_global_handlers
 import ratatosk.lib.align.bwa
@@ -38,6 +39,7 @@ if __name__ == "__main__":
     if "--custom-config" in task_args:
         custom_config_file = task_args[task_args.index("--custom-config") + 1]
 
+    setup_logging()
     setup_config(config_file=config_file, custom_config_file=custom_config_file)
     setup_global_handlers()
 
