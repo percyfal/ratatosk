@@ -40,7 +40,7 @@ class InputBamFile(ratatosk.lib.files.input.InputBamFile):
     pass
 
 class InputFastaFile(ratatosk.lib.files.input.InputFastaFile):
-    pass
+    suffix = luigi.Parameter(default=".fa")
 
 class PicardJobRunner(DefaultShellJobRunner):
     def _make_arglist(self, job):

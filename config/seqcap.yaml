@@ -73,11 +73,12 @@ ratatosk.lib.tools.gatk:
 
   VariantSnpEffAnnotator:
     parent_task: 
-      - ratatosk.lib.annotation.snpeff.snpEffWrapper
-      - ratatosk.lib.annotation.snpeff.snpEffWrapper
+      - ratatosk.lib.tools.gatk.ReadBackedPhasing
+      - ratatosk.lib.annotation.snpeff.snpEff
+
     add_label:
-      - -effects
       - 
+      - -effects
 
 ratatosk.lib.align.bwa:
   Aln:

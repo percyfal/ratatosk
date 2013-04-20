@@ -288,8 +288,6 @@ class VariantSnpEffAnnotator(VariantAnnotator):
     suffix = luigi.Parameter(default=(".vcf",), is_list=True)
 
     def args(self):
-        print [x.path for x in self.input()]
-        print [x for x in self.input()]
         retval = ["--variant", self.input()[0], "--out", self.output(), "--snpEffFile", self.input()[1]]
         if not self.ref:
             raise Exception("need reference for VariantAnnotator")
