@@ -321,10 +321,20 @@ class UnifiedGenotyper(GATKIndexedJobTask):
         return retval
 
 class UnifiedGenotyperAlleles(UnifiedGenotyper):
-    """Force genotype calling at variants defined by second argument."""
+    """Force genotype calling at variants defined by second argument.
+    
+    For background, see :ref:`merging batched call sets
+    <http://gatkforums.broadinstitute.org/discussion/46/merging-batched-call-sets>`_.
+    The 'master vcf file' is the union of variant calls made for a
+    batch of samples, in which samples may have unique variant calls.
+    This step is therefore needed to ascertain whether a missing call
+    in one sample is due to low coverage, or that it is homozygote wrt
+    the reference.
+    """
     label = luigi.Parameter(default="-genotype")
     parent_task = luigi.Parameter(default=("ratatosk.lib.tools.gatk.InputBamFile",
                                            "ratatosk.lib.tools.gatk.InputVcfFile"), is_list=True)
+        
     def opts(self):
         retval = super(UnifiedGenotyperAlleles, self).opts()
         retval = [x.replace("EMIT_VARIANTS_ONLY", "EMIT_ALL_SITES") for x in retval]
@@ -336,8 +346,6 @@ class UnifiedGenotyperAlleles(UnifiedGenotyper):
 
     def args(self):
         retval = super(UnifiedGenotyperAlleles, self).args() + ['--alleles', self.input()[1]]
-        print "Args " + self.input()[1]
-        print "Args"
         return retval
 
 class SplitUnifiedGenotyper(UnifiedGenotyper):
@@ -370,13 +378,11 @@ class CombineVariants(GATKJobTask):
     def requires(self):
         if self.target_generator_handler:
             cls = self.parent()[0]
-            print cls
             sources = []
             if "target_generator_handler" not in self._handlers.keys():
                 tgf = RatatoskHandler(label="target_generator_handler", mod=self.target_generator_handler)
                 register_task_handler(self, tgf)
             sources = self._handlers["target_generator_handler"](self)
-            print sources
             return [cls(target=src) for src in sources]
         else:
             return [cls(target=source) for cls, source in izip(self.parent(), self.source())]
@@ -404,7 +410,7 @@ class CombineSplitVariants(CombineVariants):
 
     def requires(self):
         cls = self.parent()[0]
-        bamcls = self.parent()[1]
+        bamcls = self.parent()[0]().parent()[0]
         source = self.source()[0]
         if self.split_by == "chromosome":
             # Partition sources by chromosome. Need to get the
