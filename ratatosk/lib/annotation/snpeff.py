@@ -22,13 +22,17 @@ Classes
 import os
 import luigi
 import logging
-import ratatosk.lib.files.external
+import ratatosk.lib.files.input
 from ratatosk.utils import rreplace, fullclassname
-from ratatosk.job import InputJobTask, JobTask, JobWrapperTask
+from ratatosk.job import JobTask, JobWrapperTask
 from ratatosk.jobrunner import  DefaultShellJobRunner
+from ratatosk.log import get_logger
 import ratatosk.shell as shell
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger()
+
+class InputVcfFile(ratatosk.lib.files.input.InputVcfFile):
+    pass
 
 class snpEffJobRunner(DefaultShellJobRunner):
     def _make_arglist(self, job):
@@ -67,11 +71,6 @@ class snpEffJobRunner(DefaultShellJobRunner):
                 #     os.rename(a.path + ".idx", b.path + ".idx")
         else:
             raise Exception("Job '{}' failed: \n{}".format(cmd, " ".join([stderr])))
-
-
-class InputVcfFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
-    suffix = luigi.Parameter(default=(".vcf", ), is_list=True)
 
 class snpEffJobTask(JobTask):
     _snpeff_default_home = os.getenv("SNPEFF_HOME") if os.getenv("SNPEFF_HOME") else os.curdir
@@ -113,7 +112,6 @@ class snpEff(snpEffJobTask):
     suffix = luigi.Parameter(default=(".vcf", ), is_list=True)
 
     def output(self):
-        print self.target
         return luigi.LocalTarget(self.target)
         
     def args(self):
@@ -127,13 +125,5 @@ class snpEff(snpEffJobTask):
                   ]
         return retval
 
-# FIX ME: what does the wrapper return? 
-class snpEffWrapper(JobWrapperTask):
-    parent_task = luigi.Parameter(default=("ratatosk.lib.annotation.snpeff.InputVcfFile", ), is_list=True)
-    suffix = luigi.Parameter(default="")
-    label = luigi.Parameter(default="-effects")
-
-    def requires(self):
-        return [snpEff(target=self.target + ".txt", suffix=(".txt",)), snpEff(target=self.target + ".vcf", suffix=(".vcf",))]
-
-
+class snpEffTxt(snpEff):
+    suffix = luigi.Parameter(default=(".txt", ), is_list=True)

@@ -26,20 +26,19 @@ import luigi
 import time
 import shutil
 import random
-import logging
-from ratatosk.job import InputJobTask, JobTask
+import ratatosk.lib.files.input
+from ratatosk.job import JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner, DefaultGzShellJobRunner
 from ratatosk.utils import rreplace
+from ratatosk.log import get_logger
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger()
 
-# NB: Now subclass DefaultGzShellJobRunner
-class CutadaptJobRunner(DefaultGzShellJobRunner):
+class InputFastqFile(ratatosk.lib.files.input.InputFastqFile):
     pass
 
-class InputFastqFile(InputJobTask):
-    parent_task = luigi.Parameter(default=("ratatosk.lib.files.external.FastqFile", ), is_list=True)
-    suffix = luigi.Parameter(default=(".fastq.gz", ), is_list=True)
+class CutadaptJobRunner(DefaultGzShellJobRunner):
+    pass
 
 # NB: cutadapt is a non-hiearchical tool. Group under, say, utils?
 class Cutadapt(JobTask):

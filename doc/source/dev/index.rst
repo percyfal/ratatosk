@@ -10,6 +10,7 @@ Developer Documentation
    tasks
    configuration
    scripts
+   examples
    issues
    ideas
 

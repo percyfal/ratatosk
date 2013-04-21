@@ -22,27 +22,26 @@ Classes
 import os
 import luigi
 import logging
-import ratatosk.lib.files.external
+import ratatosk.lib.files.input
 from ratatosk.utils import rreplace, fullclassname
-from ratatosk.job import InputJobTask, JobTask
+from ratatosk.job import JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner
+from ratatosk.log import get_logger
 import subprocess
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger()
+
+class InputVcfFile(ratatosk.lib.files.input.InputVcfFile):
+    pass
+
+class InputTxtFile(ratatosk.lib.files.input.InputTxtFile):
+    pass
+
+class InputPath(ratatosk.lib.files.input.InputPath):
+    pass
 
 class AnnovarJobRunner(DefaultShellJobRunner):
     pass
-
-class InputVcfFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
-    suffix = luigi.Parameter(default=(".vcf", ), is_list=True)
-
-class InputTxtFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.TxtFile")
-    suffix = luigi.Parameter(default=(".txt", ), is_list=True)
-
-class InputPath(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.Path")
 
 class AnnovarJobTask(JobTask):
     exe_path = luigi.Parameter(default=os.getenv("ANNOVAR_HOME") if os.getenv("ANNOVAR_HOME") else os.curdir)

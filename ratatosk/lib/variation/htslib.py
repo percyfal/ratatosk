@@ -22,20 +22,21 @@ Classes
 """
 
 import luigi
-import logging
-import ratatosk.lib.files.external
+import ratatosk.lib.files.input
 import ratatosk.lib.variation.tabix
 from ratatosk.handler import RatatoskHandler, register_task_handler
-from ratatosk.job import InputJobTask, JobTask
+from ratatosk.job import JobTask
 from ratatosk.jobrunner import  DefaultShellJobRunner
 from ratatosk.utils import rreplace, fullclassname
+from ratatosk.log import get_logger
+
+logger = get_logger()
+
+class InputVcfFile(ratatosk.lib.files.input.InputVcfFile):
+    pass
 
 class HtslibJobRunner(DefaultShellJobRunner):
     pass
-
-class InputVcfFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
-    suffix = luigi.Parameter(default=(".vcf", ), is_list=True)
 
 class HtslibVcfJobTask(JobTask):
     executable = luigi.Parameter(default="vcf")

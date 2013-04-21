@@ -22,9 +22,9 @@ Classes
 """
 import os
 import luigi
-import logging
+from ratatosk.log import get_logger
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger()
 
 class BamFile(luigi.ExternalTask):
     target = luigi.Parameter(default=None)

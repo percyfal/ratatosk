@@ -20,27 +20,23 @@ Classes
 """
 import os
 import luigi
-import logging
-import ratatosk.lib.files.external
+import ratatosk.lib.files.input
 from ratatosk.job import InputJobTask, JobTask
 from ratatosk.utils import rreplace
 from ratatosk.jobrunner import DefaultShellJobRunner
+from ratatosk.log import get_logger
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger
+
+class InputBamFile(ratatosk.lib.files.input.InputBamFile):
+    pass
+
+class InputSamFile(ratatosk.lib.files.input.InputSamFile):
+    pass
 
 class SamtoolsJobRunner(DefaultShellJobRunner):
     pass
 
-class InputSamFile(InputJobTask):
-    """Wrapper task that serves as entry point for samtools tasks that take sam file as input"""
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.SamFile")
-    suffix = luigi.Parameter(default=".sam")
-
-class InputBamFile(InputJobTask):
-    """Wrapper task that serves as entry point for samtools tasks that take bam file as input"""
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
-    suffix = luigi.Parameter(default=".bam")
-    
 class SamtoolsJobTask(JobTask):
     """Main samtools job task"""
     executable = luigi.Parameter(default="samtools")

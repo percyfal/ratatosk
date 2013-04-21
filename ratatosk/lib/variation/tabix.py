@@ -21,18 +21,19 @@ Classes
 
 import os
 import luigi
-import logging
-import ratatosk.lib.files.external
-from ratatosk.job import InputJobTask, JobTask, JobWrapperTask
+import ratatosk.lib.files.input
+from ratatosk.job import JobTask, JobWrapperTask
 from ratatosk.jobrunner import DefaultShellJobRunner
 from ratatosk.utils import rreplace, fullclassname
+from ratatosk.log import get_logger
+
+logger = get_logger()
+
+class InputVcfFile(ratatosk.lib.files.input.InputVcfFile):
+    pass
 
 class TabixJobRunner(DefaultShellJobRunner):
     pass
-
-class InputVcfFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.VcfFile")
-    suffix = luigi.Parameter(default=(".vcf", ), is_list=True)
 
 class TabixJobTask(JobTask):
     executable = ""

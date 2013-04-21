@@ -23,6 +23,7 @@ import tornado.web
 import tornado.httpclient
 import tornado.httpserver
 import luigi.scheduler as scheduler
+import luigi.interface as interface
 import pkg_resources
 try:
     import pygraphviz
@@ -34,9 +35,17 @@ from luigi.rpc import RemoteSchedulerResponder
 from luigi.scheduler import PENDING, DONE, FAILED, RUNNING
 
 
+def _create_scheduler():
+    config = interface.get_config()
+    retry_delay = config.getfloat('scheduler', 'retry-delay', 900.0)
+    remove_delay = config.getfloat('scheduler', 'remove-delay', 600.0)
+    worker_disconnect_delay = config.getfloat('scheduler', 'worker-disconnect-delay', 60.0)
+    return scheduler.CentralPlannerScheduler(retry_delay, remove_delay, worker_disconnect_delay)
+
+
 class RPCHandler(tornado.web.RequestHandler):
     """ Handle remote scheduling calls using rpc.RemoteSchedulerResponder"""
-    scheduler = scheduler.CentralPlannerScheduler(remove_delay=30.0)
+    scheduler = _create_scheduler()
     api = RemoteSchedulerResponder(scheduler)
 
     def get(self, method):
@@ -70,23 +79,24 @@ class TableVisualizeHandler(tornado.web.RequestHandler):
         # with sample names in production
         task_header = ["Project", "Flowcell", "Sample"]
         status_line = ["J.Doe_00_01", "NA", "NA"]
+
+        colors = {PENDING: ('white', 'black'),
+                  DONE: ('green', 'white'),
+                  FAILED: ('red', 'white'),
+                  RUNNING: ('blue', 'white'),
+                  'BROKEN': ('orange', 'black'),  # external task, can't run
+                  }
         for task, p in tasks.iteritems():
             selector = p['status']
 
             if selector == PENDING and not p['workers']:
                 selector = 'BROKEN'
 
-            colors = {PENDING: ('white', 'black'),
-                     DONE: ('green', 'white'),
-                     FAILED: ('red', 'white'),
-                     RUNNING: ('blue', 'white'),
-                     'BROKEN': ('orange', 'black'),  # external task, can't run
-                     }
-
             label = task.replace('(', '\\n(').replace(',', ',\\n')  # force GraphViz to break lines
             taskname = task.split("(")[0]
             task_header.append(taskname)
             status_line.append(selector)
+
 
         self.write("<table border=1 cellpadding=10>\n<tr>\n")
         self.write(" ".join(["<th>{}</th>".format(x) for x in task_header]))
@@ -124,18 +134,19 @@ class VisualizeHandler(tornado.web.RequestHandler):
 
         graphviz = pygraphviz.AGraph(directed=True, size=12)
         n_nodes = 0
+
+        colors = {PENDING: ('white', 'black'),
+                  DONE: ('green', 'white'),
+                  FAILED: ('red', 'white'),
+                  RUNNING: ('blue', 'white'),
+                  'BROKEN': ('orange', 'black'),  # external task, can't run
+                  }
         for task, p in tasks.iteritems():
             selector = p['status']
 
             if selector == PENDING and not p['workers']:
                 selector = 'BROKEN'
 
-            colors = {PENDING: ('white', 'black'),
-                     DONE: ('green', 'white'),
-                     FAILED: ('red', 'white'),
-                     RUNNING: ('blue', 'white'),
-                     'BROKEN': ('orange', 'black'),  # external task, can't run
-                     }
             fillcolor = colors[selector][0]
             fontcolor = colors[selector][1]
             shape = 'box'
@@ -231,16 +242,16 @@ def apps(debug):
     return api_app, visualizer_app, table_app
 
 
-def run(visualizer_processes=1):
+def run(visualizer_processes=1, visualizer_port=8081, api_port=8082, table_visualizer_port=8083):
     """ Runs one instance of the API server and <visualizer_processes> visualizer servers
     """
     import luigi.process as process
 
     api_app, visualizer_app, table_app = apps(debug=False)
 
-    visualizer_sockets = tornado.netutil.bind_sockets(8081)
-    api_sockets = tornado.netutil.bind_sockets(8082)
-    table_sockets = tornado.netutil.bind_sockets(8083)
+    visualizer_sockets = tornado.netutil.bind_sockets(visualizer_port)
+    api_sockets = tornado.netutil.bind_sockets(api_port)
+    table_sockets = tornado.netutil.bind_sockets(table_visualizer_port)
 
     proc, attempt = process.fork_linked_workers(1 + visualizer_processes)
 
@@ -282,6 +293,24 @@ def run(visualizer_processes=1):
 
     tornado.ioloop.IOLoop.instance().start()
 
+def run_api_threaded(api_port=8082):
+    ''' For unit tests'''
+
+    api_app, visualizer_app = apps(debug=False)
+
+    api_sockets = tornado.netutil.bind_sockets(api_port)
+
+    server = tornado.httpserver.HTTPServer(api_app)
+    server.add_sockets(api_sockets)
+
+    def run_tornado():
+        tornado.ioloop.IOLoop.instance().start()
+
+    import threading
+    threading.Thread(target=run_tornado).start()
+
+def stop():
+    tornado.ioloop.IOLoop.instance().stop()
 
 if __name__ == "__main__":
     run()

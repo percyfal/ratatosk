@@ -20,4 +20,6 @@ Classes
 """
 
 import os
-import logging
+from ratatosk.log import get_logger
+
+logger = get_logger()

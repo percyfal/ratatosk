@@ -21,11 +21,19 @@ Classes
 
 import os
 import luigi
-import logging
-from ratatosk.job import InputJobTask, JobTask
+import ratatosk.lib.files.input
+from ratatosk.job import JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner
-logger = logging.getLogger('luigi-interface')
+from ratatosk.log import get_logger
 import ratatosk.shell as shell
+
+logger = get_logger()
+
+class InputBamFile(ratatosk.lib.files.input.InputBamFile):
+    pass
+
+class InputFastqFile(ratatosk.lib.files.input.InputFastqFile):
+    pass
 
 # This was a nightmare to get right. Temporary output is a directory,
 # so would need custom _fix_paths for cases like this
@@ -58,14 +66,6 @@ class FastQCJobRunner(DefaultShellJobRunner):
                 a.move(os.path.join(os.curdir, b.path))
         else:
             raise Exception("Job '{}' failed: \n{}".format(cmd.replace("= ", "="), " ".join([stderr])))
-
-class InputBamFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.BamFile")
-    suffix = luigi.Parameter(default=(".bam", ), is_list=True)
-
-class InputFastqFile(InputJobTask):
-    parent_task = luigi.Parameter(default="ratatosk.lib.files.external.FastqFile")
-    suffix = luigi.Parameter(default=(".fastq.gz", ), is_list=True)
 
 class FastQC(JobTask):
     executable = luigi.Parameter(default="fastqc")

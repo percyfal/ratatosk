@@ -9,6 +9,7 @@ ratatosk modules
 
    backend
    config
+   experiment
    handler
    interface
    job

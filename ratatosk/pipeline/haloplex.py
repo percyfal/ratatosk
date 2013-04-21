@@ -41,14 +41,14 @@ Classes
 
 import luigi
 import os
-import logging
 from ratatosk import backend
 from ratatosk.job import PipelineTask, JobTask, JobWrapperTask, PrintConfig
 from ratatosk.utils import make_fastq_links
 from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, VariantFiltration
 from ratatosk.lib.variation.tabix import Bgzip
+from ratatosk.log import get_logger
 
-logger = logging.getLogger('luigi-interface')
+logger = get_logger()
 
 class RawUnifiedGenotyper(UnifiedGenotyper):
     """
@@ -103,7 +103,7 @@ class HaloPlex(HaloPipeline):
         self._setup()
         if not self.targets:
             return []
-        variant_targets = ["{}.{}".format(x[1], self.final_target_suffix) for x in self.targets]
+        variant_targets = ["{}.{}".format(x.prefix("sample"), self.final_target_suffix) for x in self.targets]
         return [VariantEval(target=tgt) for tgt in variant_targets]
 
 class HaloBgzip(Bgzip):
