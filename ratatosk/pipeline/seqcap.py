@@ -177,8 +177,8 @@ class SeqCapPipeline(PipelineTask):
 class SeqCap(SeqCapPipeline):
     def requires(self):
         self._setup()
-        out_targets = ["{}.{}".format(x[1], "sort.merge.dup.realign.recal-variants-combined-phased-effects") for x in self.targets]
-        out_targets = ["{}.{}".format(x[1], "sort.merge.dup.realign.recal-variants-combined-phased-annotated.vcf") for x in self.targets]
+        out_targets = ["{}.{}".format(x.prefix("sample"), "sort.merge.dup.realign.recal-variants-combined-phased-effects") for x in self.targets]
+        out_targets = ["{}.{}".format(x.prefix("sample"), "sort.merge.dup.realign.recal-variants-combined-phased-annotated.vcf") for x in self.targets]
         return [VariantSnpEffAnnotator(target=tgt) for tgt in out_targets]
 
 class SeqCapSummary(SeqCapPipeline):
