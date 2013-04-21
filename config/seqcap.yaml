@@ -44,9 +44,9 @@ ratatosk.lib.tools.gatk:
   SplitUnifiedGenotyper:
     parent_task: ratatosk.lib.tools.gatk.PrintReads
   SelectSnpVariants:
-    parent_task: ratatosk.lib.tools.gatk.CombineVariants
+    parent_task: ratatosk.lib.tools.gatk.CombineSplitVariants
   SelectIndelVariants:
-    parent_task: ratatosk.lib.tools.gatk.CombineVariants
+    parent_task: ratatosk.lib.tools.gatk.CombineSplitVariants
   VariantSnpRecalibrator:
     parent_task: ratatosk.lib.tools.gatk.SelectSnpVariants
   VariantSnpRecalibratorExome:
@@ -75,9 +75,11 @@ ratatosk.lib.tools.gatk:
     parent_task: 
       - ratatosk.lib.tools.gatk.ReadBackedPhasing
       - ratatosk.lib.annotation.snpeff.snpEff
+      - ratatosk.lib.annotation.snpeff.snpEffTxt
 
     add_label:
       - 
+      - -effects
       - -effects
 
 ratatosk.lib.align.bwa:
@@ -93,5 +95,8 @@ ratatosk.lib.tools.fastqc:
 
 ratatosk.lib.annotation.snpeff:
   snpEff:
+    parent_task:
+      - ratatosk.lib.tools.gatk.ReadBackedPhasing
+  snpEffTxt:
     parent_task:
       - ratatosk.lib.tools.gatk.ReadBackedPhasing

@@ -43,14 +43,37 @@ Calling via ratatosk_run.py
 Classes
 -------
 """
+import os
 import luigi
 from ratatosk import backend
 from ratatosk.job import PipelineTask, JobWrapperTask
-from ratatosk.lib.tools.gatk import  CombineVariants, SelectSnpVariants, SelectIndelVariants, VariantSnpRecalibrator, VariantIndelRecalibrator, VariantSnpRecalibrator, VariantIndelRecalibrator, VariantSnpFiltrationExp, VariantIndelFiltrationExp, VariantSnpEffAnnotator
-from ratatosk.utils import make_fastq_links
+from ratatosk.lib.tools.gatk import  CombineVariants, SelectSnpVariants, SelectIndelVariants, VariantSnpRecalibrator, VariantIndelRecalibrator, VariantSnpRecalibrator, VariantIndelRecalibrator, VariantSnpFiltrationExp, VariantIndelFiltrationExp, VariantSnpEffAnnotator, UnifiedGenotyperAlleles
+from ratatosk.utils import make_fastq_links, rreplace, fullclassname
 from ratatosk.log import get_logger
+import ratatosk.lib.tools.samtools
 
 logger = get_logger()
+
+class SeqCapUnifiedGenotyperAlleles(UnifiedGenotyperAlleles):
+    """ Temporary class that resolves the issue of calling
+t
+    CombineVariants with a predefined target name.
+    """
+    parent_task = luigi.Parameter(default=("ratatosk.lib.tools.gatk.PrintReads",
+                                           "ratatosk.lib.tools.gatk.CombineVariants"), is_list=True)
+    _config_section = "ratatosk.lib.tools.gatk"
+    outdir = luigi.Parameter(description="Where analysis takes place", default=None)
+    def requires(self):
+        """Task requirements. In many cases this is a single source
+        whose name can be generated following the code below, and
+        therefore doesn't need reimplementation in the subclasses."""
+        bamcls = self.parent()[0]
+        indexcls = ratatosk.lib.tools.samtools.Index
+        print "Source list " + str(self.source())
+        print self.parent()[1].target
+        retval = [bamcls(target=self.source()[0])]  + [CombineVariants(target=os.path.join(self.outdir, "CombinedVariants.vcf"))] + [indexcls(target=rreplace(self.source()[0], bamcls().sfx(), indexcls().sfx(), 1), parent_task=fullclassname(bamcls))]
+        print [x.target for x in retval]
+        return [bamcls(target=self.source()[0])]  + [CombineVariants(target=os.path.join(self.outdir, "CombinedVariants.vcf"))] + [indexcls(target=rreplace(self.source()[0], bamcls().sfx(), indexcls().sfx(), 1), parent_task=fullclassname(bamcls))]
 
 class CombineFilteredVariants(CombineVariants):
     """
@@ -59,8 +82,7 @@ class CombineFilteredVariants(CombineVariants):
     """
     _config_section = "ratatosk.lib.tools.gatk"
 
-    parent_task = luigi.Parameter(default=("ratatosk.pipeline.seqcap.FiltrationWrapper",
-                                           "ratatosk.lib.tools.gatk.InputBamFile",), is_list=True)
+    parent_task = luigi.Parameter(default=("ratatosk.pipeline.seqcap.FiltrationWrapper",), is_list=True)
     label = "-combined"
     suffix = ".vcf"
     split_by = None
@@ -162,5 +184,8 @@ class SeqCap(SeqCapPipeline):
 class SeqCapSummary(SeqCapPipeline):
     def requires(self):
         self._setup()
-        return []
+        out_targets = ["{}.{}".format(x[1], "sort.merge.dup.realign.recal-variants-combined-phased-annotated-genotype.vcf") for x in self.targets]
+        print self.targets
+        print "Targets " + str(out_targets)
+        return [SeqCapUnifiedGenotyperAlleles(target=tgt, outdir=self.outdir) for tgt in out_targets]
         
