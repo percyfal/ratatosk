@@ -42,7 +42,7 @@ class ISample(object):
     def path(self, group):
         """Return path specified group level (e.g. project, sample, sample run)"""
         return
-    @abc.abstractproperty
+    @abc.abstractmethod
     def levels(self):
         """Registered factor levels"""
         return
@@ -71,6 +71,8 @@ class Sample(ISample):
                         'sample' : sample_prefix,
                         'sample_run' : sample_run_prefix
                         }
+    def __repr__(self):
+        return "{} (".format(self.__class__) + ",".join([str(self.project_id()), str(self.sample_id()), str(self.prefix("project")), str(self.prefix("sample")), str(self.prefix("sample_run"))]) + ")"
     def project_id(self):
         return self._project_id
     def sample_id(self):
@@ -92,3 +94,12 @@ class Sample(ISample):
         return
     def get_level(self, level):
         return
+
+# Add ITargetGenerator class?
+# class ITargetGenerator(object):
+#     __metaclass__ = abc.ABCMeta
+
+#     @abc.abstractmethod
+#     def iterator(self):
+#         """Iterate """
+#         return

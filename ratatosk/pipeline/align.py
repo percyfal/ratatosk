@@ -63,14 +63,11 @@ class AlignPipeline(PipelineTask):
         # Finally register targets in backend
         backend.__global_vars__["targets"] = self.targets
 
-
-
 class Align(AlignPipeline):
     def requires(self):
         self._setup()
-        picard_metrics_targets = ["{}.{}".format(x[1], "sort.merge.dup") for x in self.targets]
+        picard_metrics_targets = ["{}.{}".format(x.prefix("sample"), "sort.merge.dup") for x in self.targets]
         return [PicardMetrics(target=tgt) for tgt in picard_metrics_targets] 
-
 
 class AlignSummary(AlignPipeline):
     def requires(self):

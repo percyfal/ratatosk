@@ -32,3 +32,4 @@ class TestABCSample(unittest.TestCase):
         self.assertEqual(self.sample.path("project"), ".")
         self.assertEqual(self.sample.prefix("sample_run"), "project/sample/samplerun/samplerun")
         self.assertEqual(self.sample.path("sample_run"), "project/sample/samplerun")
+        self.assertEqual(self.sample.project_id(), "project")
