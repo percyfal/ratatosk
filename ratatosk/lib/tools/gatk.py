@@ -321,11 +321,20 @@ class UnifiedGenotyper(GATKIndexedJobTask):
         return retval
 
 class UnifiedGenotyperAlleles(UnifiedGenotyper):
-    """Force genotype calling at variants defined by second argument."""
+    """Force genotype calling at variants defined by second argument.
+    
+    For background, see :ref:`merging batched call sets
+    <http://gatkforums.broadinstitute.org/discussion/46/merging-batched-call-sets>`_.
+    The 'master vcf file' is the union of variant calls made for a
+    batch of samples, in which samples may have unique variant calls.
+    This step is therefore needed to ascertain whether a missing call
+    in one sample is due to low coverage, or that it is homozygote wrt
+    the reference.
+    """
     label = luigi.Parameter(default="-genotype")
     parent_task = luigi.Parameter(default=("ratatosk.lib.tools.gatk.InputBamFile",
                                            "ratatosk.lib.tools.gatk.InputVcfFile"), is_list=True)
-    
+        
     def opts(self):
         retval = super(UnifiedGenotyperAlleles, self).opts()
         retval = [x.replace("EMIT_VARIANTS_ONLY", "EMIT_ALL_SITES") for x in retval]
@@ -336,10 +345,7 @@ class UnifiedGenotyperAlleles(UnifiedGenotyper):
         return retval
 
     def args(self):
-        retval =  ["-I", self.input()[0], "-o", self.output(), '--alleles', self.input()[1]]
-        if not self.ref:
-            raise Exception("need reference for UnifiedGenotyperAlleles")
-        retval += ["-R", self.ref]
+        retval = super(UnifiedGenotyperAlleles, self).args() + ['--alleles', self.input()[1]]
         return retval
 
 class SplitUnifiedGenotyper(UnifiedGenotyper):
@@ -356,36 +362,55 @@ class SplitUnifiedGenotyper(UnifiedGenotyper):
         base = rreplace(os.path.join(os.path.dirname(os.path.dirname(self.target)), os.path.basename(self.target)), self.label, "", 1).split("-")
         return "".join(base[0:-1]) + parent_cls().sfx()
 
-# class CombineVariantsList(GATKJobTask):
-#     sub_executable = "CombineVariants"
-#     suffix = luigi.Parameter(default=".vcf")
-#     label = luigi.Parameter(default="-variants")
-#     parent_task = luigi.Parameter(default=("ratatosk.lib.tools.gatk.InputVcfFile",), is_list=True)
-#     target_generator_handler = luigi.Parameter(default=None)
-
-#     def requires(self):
-#         cls = self.parent()[0]
-#         sources = []
-#         if self.target_generator_handler and "target_generator_handler" not in self._handlers.keys():
-#             tgf = RatatoskHandler(label="target_generator_handler", mod=self.target_generator_handler)
-#             register_task_handler(self, tgf)
-#         if not "target_generator_handler" in self._handlers.keys():
-#             logging.warn("combine variants requires a target generator handler; no defaults are as of yet implemented")
-#             return []
-#         sources = self._handlers["target_generator_handler"](self)
-#         print sources
-#         return [cls(target=src) for src in sources]
-
 class CombineVariants(GATKJobTask):
+    """CombineVariants.
+
+    Generic task for combining variants from variant files. Input can
+    be tasks that generate vcf files, or output from
+    :func:`.target_generator_handler`.
+    """
     sub_executable = "CombineVariants"
     suffix = luigi.Parameter(default=".vcf")
     label = luigi.Parameter(default="-variants")
-    parent_task = luigi.Parameter(default=("ratatosk.lib.tools.gatk.SplitUnifiedGenotyper", "ratatosk.lib.tools.gatk.InputBamFile",), is_list=True)
+    parent_task = luigi.Parameter(default=("ratatosk.lib.tools.gatk.InputVcfFile",), is_list=True)
+    target_generator_handler = luigi.Parameter(default=None)
+
+    def requires(self):
+        if self.target_generator_handler:
+            cls = self.parent()[0]
+            sources = []
+            if "target_generator_handler" not in self._handlers.keys():
+                tgf = RatatoskHandler(label="target_generator_handler", mod=self.target_generator_handler)
+                register_task_handler(self, tgf)
+            sources = self._handlers["target_generator_handler"](self)
+            return [cls(target=src) for src in sources]
+        else:
+            return [cls(target=source) for cls, source in izip(self.parent(), self.source())]
+
+    def args(self):
+        retval = []
+        for x in self.input():
+            retval += ["-V", x]
+        retval += ["-o", self.output()]
+        if not self.ref:
+            raise Exception("need reference for CombineVariants")
+        retval += ["-R", self.ref]
+        return retval
+
+class CombineSplitVariants(CombineVariants):
+    """CombineSplitVariants
+
+    Combine variant files that originate from split variant calling,
+    typically SplitUnifiedGenotyper. Here, a bam file is split into
+    chromosomes or regions so as to parallelize and thereby speed up
+    variant calling.
+    """
+    parent_task = luigi.Parameter(default=("ratatosk.lib.tools.gatk.SplitUnifiedGenotyper", ), is_list=True)
     split_by = luigi.Parameter(default="chromosome", description="Splitting mode")
 
     def requires(self):
         cls = self.parent()[0]
-        bamcls = self.parent()[1]
+        bamcls = self.parent()[0]().parent()[0]
         source = self.source()[0]
         if self.split_by == "chromosome":
             # Partition sources by chromosome. Need to get the
@@ -412,17 +437,6 @@ class CombineVariants(GATKJobTask):
             return [cls(target=tgt, target_region=chr_ref) for tgt, chr_ref in izip(split_targets, refs)]
         else:
             return [cls(target=source)]
-
-    def args(self):
-        retval = []
-        for x in self.input():
-            retval += ["-V", x]
-        retval += ["-o", self.output()]
-        if not self.ref:
-            raise Exception("need reference for CombineVariants")
-        retval += ["-R", self.ref]
-        return retval
-        
 
 class SelectVariants(GATKJobTask):
     sub_executable = "SelectVariants"

@@ -44,9 +44,9 @@ ratatosk.lib.tools.gatk:
   SplitUnifiedGenotyper:
     parent_task: ratatosk.lib.tools.gatk.PrintReads
   SelectSnpVariants:
-    parent_task: ratatosk.lib.tools.gatk.CombineVariants
+    parent_task: ratatosk.lib.tools.gatk.CombineSplitVariants
   SelectIndelVariants:
-    parent_task: ratatosk.lib.tools.gatk.CombineVariants
+    parent_task: ratatosk.lib.tools.gatk.CombineSplitVariants
   VariantSnpRecalibrator:
     parent_task: ratatosk.lib.tools.gatk.SelectSnpVariants
   VariantSnpRecalibratorExome:
@@ -67,18 +67,32 @@ ratatosk.lib.tools.gatk:
       - ratatosk.lib.tools.gatk.PrintReads
       - ratatosk.pipeline.seqcap.CombineFilteredVariants
   CombineVariants:
+    options:
+      - -minimalVCF
+      - --sites_only
     parent_task:
-      - ratatosk.lib.tools.gatk.SplitUnifiedGenotyper
-      - ratatosk.lib.tools.gatk.PrintReads
+      - ratatosk.lib.tools.gatk.VariantSnpEffAnnotator
+    target_generator_handler: ratatosk.ext.scilife.sample.collect_vcf_files
+    add_label:
+      - .sort.merge.dup.realign.recal-variants-combined-phased-annotated
 
   VariantSnpEffAnnotator:
     parent_task: 
       - ratatosk.lib.tools.gatk.ReadBackedPhasing
       - ratatosk.lib.annotation.snpeff.snpEff
+      - ratatosk.lib.annotation.snpeff.snpEffTxt
 
     add_label:
       - 
       - -effects
+      - -effects
+  SeqCapUnifiedGenotyperAlleles:
+    parent_task:
+      - ratatosk.lib.tools.gatk.PrintReads
+      - ratatosk.lib.tools.gatk.CombineVariants
+    diff_label:
+      - -variants-combined-phased-annotated
+      - 
 
 ratatosk.lib.align.bwa:
   Aln:
@@ -93,5 +107,8 @@ ratatosk.lib.tools.fastqc:
 
 ratatosk.lib.annotation.snpeff:
   snpEff:
+    parent_task:
+      - ratatosk.lib.tools.gatk.ReadBackedPhasing
+  snpEffTxt:
     parent_task:
       - ratatosk.lib.tools.gatk.ReadBackedPhasing
