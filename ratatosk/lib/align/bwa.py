@@ -119,8 +119,8 @@ class Sampe(BwaJobTask):
             # backend.__global_vars__["targets"] be set
             # This is not perfect but works for now
             for tgt in backend.__global_vars__.get("targets", []):
-                if smid.startswith(tgt[2]):
-                    smid = tgt[0]
+                if smid.startswith(tgt.prefix("sample_run")):
+                    smid = tgt.sample_id()
                     break
             # The platform should be configured elsewhere
             rg = "\"{}\"".format("\t".join(["@RG", "ID:{}".format(rgid), "SM:{}".format(smid), "PL:{}".format(self.platform)]))

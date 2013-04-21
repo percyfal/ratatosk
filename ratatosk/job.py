@@ -31,6 +31,7 @@ from ratatosk.handler import RatatoskHandler, register_attr
 from ratatosk.config import get_config, get_custom_config
 from ratatosk.utils import rreplace, update, config_to_dict
 from ratatosk.log import get_logger
+from ratatosk.experiment import ISample
 
 logger = get_logger()
 
@@ -390,10 +391,8 @@ class BaseJobTask(luigi.Task):
         if not target_list:
             return
         for tgt in target_list:
-            if len(tgt) != 3:
-                raise ValueError, "target generator handler must return 3-tuple"
-            sample, sample_merge, sample_run = tgt
-            yield sample, sample_merge, sample_run
+            assert isinstance(tgt, ISample), "Target iterater must return an object of type 'ISample'"
+            yield tgt
 
     def source(self):
         """Make source file names from parent tasks in self.parent()"""

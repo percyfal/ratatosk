@@ -103,7 +103,7 @@ class HaloPlex(HaloPipeline):
         self._setup()
         if not self.targets:
             return []
-        variant_targets = ["{}.{}".format(x[1], self.final_target_suffix) for x in self.targets]
+        variant_targets = ["{}.{}".format(x.prefix("sample"), self.final_target_suffix) for x in self.targets]
         return [VariantEval(target=tgt) for tgt in variant_targets]
 
 class HaloBgzip(Bgzip):

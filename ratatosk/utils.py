@@ -20,6 +20,7 @@ import glob
 import itertools
 import logging
 from ratatosk.log import get_logger
+from ratatosk.experiment import Sample
 
 logger = get_logger()
 
@@ -81,7 +82,7 @@ def make_fastq_links(targets, indir, outdir, fastq_suffix="001.fastq.gz", ssheet
     """Given a set of targets and an output directory, create links
     from targets (source raw data) to an output directory.
 
-    :param targets: list of tuples consisting of (sample, sample target prefix, sample run prefix)
+    :param targets: list of :class:`ratatosk.experiment.ISample` objects
     :param outdir: (top) output directory
     :param fastq_suffix: fastq suffix
     :param ssheet: sample sheet name
@@ -90,9 +91,9 @@ def make_fastq_links(targets, indir, outdir, fastq_suffix="001.fastq.gz", ssheet
     """
     newtargets = []
     for tgt in targets:
-        fastq = glob.glob("{}*{}".format(tgt[2], fastq_suffix))
+        fastq = glob.glob("{}*{}".format(tgt.prefix("sample_run"), fastq_suffix))
         if len(fastq) == 0:
-            logger.warn("No fastq files for prefix {} in {}".format(tgt[2], "make_fastq_links"))
+            logger.warn("No fastq files for prefix {} in {}".format(tgt.prefix("sample_run"), "make_fastq_links"))
         for f in fastq:
             newpath = os.path.join(outdir, os.path.relpath(f, indir))
             if not os.path.exists(os.path.dirname(newpath)):
@@ -110,9 +111,13 @@ def make_fastq_links(targets, indir, outdir, fastq_suffix="001.fastq.gz", ssheet
                 os.symlink(os.path.abspath(f), newpath)
             if not os.path.lexists(os.path.join(os.path.dirname(newpath), ssheet)) and os.path.exists(os.path.abspath(os.path.join(os.path.dirname(f), ssheet))):
                 os.symlink(os.path.abspath(os.path.join(os.path.dirname(f), ssheet)), os.path.join(os.path.dirname(newpath), ssheet))
-        newtargets.append((tgt[0], 
-                           os.path.join(outdir, os.path.relpath(tgt[1], indir)),
-                           os.path.join(outdir, os.path.relpath(tgt[2], indir))))
+        newsample = Sample(project_id=tgt.project_id(), sample_id=tgt.sample_id(), 
+                           project_prefix=outdir, sample_prefix=os.path.join(outdir, os.path.relpath(tgt.prefix("sample"), indir)),
+                           sample_run_prefix=os.path.join(outdir, os.path.relpath(tgt.prefix("sample_run"), indir)))
+        newtargets.append(newsample)
+        # newtargets.append((tgt.sample_id(), 
+        #                    os.path.join(outdir, os.path.relpath(tgt.prefix("sample"), indir)),
+        #                    os.path.join(outdir, os.path.relpath(tgt.prefix("sample_run"), indir))))
     return newtargets
     
 # Shamelessly stolen from http://twistedmatrix.com/trac/browser/tags/releases/twisted-8.2.0/twisted/python/procutils.py
