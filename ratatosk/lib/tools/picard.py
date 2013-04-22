@@ -21,18 +21,14 @@ Classes
 
 import os
 import luigi
-import time
-import glob
 import re
 import ratatosk.lib.files.input
 from ratatosk.utils import rreplace
 from ratatosk.config import get_config
 from ratatosk.job import JobWrapperTask, JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner
-from ratatosk.handler import RatatoskHandler, register, register_task_handler
-from ratatosk import backend
+from ratatosk.handler import RatatoskHandler, register_task_handler
 from ratatosk.log import get_logger
-import ratatosk.shell as shell
 
 logger = get_logger()
 

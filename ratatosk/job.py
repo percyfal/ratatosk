@@ -118,7 +118,7 @@ class BaseJobTask(luigi.Task):
 
         """
         self._parent_cls = []
-        self._handers = {}
+        self._handlers = {}
         params = self.get_params()
         param_values = self.get_param_values(params, args, kwargs)
         param_values_dict = {x[0]:x[1] for x in self.get_param_values(params, args, kwargs)}

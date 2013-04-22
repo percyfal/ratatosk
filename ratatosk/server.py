@@ -192,6 +192,7 @@ class VisualizeHandler(tornado.web.RequestHandler):
             # stupid workaround...
             graphviz.layout('fdp')
 
+        graphviz.draw("graph.svg", format='svg')
         s = StringIO()
         graphviz.draw(s, format='svg')
         s.seek(0)
