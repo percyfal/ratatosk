@@ -1,3 +1,5 @@
+.. _handler_and_targets:
+
 Of handlers and targets
 ========================
 

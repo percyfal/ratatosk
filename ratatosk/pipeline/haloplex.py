@@ -34,7 +34,7 @@ Calling via ratatosk_run.py
 
 .. code-block:: text
 
-   ratatosk_run.py Halo --indir inputdir --custom-config custom_config_file.yaml
+   ratatosk_run.py HaloPlex --indir inputdir --custom-config custom_config_file.yaml
    ratatosk_run.py HaloPlexSummary --indir inputdir --custom-config custom_config_file.yaml
 
 
