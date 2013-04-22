@@ -67,7 +67,7 @@ class Aln(BwaJobTask):
         source = self.source()[0]
         # Ugly hack for 1 -> 2 dependency: works but should be dealt with otherwise
         if str(fullclassname(cls)) in ["ratatosk.lib.utils.misc.ResyncMates"]:
-            if re.search(self.read1_suffix, source):
+            if re.search(r"{}(.fastq.gz$|.fastq$|.fq.gz$|.fq$)".format(self.read1_suffix), source):
                 self.is_read1 = True
                 fq1 = source
                 fq2 = rreplace(source, self.read1_suffix, self.read2_suffix, 1)

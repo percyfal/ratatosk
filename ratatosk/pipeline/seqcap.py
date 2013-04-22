@@ -61,7 +61,7 @@ class CombineAllVariants(CombineVariants):
 
     def requires(self):
         targets = backend.__global_vars__["targets"]
-        out_targets = ["{}.{}".format(x.prefix("sample"), "sort.merge.dup.realign.recal-variants-combined-phased-annotated-genotype.vcf") for x in targets]
+        out_targets = list(set(["{}.{}".format(x.prefix("sample"), "sort.merge.dup.realign.recal-variants-combined-phased-annotated-genotype.vcf") for x in targets]))
         return [SeqCapUnifiedGenotyperAlleles(target=tgt, outdir=os.path.dirname(self.target)) for tgt in out_targets]
 
 class SeqCapUnifiedGenotyperAlleles(UnifiedGenotyperAlleles):
