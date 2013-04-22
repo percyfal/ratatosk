@@ -26,6 +26,8 @@ Core features include
  * Parallelization via the *luigi* scheduler
  * Easy to include external library code 
 
+:mod:`ratatosk` currently works with python version 2.7.
+
 Documentation
 -------------
 
