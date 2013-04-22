@@ -43,52 +43,88 @@ class BaseJobTask(luigi.Task):
     
     """
     config_file = luigi.Parameter(is_global=True, default=os.path.join(os.path.join(ratatosk.__path__[0], os.pardir, "config", "ratatosk.yaml")), description="Main configuration file.")
-    custom_config = luigi.Parameter(is_global=True, default=None, description="Custom configuration file for tuning options in predefined pipelines in which workflow may not be altered.")
-    dry_run = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="Generate pipeline graph/flow without running any commands")
-    restart = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="Restart pipeline from scratch.")
-    restart_from = luigi.Parameter(default=None, is_global=True, description="NOT YET IMPLEMENTED: Restart pipeline from a given task.")
-    options = luigi.Parameter(default=(), description="Program options", is_list=True)
-    parent_task = luigi.Parameter(default=(), description="Main parent task(s) from which the current task receives of its input", is_list=True)
-    num_threads = luigi.Parameter(default=1, description="Number of threads to run. Set to 1 if task.can_multi_thread is false")
-    pipe  = luigi.BooleanParameter(default=False, description="Piped input/output. In practice refrains from including input/output file names in command list.")
-    # Note: output should generate one file only; in special cases we
-    # need to do hacks
-    target = luigi.Parameter(default=None, description="Output target name")
-    suffix = luigi.Parameter(default=(), description="File suffix for target", is_list=True)
-    # Use for changing labels in graph visualization
-    use_long_names = luigi.Parameter(default=False, description="Use long names (including all options) in graph vizualization", is_boolean=True, is_global=True)
-    # Use for changing labels in graph visualization
-    use_target_names = luigi.Parameter(default=False, description="Use target names in graph vizualization", is_boolean=True, is_global=True)
+    """Main configuration file. For pipeline tasks, a predefined
+    configuration file is loaded, disabling this option. Use
+    :attr:`.custom_config` to configure pipeline tasks."""
 
-    # Labels ("tag") for output file name; not all tasks are allowed
-    # to "label" their output
+    custom_config = luigi.Parameter(is_global=True, default=None, description="Custom configuration file for tuning options in predefined pipelines in which workflow may not be altered.")
+    """Custom configuration file for tuning options in predefined pipelines."""
+
+    dry_run = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="Generate pipeline graph/flow without running any commands")
+    """Dry run: don't actually run anything."""
+
+    restart = luigi.Parameter(default=False, is_global=True, is_boolean=True, description="Restart pipeline from scratch.")
+    """NOT YET IMPLEMENTED: Restart from scratch."""
+
+    restart_from = luigi.Parameter(default=None, is_global=True, description="NOT YET IMPLEMENTED: Restart pipeline from a given task.")
+    """NOT YET IMPLEMENTED: restart from a given task."""
+
+    options = luigi.Parameter(default=(), description="Program options", is_list=True)
+    """Program options to pass to task executable"""
+
+    parent_task = luigi.Parameter(default=(), description="Main parent task(s) from which the current task receives of its input", is_list=True)
+    """Parent task(s) on which the task depends."""
+
+    num_threads = luigi.Parameter(default=1, description="Number of threads to run. Set to 1 if task.can_multi_thread is false")
+    """Number of threads to run. Reset to 1 if :attr:`.can_multi_thread` False."""
+
+    pipe  = luigi.BooleanParameter(default=False, description="Piped input/output. In practice refrains from including input/output file names in command list.")
+
+    target = luigi.Parameter(default=None, description="Output target name")
+    """Output target name for this task. Note: output should, as far as possible, be a singleton"""
+
+    suffix = luigi.Parameter(default=(), description="File suffix for target", is_list=True)
+    """File suffix name for target"""
+
+    use_long_names = luigi.Parameter(default=False, description="Use long names (including all options) in graph vizualization", is_boolean=True, is_global=True)
+    """Use all names, including options, in graph visualization. Useful for debugging purposes."""
+
+    use_target_names = luigi.Parameter(default=False, description="Use target names in graph visualization", is_boolean=True, is_global=True)
+    """Use target names in graph visualization."""
+
     label = luigi.Parameter(default=None)
-    # Hack to communicate between tasks between which many labels have
-    # been added. I see no easy way to generate this information
-    # automatically.
+    """Output label for this task. Used to generate target name. For
+    instance, if source=file.txt, label=.label, and suffix=.txt, then
+    target=file.label.txt"""
+
     diff_label = luigi.Parameter(default=None, is_list=True)
-    # Conversely, label to be added to source. For e.g. BwaSampe
+    """NB: TARGETED FOR REMOVAL. Label that is the difference in
+    labels between tasks that are "far apart" in the dependency tree."""
+
     add_label = luigi.Parameter(default=None, is_list=True)
-    # Path to main program; used by job runner
+    """NB: TARGETED FOR REMOVAL. Label to be added to source."""
+
     exe_path = luigi.Parameter(default=None)
-    # Name of executable to run a program
+    """Path to main program; used by job runner"""
+
     executable = None
-    # Name of 'sub_executable' (e.g. for GATK, bwa). 
+    """Name of executable to run a program"""
+
     sub_executable = None
+    """Name of 'sub_executable' (e.g. for GATK, bwa)."""
 
     n_reduce_tasks = 8
+
     can_multi_thread = False
+    """Flag to indicate whether this task can run in multi-threaded mode."""
+
     max_memory_gb = 3
+    """Max memory this process may use. In general, max_memory_gb X
+    workers should be less than the memory of the computing
+    resource."""
 
-    # Handlers attached to a task
     _handlers = {}
+    """Handlers attached to a task"""
 
-    # Configuration, main section
     _config_section = None
+    """Configuration, main section. This is needed to group a task in
+    a given namespace in the configuration file."""
 
-    # Parent task classes
     _parent_cls = []
+    """Parent task classes."""
+
     _target_iter = 0
+    """Counter."""
 
     def __init__(self, *args, **kwargs):
         """Initializes job task. A job task can be customized via
@@ -243,7 +279,10 @@ class BaseJobTask(luigi.Task):
         return kwargs
 
     def path(self):
-        """Main path of this executable"""
+        """Main path of this executable. 
+
+        :returns: :attr:`.exe_path`
+        """
         return self.exe_path
 
     def exe(self):
@@ -521,12 +560,12 @@ class InputPath(InputJobTask):
 
 class PipedTask(JobTask):
     """A piped task takes as input a set of tasks and uses the
-    standard python module subprocess.Popen to communicate output
-    between the tasks.
+    standard python module :py:mod:`subprocess.Popen` to communicate
+    output between the tasks.
 
     """
-
     tasks = luigi.Parameter(default=[], is_list=True)
+    """Task list to run."""
 
     # TODO: Is this needed? Better is probably to do a "regular" depends
     # def requires(self):
@@ -547,6 +586,8 @@ class PipelineTask(JobWrapperTask):
     collect targets.
     """
     target_generator_handler = luigi.Parameter(default=None)
+    """Target generator handler is a function that returns a list of
+    :class:`ISample <ratatosk.experiment.ISample>` objects."""
     
 class PrintConfig(JobTask):
     """Print global configuration for all tasks, including all
@@ -583,7 +624,9 @@ class PrintConfig(JobTask):
 
 
 def name_prefix():
-    """Generate a name prefix based on available labels for task
+    """NOT IMPLEMENTED YET
+
+    Generate a name prefix based on available labels for task
     graph. Traverse dependency tree, recording all possible joins of
     labels from end leaf to "top" leaf. Note that this is similar, but
     not identical, to the longest path problem (not all nodes have a
@@ -606,12 +649,9 @@ def name_prefix():
 # does not take arguments. How pass on to generic_target_generator?
 # Something along the lines of the backend or **kwargs
 def generic_target_generator(target_generator_infile=None, **kwargs):
-    """Generic target generator. Should take as input a file name, read and return contents"""
-    if not target_generator_infile:
-        return (None, None, None)
-    else:
-        with open(target_generator_infile) as fh:
-            lines = [x for x in fh.readlines() if not x.startswith("#")]
-        if not len(lines[0], split()):
-            raise ValueError, "target generator input file must consist of 3-tuple (sample, merge-prefix, read-prefix)"
-        return lines
+    """NOT IMPLEMENTED YET.
+
+    Generic target generator. Should take as input a file name, read
+    and return contents.
+    """ 
+    pass
