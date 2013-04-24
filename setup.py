@@ -29,6 +29,7 @@ setup(name = "ratatosk",
         "pyyaml",
         "tornado",
         "luigi>=1.0",
+        "matplotlib>=1.2.1",
         "pysam",
         "pygraphviz",
         ## Required for testing
