@@ -13,7 +13,6 @@
 # the License.
 
 from setuptools import setup, find_packages
-import sys
 import os
 import glob
 
@@ -25,21 +24,18 @@ setup(name = "ratatosk",
       license = "Apache",
       scripts = glob.glob('scripts/*.py') + ['bin/ratatoskd'],
       install_requires = [
-        "drmaa >= 0.5",
-        "mock",
-        # Currently works with luigi version 1.0, commit hash tag
-        # da20852fa10a60a388 - would want to put this here in master
-        # in case something breaks in the future
+        "mako",
         "simplejson",
         "pyyaml",
         "tornado",
         "luigi>=1.0",
-        "nose",
-        "nose-timer",
-        "cement",
+        "matplotlib>=1.2.1",
         "pysam",
         "pygraphviz",
-        "PIL",
+        ## Required for testing
+        # "nose",
+        ## Required to build documentation
+        # "PIL",
         ],
       test_suite = 'nose.collector',
       packages=find_packages(exclude=['ez_setup', 'test*']),
@@ -47,9 +43,6 @@ setup(name = "ratatosk",
         'ratatosk',
         'ratatosk.ext',
         ],
-      # packages=[
-      #       'ratatosk'
-      #       ],
       package_data = {
         'ratatosk':[
             'data/grf/*',

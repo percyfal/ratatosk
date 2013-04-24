@@ -14,6 +14,7 @@ from ratatosk.pipeline.haloplex import HaloPlex, HaloPlexSummary
 from ratatosk.pipeline.seqcap import SeqCap, SeqCapSummary
 from ratatosk.pipeline.align import Align, AlignSummary
 from ratatosk.pipeline import config_dict
+from ratatosk.report.sphinx import SphinxReport
 
 if __name__ == "__main__":
     task_cls = None
@@ -29,6 +30,8 @@ if __name__ == "__main__":
                 task_args.append("--config-file")
                 task_args.append(config_dict[task]['config'])
             task_cls = config_dict[task]['cls']
+    elif len(sys.argv) == 1:
+        luigi.run(['-h'])
     else:
         task = None
 
