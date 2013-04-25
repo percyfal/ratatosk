@@ -39,8 +39,8 @@ Alignment metrics
        for row in df:
        	   pct_aligned[row["CATEGORY"]].append(float(row["PCT_PF_READS_ALIGNED"]))
 
-   n = len(grouped_samples)
-   xticks(range(0,n), [x for x in grouped_samples.keys()], rotation=45)
+   n = len(pmc.idlist())
+   xticks(range(0,n), [x for x in pmc.idlist()], rotation=45)
    xlim(-.1, (n-1)*1.1)
    plt.plot(range(0,n), pct_aligned['PAIR'], "o")
    plt.tight_layout()
@@ -69,8 +69,8 @@ Duplication metrics
        df = [row for row in csv.DictReader(c)]
        dup.append(100 * float(df[0]["PERCENT_DUPLICATION"]))
 
-   n = len(grouped_samples)
-   xticks(range(0,n), [x for x in grouped_samples.keys()], rotation=45)
+   n = len(pmc.idlist())
+   xticks(range(0,n), [x for x in pmc.idlist()], rotation=45)
    xlim(-.1, (n-1)*1.1)
    plt.plot(range(0,n), dup, "o")
    plt.tight_layout()
@@ -102,7 +102,6 @@ Hybridization metrics
    for c in pmccsv:
        df = [row for row in csv.DictReader(c)]
        hsmetrics.append([100 * float(df[0][x]) for x in headers])
-   n = len(grouped_samples)
    plt.boxplot(np.array(hsmetrics))
    plt.show()
 
@@ -129,7 +128,7 @@ Hybridization metrics
    for c in pmccsv:
        df = [row for row in csv.DictReader(c)]
        hsmetrics.append([100 * float(df[0][x]) for x in headers])
-   n = len(grouped_samples)
+   n = len(pmc.idlist())
    nsubplots = int(math.ceil(n/9))
    nrow = int(math.ceil(n/3))
    k = 0
@@ -141,7 +140,7 @@ Hybridization metrics
 	      	  x = range(0, len(hticks))
                	  axarr[i,j].plot(x, hsmetrics[k], "o")
 	       	  axarr[i,j].set_xticks(x)
-	       	  axarr[i,j].set_title(grouped_samples.keys()[k])
+	       	  axarr[i,j].set_title(pmc.idlist()[k])
 	       	  axarr[i,j].set_xlim(-.1, (len(hticks)-1)*1.1)
 	       	  axarr[i,j].set_ylim(-5, 105)
 	       	  axarr[i,j].set_xticklabels(hticks)
