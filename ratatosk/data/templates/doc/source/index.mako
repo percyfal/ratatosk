@@ -98,6 +98,7 @@ Hybridization metrics
    hsmetrics = []
    headers = ["ZERO_CVG_TARGETS_PCT", "PCT_TARGET_BASES_2X", "PCT_TARGET_BASES_10X", "PCT_TARGET_BASES_20X", "PCT_TARGET_BASES_30X"]
    hticks = ["0X", "2X", "10X", "20X", "30X"]
+   xticks(range(0,len(hticks)), [x for x in hticks])
    for c in pmccsv:
        df = [row for row in csv.DictReader(c)]
        hsmetrics.append([100 * float(df[0][x]) for x in headers])
@@ -129,20 +130,22 @@ Hybridization metrics
        df = [row for row in csv.DictReader(c)]
        hsmetrics.append([100 * float(df[0][x]) for x in headers])
    n = len(grouped_samples)
-   m = int(math.ceil(math.sqrt(n)))
-   f, axarr = plt.subplots(m, m) # , sharex='col', sharey='row')
+   nsubplots = int(math.ceil(n/9))
+   nrow = int(math.ceil(n/3))
    k = 0
-   for i in range(0, m):
-       for j in range(0, m):
-       	   if k < n:
-	       x = range(0, len(hticks))
-               axarr[i,j].plot(x, hsmetrics[k], "o")
-	       axarr[i,j].set_xticks(x)
-	       axarr[i,j].set_title(grouped_samples.keys()[k])
-	       axarr[i,j].set_xlim(-.1, (len(hticks)-1)*1.1)
-	       axarr[i,j].set_ylim(-5, 105)
-	       axarr[i,j].set_xticklabels(hticks)
-   	   else:
-   	       axarr[i,j].axis('off')
-           k += 1
+   for i_subplot in range(0, nsubplots + 1):
+      f, axarr = plt.subplots(3, 3, sharex='col', sharey='row')
+      for i in range(0, 3):
+      	  for j in range(0, 3):
+       	      if k < n:
+	      	  x = range(0, len(hticks))
+               	  axarr[i,j].plot(x, hsmetrics[k], "o")
+	       	  axarr[i,j].set_xticks(x)
+	       	  axarr[i,j].set_title(grouped_samples.keys()[k])
+	       	  axarr[i,j].set_xlim(-.1, (len(hticks)-1)*1.1)
+	       	  axarr[i,j].set_ylim(-5, 105)
+	       	  axarr[i,j].set_xticklabels(hticks)
+   	      else:
+		  axarr[i,j].axis('off')
+              k += 1
    plt.show()
