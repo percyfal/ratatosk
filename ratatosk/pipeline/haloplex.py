@@ -23,6 +23,7 @@ The main pipeline tasks are
 
 1. HaloPlex
 2. HaloPlexSummary
+3. HaloPlexCombine
 
 They should be run in this order.
 
@@ -44,7 +45,7 @@ import os
 from ratatosk import backend
 from ratatosk.job import PipelineTask, JobTask, JobWrapperTask, PrintConfig
 from ratatosk.utils import make_fastq_links
-from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, VariantFiltration
+from ratatosk.lib.tools.gatk import VariantEval, UnifiedGenotyper, VariantFiltration, CombineVariants
 from ratatosk.lib.variation.tabix import Bgzip
 from ratatosk.log import get_logger
 
@@ -114,3 +115,9 @@ class HaloPlexSummary(HaloPipeline):
     def requires(self):
         self._setup()
         return [HaloBgzip(target=os.path.join(self.outdir, "all.vcfmerge.vcf.gz"))]
+
+class HaloPlexCombine(HaloPipeline):
+    def requires(self):
+        self._setup()
+        return [CombineVariants(target=os.path.join(self.outdir, "CombinedVariants.vcf"))]
+        #return [CombineAllVariants(target=os.path.join(self.outdir, "CombinedVariantsAll.vcf"))]
