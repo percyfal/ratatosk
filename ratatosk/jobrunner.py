@@ -176,15 +176,17 @@ class PipedJobRunner(DefaultShellJobRunner):
             cmdlist.append(arglist)
 
         plist = []
-        # This is extremely annoying. The bwa -r "@RG\tID:foo" etc
-        # screws up the regular call to Popen, forcing me to use
-        # shell=True. Some escape character that needs correcting;
-        # throws error [bwa_sai2sam_pe] malformated @RG line
         plist.append(Popen(" ".join(cmdlist[0]), stdout=PIPE, shell=True))
-        #plist.append(Popen(cmdlist[0], stdout=PIPE))
         for i in xrange(1, len(cmdlist)):
-            #plist.append(Popen(cmdlist[i], stdin=plist[i-1].stdout, stdout=PIPE))
             plist.append(Popen(" ".join(cmdlist[1]), stdin=plist[i-1].stdout, stdout=PIPE, shell=True))
             plist[i-1].stdout.close()
-        pipe = Popen("cat > {}".format(job.target), stdin=plist[-1].stdout, shell=True)
-        out, err = pipe.communicate()
+        tmppath = job.target + '-luigi-tmp-%09d' % random.randrange(0, 1e10)
+        pipe = Popen("cat > {}".format(tmppath), stdin=plist[-1].stdout, shell=True)
+        stdout, stderr = pipe.communicate()
+        if pipe.returncode == 0:
+            logger.info("Shell job completed")
+            logger.info("renaming {0} to {1}".format(tmppath, job.target))
+            os.rename(tmppath, job.target)
+        else:
+            raise Exception("Job '{}' failed: \n{}".format(' '.join(arglist), " ".join([stderr])))
+
