@@ -49,7 +49,8 @@ def collect_metrics(grouped_samples, projroot, tgtdir, ext, grouping="sample"):
     metrics = []
     for item_id, itemlist in grouped_samples.items():
         item = itemlist[0]
-        pfx = os.path.relpath(itemlist[0].prefix(grouping), tgtdir)
+        # FIXME: tgtdir should be docroot!
+        pfx = os.path.relpath(itemlist[0].prefix(grouping), os.path.dirname(tgtdir))
         mfile = glob.glob(pfx + ".*" + ext)
         if mfile:
             metrics.append((item_id, mfile[0]))

@@ -81,7 +81,7 @@ class SphinxReport(JobTask):
         if self.indir is None:
             logger.error("Need input directory to run")
             self.targets = []
-        self.samples = [tgt for tgt in self.target_iterator()]
+        self.samples = sorted([tgt for tgt in self.target_iterator()], key=lambda x:x.sample_id())
         kw['samples'].extend([["`{} <samples/{}.rst>`_".format(s.sample_id(), s.sample_id())] for s in self.samples])
         kw['samples'] = make_rst_table(kw['samples'])
         _setup_directories(self.outdir)

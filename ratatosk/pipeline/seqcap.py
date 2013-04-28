@@ -23,13 +23,17 @@ It adds the following custom tasks:
 1. CombineFilteredVariants
 2. FiltrationWrapper
 3. SelectVariantsWrapper
+4. CombineAllVariants
+5. SeqCapUnifiedGenotyperAlleles
 
 The main pipeline tasks are 
 
 1. SeqCap
 2. SeqCapSummary
 
-They should be run in this order.
+Running only SeqCapSummary should invoke all dependencies in SeqCap.
+However, for many samples (>20), it is advisable to first run SeqCap
+with smaller number of samples in batches.
 
 Calling via ratatosk_run.py
 ----------------------------
@@ -66,7 +70,6 @@ class CombineAllVariants(CombineVariants):
 
 class SeqCapUnifiedGenotyperAlleles(UnifiedGenotyperAlleles):
     """ Temporary class that resolves the issue of calling
-t
     CombineVariants with a predefined target name.
     """
     parent_task = luigi.Parameter(default=("ratatosk.lib.tools.gatk.PrintReads",

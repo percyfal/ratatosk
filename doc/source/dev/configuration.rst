@@ -119,6 +119,8 @@ try to load the additional parent, and if that fails, fall back on
    wrapper task that generates its targets only from it's own parents
    or 2) it uses the same target as the first default task
 
+.. _ratatosk.doc.configuration.source_names:
+
 Generating source names
 -----------------------
 

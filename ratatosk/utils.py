@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 import os
+import re
 import collections
 from datetime import datetime
 import time
@@ -185,4 +186,21 @@ def dict_to_opt(opt_dict):
     args = list(itertools.chain.from_iterable([(k,v) for k,v in opt_dict.iteritems()]))
     ret_args = [x for x in args if not isinstance(x, bool)]
     return ret_args
+
+def determine_read_type(fn, read1_suffix, read2_suffix=None, suffix="(.fastq.gz$|.fastq$|.fq.gz$|.fq$|.sai$)"):
+    """Deduce if fn is first or second in read pair.
+
+    :param fn: file name
+    :param read1_suffix: read1 suffix
+    :param read2_suffix: read2 suffix
+    :param suffix: suffix to use for paired files
+    """
+    parts = fn.split(".")
+
+    if parts[0].endswith(read1_suffix):
+        return 1
+    if read2_suffix:
+        if parts[0].endswith(str(read2_suffix)):
+            return 2
+    raise Exception("file name {} doesn't appear to have any read pair information in it's name".format(fn))
 

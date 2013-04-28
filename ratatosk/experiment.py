@@ -23,7 +23,20 @@ import abc
 
 # GOAL: ('P001_101_index3', 'seqcap/P001_101_index3/P001_101_index3', 'seqcap/P001_101_index3/120924_AC003CCCXX/P001_101_index3_TGACCA_L001')
 class ISample(object):
-    """A sample interface class"""
+    """An abstract base class representing a generic sample. It
+    defines methods and properties that constitute a minimal
+    information requirement for samples:
+
+    1. project_id
+    2. sample_id
+    3. a prefix grouping function
+    4. a path grouping function
+    5. container, getter and setter for factor levels
+
+    The prefix functions should be used to return name prefixes at
+    different workflow levels (e.g. sample run, i.e. read 1 and 2, as
+    opposed to sample level).
+    """
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractproperty
@@ -56,7 +69,11 @@ class ISample(object):
         return
 
 class Sample(ISample):
-    """A class describing a sample."""
+    """A class describing a sample. Provides placeholders for
+    project_id, sample_id, project_prefix, sample_prefix, and
+    sample_run_prefix.
+
+    """
     _levels = {}
     _sample_id = None
     _project_id = None
