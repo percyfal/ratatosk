@@ -14,7 +14,7 @@ import ratatosk.lib.utils.cutadapt as CUTADAPT
 import ratatosk.lib.tools.fastqc as FASTQC
 import ratatosk.lib.files.external
 from ratatosk.config import get_config
-from ratatosk.utils import make_fastq_links, rreplace
+from ratatosk.utils import make_fastq_links, rreplace, determine_read_type
 
 logging.basicConfig(level=logging.DEBUG)
 sample = "P001_101_index3_TGACCA_L001"
@@ -183,3 +183,24 @@ class TestGeneralFunctions(unittest.TestCase):
                                                                    'ratatosk.lib.tools.gatk.RealignerTargetCreator',
                                                                    'ratatosk.lib.tools.gatk.UnifiedGenotyper',])
         self.assertEqual(task.source(), ['data/sample.dup.merge.bam', 'data/sample.merge.dup.intervals', 'data/sample.merge.dup.vcf'])
+
+class TestUtilsFunctions(unittest.TestCase):
+    def test_determine_read_type(self):
+        fn = "sample_index1_1.fastq.gz"
+        rtype = determine_read_type(fn, "_1", "_2")
+        self.assertEqual(rtype, 1)
+        fn = "sample_index1_2.fastq.gz"
+        rtype = determine_read_type(fn, "_1", "_2")
+        self.assertEqual(rtype, 2)
+        fn = "4_120924_AC003CCCXX_P001_101_index1_1.fastq.gz"
+        rtype = determine_read_type(fn, "_1", "_2")
+        self.assertEqual(rtype, 1)
+        fn = "4_120924_AC003CCCXX_P001_101_index1_2.fastq.gz"
+        rtype = determine_read_type(fn, "_1", "_2")
+        self.assertEqual(rtype, 2)
+        fn = "P001_101_index3_TGACCA_L001_R1_001.fastq.gz"
+        rtype = determine_read_type(fn, "_R1_001", "_R2_001")
+        self.assertEqual(rtype, 1)
+        fn = "P001_101_index3_TGACCA_L001_R2_001.fastq.gz"
+        rtype = determine_read_type(fn, "_R1_001", "_R2_001")
+        self.assertEqual(rtype, 2)

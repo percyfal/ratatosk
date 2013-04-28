@@ -29,7 +29,7 @@ import random
 import ratatosk.lib.files.input
 from ratatosk.job import JobTask
 from ratatosk.jobrunner import DefaultShellJobRunner, DefaultGzShellJobRunner
-from ratatosk.utils import rreplace
+from ratatosk.utils import rreplace, determine_read_type
 from ratatosk.log import get_logger
 
 logger = get_logger()
@@ -47,19 +47,17 @@ class Cutadapt(JobTask):
     parent_task = luigi.Parameter(default=("ratatosk.lib.utils.cutadapt.InputFastqFile", ),is_list=True)
     # Use Illumina TruSeq adapter sequences as default
     threeprime = luigi.Parameter(default="AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC")
-    fiveprime = luigi.Parameter(default="AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC")
+    fiveprime = luigi.Parameter(default= "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT")
     read1_suffix = luigi.Parameter(default="_R1_001")
     read2_suffix = luigi.Parameter(default="_R2_001")
     suffix = luigi.Parameter(default=(".fastq.gz", ".fastq.cutadapt_metrics"), is_list=True)
-
-    def read1(self):
-        # Assume read 2 if no match...
-        return self.input()[0].path.find(self.read1_suffix) > 0
 
     def job_runner(self):
         return CutadaptJobRunner()
 
     def args(self):
         cls = self.parent()[0]
-        seq = self.threeprime if self.read1() else self.fiveprime
+        seq = self.threeprime 
+        if determine_read_type(self.input()[0].path, self.read1_suffix, self.read2_suffix) == 2:
+            seq = self.fiveprime
         return ["-a", seq, self.input()[0], "-o", self.output(), ">", rreplace(self.input()[0].path, str(cls().suffix[0]), self.label + self.suffix[1], 1)]
