@@ -16,4 +16,6 @@ config_dict = {
                   'cls' : haloplex.HaloPlex},
     'HaloPlexSummary' : {'config' : os.path.join(ratatosk.__path__[0],os.pardir, "config", "haloplex.yaml"),
                          'cls' : haloplex.HaloPlexSummary},
+    'HaloPlexCombine' : {'config' : os.path.join(ratatosk.__path__[0],os.pardir, "config", "haloplex.yaml"),
+                         'cls' : haloplex.HaloPlexCombine},
     }
