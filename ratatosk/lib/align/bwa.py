@@ -24,7 +24,7 @@ from itertools import izip
 import ratatosk.lib.files.input
 from ratatosk.job import JobTask, JobWrapperTask, DefaultShellJobRunner, PipedTask
 from ratatosk.lib.tools.samtools import SamToBam
-from ratatosk.utils import rreplace, fullclassname
+from ratatosk.utils import rreplace, fullclassname, determine_read_type
 
 class InputFastqFile(ratatosk.lib.files.input.InputFastqFile):
     pass
@@ -67,11 +67,12 @@ class Aln(BwaJobTask):
         source = self.source()[0]
         # Ugly hack for 1 -> 2 dependency: works but should be dealt with otherwise
         if str(fullclassname(cls)) in ["ratatosk.lib.utils.misc.ResyncMates"]:
-            if re.search(r"{}(.fastq.gz$|.fastq$|.fq.gz$|.fq$)".format(self.read1_suffix), source):
+            rt = determine_read_type(source, self.read1_suffix, self.read2_suffix)
+            if rt == 1:
                 self.is_read1 = True
                 fq1 = source
                 fq2 = rreplace(source, self.read1_suffix, self.read2_suffix, 1)
-            else:
+            elif rt == 2:
                 self.is_read1 = False
                 fq1 = rreplace(source, self.read2_suffix, self.read1_suffix, 1)
                 fq2 = source

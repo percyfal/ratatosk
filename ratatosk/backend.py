@@ -14,11 +14,14 @@
 
 # global config dict
 __global_config__ = {}
+"""Global configuration dict"""
 
 # global vars dict
 # for storing stuff like targets
 __global_vars__ = {}
+"""Global vars dict, for storing stuff like for instance targets"""
 
 # global handlers dict
 # Currently key corresponds to handler name and value is the handler
 __handlers__ = {}
+"""Global handlers dict, where the key is the handler name and the value is the handler"""

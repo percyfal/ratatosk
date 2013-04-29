@@ -122,3 +122,5 @@ class PicardMetricsCollection(object):
     def hist(self, as_csv=False):
         return [pm.hist(as_csv=as_csv) for pm in self._metrics]
 
+    def idlist(self):
+        return [pm.id() for pm in self._metrics]

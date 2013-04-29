@@ -55,15 +55,15 @@ def setUpModule():
     cnf.clear()
     with open(localconf, "w") as fp:
         fp.write(yaml.safe_dump({
-                    'bwa' :{
+                    'ratatosk.lib.align.bwa' :{
                         'InputFastqFile': {'target_suffix':'.fastq.gz'},
                         'bwaref': 'data/chr11.fa',
-                        'Sampe':{'read1_suffix':"_1",
-                                 'read2_suffix':"_2"},
-                        'Bampe':{'read1_suffix':"_1",
-                                 'read2_suffix':"_2"},
+                        'Aln':{'read1_suffix':"_1",
+                               'read2_suffix':"_2"},
+                        'Bampe':{'add_label':["_1","_2"]},
+                        'Sampe':{'add_label':["_1","_2"]},
                         },
-                    'picard' : {
+                    'ratatosk.lib.tools.picard' : {
                         'InputBamFile' :
                             {'parent_task': 'ratatosk.lib.tools.samtools.SamToBam'},
                         'SortSam':
@@ -79,7 +79,7 @@ def setUpModule():
                              'bait_regions' : 'data/chr11_baits.interval_list',
                              'target_regions' : 'data/chr11_targets.interval_list'},
                         },
-                    'gatk' : 
+                    'ratatosk.lib.tools.gatk' : 
                     {
                         'UnifiedGenotyper' : {'ref': 'data/chr11.fa'},
                         'CombineVariants' : {'ref': 'data/chr11.fa'},
@@ -241,4 +241,4 @@ class TestPipedCommand(unittest.TestCase):
         luigi.build([pt])
 
     def test_bampe(self):
-        luigi.run(['--target', "data/read.bam", '--config-file', localconf],main_task_cls=Bampe)
+        luigi.run(['--target', "data/sample1.bam", '--config-file', localconf],main_task_cls=Bampe)

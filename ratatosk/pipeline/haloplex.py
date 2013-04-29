@@ -25,14 +25,17 @@ The main pipeline tasks are
 2. HaloPlexSummary
 3. HaloPlexCombine
 
-They should be run in this order.
+Running only HaloPlexSummary should invoke all dependencies in HaloPlex.
+However, for many samples (>20), it is advisable to first run HaloPlex
+with smaller number of samples in batches.
+
 
 Calling via ratatosk_run.py
 ----------------------------
 
 .. code-block:: text
 
-   ratatosk_run.py Halo --indir inputdir --custom-config custom_config_file.yaml
+   ratatosk_run.py HaloPlex --indir inputdir --custom-config custom_config_file.yaml
    ratatosk_run.py HaloPlexSummary --indir inputdir --custom-config custom_config_file.yaml
 
 

@@ -17,7 +17,7 @@ import os
 import glob
 
 setup(name = "ratatosk",
-      version = "0.1.0",
+      version = "0.1.2",
       author = "Per Unneberg",
       author_email = "per.unneberg@scilifelab.se",
       description = "Project/pipeline manager",

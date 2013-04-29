@@ -11,6 +11,10 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
+"""
+Functions and classes for registering handlers.
+
+"""
 import sys
 import os
 import logging
@@ -33,10 +37,8 @@ class IHandler(object):
 
 class RatatoskHandler(IHandler):
     """Ratatosk handler class. Ensures we have at least label and mod
-    functions that register uses to place mod in
+    functions that uses register to place mod in
     backend.__handlers__[label].
-
-    FIX ME: add interface attribute?
     """
     _label = None
     _mod = None
@@ -52,12 +54,15 @@ class RatatoskHandler(IHandler):
         setattr(self, "_load_type", load_type)
 
     def label(self):
+        """Handler identifier label"""
         return self._label
 
     def mod(self):
+        """String representation of class/function"""
         return self._mod
 
     def load_type(self):
+        """Load type (class or function)"""
         return self._load_type
 
 def _load_module_function(handler_obj):
@@ -98,6 +103,12 @@ def _load_module_class(handler_obj):
         return None
 
 def _load(handler_obj):
+    """
+    Load an :class:`.IHandler` handler object. The
+    handler_obj.load_type() defines whether
+    :func:`._load_module_function` or :func:`._load_module_class` is
+    to be used.
+    """
     if handler_obj.load_type() == "function":
         return _load_module_function(handler_obj)
     elif handler_obj.load_type() == "class":
@@ -199,7 +210,7 @@ def target_generator_validator(fn):
 def setup_global_handlers(hlist=["target_generator_handler"]):
     """Helper function to setup global handlers defined in 'settings'
     section. 
-    
+
     """
     if not "settings" in backend.__global_config__:
         return

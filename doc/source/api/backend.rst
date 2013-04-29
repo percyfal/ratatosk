@@ -9,3 +9,10 @@
     :private-members:
     :show-inheritance:
 
+.. autodata::  __global_config__
+
+.. autodata::  __global_vars__
+
+.. autodata::  __handlers__
+
+
