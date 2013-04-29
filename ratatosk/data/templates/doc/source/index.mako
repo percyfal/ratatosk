@@ -9,9 +9,9 @@ Samples
 --------
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-${samples}
+   samples/index
 
 QC Metrics
 ----------
@@ -28,21 +28,38 @@ Sequence statistics
    import matplotlib.pyplot as plt
    from ratatosk.report.picard import PicardMetricsCollection
    from ratatosk.report.utils import collect_metrics, group_samples
-   
+
    samples = pickle.load(open(os.path.relpath("${pickled_samples}", os.path.join("${docroot}", "source"))))
    grouped_samples = group_samples(samples)
    pmc = collect_metrics(grouped_samples, "${docroot}", os.path.join("${docroot}", "source"), ".align_metrics")
    pmccsv = pmc.metrics(as_csv=True)
+   # Get alignment metrics
    nseq = {'FIRST_OF_PAIR':[], 'SECOND_OF_PAIR':[], 'PAIR':[]}
+   pct_aligned = {'FIRST_OF_PAIR':[], 'SECOND_OF_PAIR':[], 'PAIR':[]}
    for c in pmccsv:
        df = [row for row in csv.DictReader(c)]
        for row in df:
-       	   nseq[row["CATEGORY"]].append(int(row["TOTAL_READS"]))
+           nseq[row["CATEGORY"]].append(int(row["TOTAL_READS"]))
+       pct_aligned[row["CATEGORY"]].append(100 * float(row["PCT_PF_READS_ALIGNED"]))
+       n = len(pmc.idlist())
 
-   n = len(pmc.idlist())
-   xticks(range(0,n), [x for x in pmc.idlist()], rotation=45)
-   xlim(-.1, (n-1)*1.1)
-   plt.plot(range(0,n), nseq['PAIR'], "o")
+   # Get duplication metrics
+   pmc = collect_metrics(grouped_samples, "haloreport", os.path.join("haloreport", "source"), ".dup_metrics")
+   pmccsv = pmc.metrics(as_csv=True)
+   dup = []
+   for c in pmccsv:
+       df = [row for row in csv.DictReader(c)]
+       dup.append(100 * float(df[0]["PERCENT_DUPLICATION"]))
+
+   if len(dup) == 0:
+       sdup = [100 for i in range(0, n)]
+   else: 
+       sdup = [int(100 + 10 * x) for x in dup]
+   plt.scatter(pct_aligned['PAIR'], nseq['PAIR'], s=sdup, alpha=0.75)
+   plt.xlabel(r'Percent aligned', fontsize=14)
+   plt.yscale('log', **{'basey':10})
+   plt.ylabel(r'Read count', fontsize=14)
+   plt.title("Sequence summary.\nPoint sizes correspond to duplication levels.", fontsize=14)
    plt.tight_layout()
    plt.show()
 
@@ -77,6 +94,8 @@ Alignment metrics
    plt.plot(range(0,n), pct_aligned['PAIR'], "o")
    plt.tight_layout()
    plt.show()
+
+
 
 
 Duplication metrics

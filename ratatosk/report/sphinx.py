@@ -20,6 +20,7 @@ import cPickle as pickle
 from mako.template import Template
 from ratatosk.job import JobTask
 from ratatosk.log import get_logger
+from ratatosk.report.utils import group_samples
 
 TEMPLATEPATH = os.path.join(os.path.dirname(__file__), os.pardir, "data", "templates", "doc")
 
@@ -27,6 +28,7 @@ templates = {
     'make' : (Template(filename=os.path.join(TEMPLATEPATH, "Makefile.mako")),''),
     'sample' : (Template(filename=os.path.join(TEMPLATEPATH, "source", "samples", "sample.mako")), '.rst'),
     'index' : (Template(filename=os.path.join(TEMPLATEPATH, "source", "index.mako")), '.rst'),
+    'sampleindex' : (Template(filename=os.path.join(TEMPLATEPATH, "source", "samples", "index.mako")), '.rst'),
     'conf' : (Template(filename=os.path.join(TEMPLATEPATH, "source", "conf.mako")), '.py')
     }
 
@@ -82,8 +84,8 @@ class SphinxReport(JobTask):
             logger.error("Need input directory to run")
             self.targets = []
         self.samples = sorted([tgt for tgt in self.target_iterator()], key=lambda x:x.sample_id())
-        kw['samples'].extend([["`{} <samples/{}.rst>`_".format(s.sample_id(), s.sample_id())] for s in self.samples])
-        kw['samples'] = make_rst_table(kw['samples'])
+        grouped_samples = group_samples(self.samples)
+        kw['samples'] = "\n".join(["   {}".format(k) for k,v in grouped_samples.items()])
         _setup_directories(self.outdir)
         pickled_samples = []
         for s in self.samples:
@@ -91,13 +93,23 @@ class SphinxReport(JobTask):
                 if not k in ["project"]:
                     s._prefix[k] = os.path.relpath(s.prefix(k), self.outdir)
             pickled_samples.append(s)
+            
         kw['pickled_samples'] = os.path.join(self.outdir, "samples.pickle" )
         with open(kw['pickled_samples'], "w") as fh:
             pickle.dump(pickled_samples, fh)
         for k,v in templates.items():
+            if k == "sample":
+                continue
             outfile = os.path.splitext(os.path.join(self.outdir, os.path.relpath(v[0].filename, TEMPLATEPATH)))[0] + v[1]
             with open(outfile, "w") as fh:
                 fh.write(v[0].render(**kw))
+
+        for k,v in grouped_samples.items():
+            kw['sample_id'] = k
+            outfile = os.path.join(self.outdir, os.path.dirname(os.path.relpath(templates['sample'][0].filename, TEMPLATEPATH)), "{}.rst".format(k))
+            with open(outfile, "w") as fh:
+                fh.write(templates['sample'][0].render(**kw))
+
 
     def output(self):
         return luigi.LocalTarget(self.outdir)
