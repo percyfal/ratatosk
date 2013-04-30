@@ -10,6 +10,19 @@ ratatosk.lib.utils.misc:
 
 ratatosk.lib.align.bwa:
   bwaref: data/chr11.fa
+  Aln:
+    read1_suffix: _1
+    read2_suffix: _2
+
+  Bampe:
+    add_label:
+      - _1
+      - _2
+
+  Sampe:
+    add_label:
+      - _1
+      - _2
 
 ratatosk.lib.files.fastq:
   FastqFileLink:

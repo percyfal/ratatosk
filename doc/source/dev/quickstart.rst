@@ -1,82 +1,75 @@
 Quickstart
 ==========
 
+As outlined in the following section, :mod:`ratatosk` is a library of
+:mod:`luigi` tasks. It is basically a collection of make targets,
+based on a python framework.
 
-Examples in tests
------------------
+Here follows some examples of how to run some basic tasks. The
+commands are run in the test directory.
 
-These examples are currently based on the tests in
-:py:mod:`ratatosk.tests.test_commands` and
-:py:mod:`ratatosk.tests.test_wrappers`.
+Running single tasks without configuration file
+-----------------------------------------------
 
-Creating file links
-^^^^^^^^^^^^^^^^^^^^^^^^
+.. note:: The commands in this section need to be run sequentially
 
-The task :py:class:`ratatosk.lib.files.fastq.FastqFileLink` creates a
-link from source to a target. The source in this case depends on an
-*external* task (:py:class:`ratatosk.lib.files.external.FastqFile`
-meaning this file was created by some outside process (e.g. sequencing
-machine).
+Sequence alignment with :program:`bwa`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: text
+.. note:: First index the reference with ``bwa index data/chr11.fa``
 
-	nosetests -v -s test_wrapper.py:TestMiscWrappers.test_fastqln
-
-.. figure:: ../../grf/test_fastqln.png
-   :alt: Fastq link task
-   :scale: 30%
-   :align: center
-
-   **Figure 1.** Fastq link task
-
-A couple of comments are warranted. First, the boxes shows tasks,
-where the :py:class:`.FastqFile` is an external task. The file it
-points to must exist for the task :py:class:`.FastqFileLink` executes.
-The color of the box indicates status; here, green means the task has
-completed successfully. Second, every task has its own set of options
-that can be passed via the command line or in the code. In the
-:py:class:`.FastqFileLink` task box we can see the options that were
-passed to the task. For instance, the option ``use_long_names=True``
-prints complete task names, as shown above.
-	
-Alignment with bwa sampe
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Here's a more useful example; paired-end alignment using
-:program:`bwa`.
+The following 
 
 .. code-block:: text
 
-	nosetests -v -s test_commands.py:TestCommand.test_bwasampe
+   ratatosk_run.py Aln --target data/sample1_1.sai --bwaref data/chr11.fa
+   ratatosk_run.py Aln --target data/sample1_2.sai --bwaref data/chr11.fa
 
-.. figure:: ../../grf/test_bwasampe.png
-   :alt: bwa sampe
-   :scale: 50%
-   :align: center
+Making sam files from alignments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   **Figure 2.** Read alignment with bwa.
-
-	
-Wrapping up metrics tasks
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The class :py:class:`ratatosk.lib.tools.picard.PicardMetrics`
-subclasses :py:class:`ratatosk.job.JobWrapperTask` that can be used to
-require that several tasks have completed. Here I've used it to group
-picard metrics tasks:
+The following command generates a sam file with :program:`bwa sampe`.
+The option ``--add-label`` is used to generate the correct input file
+names. Here, they correspond to read pair identifiers.
 
 .. code-block:: text
 
-	nosetests -v -s test_commands.py:TestCommand.test_picard_metrics
+   ratatosk_run.py Sampe --target data/sample1.sam --bwaref data/chr11.fa --add-label _1 --add-label _2
 
-.. figure:: ../../grf/test_picard_metrics.png
-   :alt: picard metrics
-   :scale: 50%
-   :align: center
+Making a sorted bam file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   **Figure 3.** Summarizing metrics with a wrapper task
+The following command first runs :program:`samtools view -bSh`, then
+:program:`SortSam.jar` to generate a sorted bam file.
 
-Here, I've set the option ``--use-long-names=False``, which changes
-the output to show only the class names for each task. This example
-utilizes a configuration file that links tasks together. More about
-that in the next example.
+.. code-block:: text
+
+   ratatosk_run.py SortSam --target data/sample1.sort.bam
+
+Working with a configuration file
+---------------------------------
+
+The following commands utilise a configuration file,
+``pipeconf.yaml``. Start by removing all files generated in the
+previous section:
+
+.. code-block:: text
+
+   rm -f data/*sai data/*sam data/*bam 
+
+Running an alignment pipeline
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following command performs an alignment and converts the results
+to a sorted bam file.
+
+.. code-block:: text
+
+   ratatosk_run.py SortSam --target data/sample1.sort.bam --custom-config pipeconf.yaml
+
+
+The workflow is illustrated in the following image.
+
+.. graphviz:: ../../grf/quickstart_alignpipe.dot
+
+

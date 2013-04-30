@@ -1,0 +1,139 @@
+   strict digraph {
+	   graph [bb="0,0,188,324",
+		   size=12
+	   ];
+	   node [label="\N"];
+	   "SamToBam(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart\
+   =False, restart_from=None, num_threads=1, pipe=False, target=data/sample1.bam, use_long_names=False, use_target_names=False, label\
+   =None, diff_label=None, add_label=None, exe_path=None, executable=samtools, options=('-bSh',), parent_task=ratatosk.lib.align.bwa.Sampe\
+   , suffix=.bam)"	 [fillcolor=forestgreen,
+		   fontcolor=white,
+		   fontname=Helvetica,
+		   fontsize=11,
+		   height="0.5",
+		   label=SamToBam,
+		   pos="94,90",
+		   shape=box,
+		   style=filled,
+		   width="1.0059"];
+	   "SortSam(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart\
+   =False, restart_from=None, num_threads=1, pipe=False, target=data/sample1.sort.bam, use_long_names=False, use_target_names=False\
+   , diff_label=None, add_label=None, java_options=('-Xmx2g',), exe_path=/Users/peru/local/bioinfo/picard-tools-1.59, parent_task=ratatosk.lib.tools.samtools.SamToBam\
+   , suffix=.bam, ref=None, validation_stringency=SILENT, options=('SO=coordinate MAX_RECORDS_IN_RAM=750000',), label=.sort)"	 [fillcolor=forestgreen,
+		   fontcolor=white,
+		   fontname=Helvetica,
+		   fontsize=11,
+		   height="0.5",
+		   label=SortSam,
+		   pos="94,18",
+		   shape=box,
+		   style=filled,
+		   width="0.81105"];
+	   "SamToBam(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart\
+   =False, restart_from=None, num_threads=1, pipe=False, target=data/sample1.bam, use_long_names=False, use_target_names=False, label\
+   =None, diff_label=None, add_label=None, exe_path=None, executable=samtools, options=('-bSh',), parent_task=ratatosk.lib.align.bwa.Sampe\
+   , suffix=.bam)" -> "SortSam(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart\
+   =False, restart_from=None, num_threads=1, pipe=False, target=data/sample1.sort.bam, use_long_names=False, use_target_names=False\
+   , diff_label=None, add_label=None, java_options=('-Xmx2g',), exe_path=/Users/peru/local/bioinfo/picard-tools-1.59, parent_task=ratatosk.lib.tools.samtools.SamToBam\
+   , suffix=.bam, ref=None, validation_stringency=SILENT, options=('SO=coordinate MAX_RECORDS_IN_RAM=750000',), label=.sort)"	 [pos="e,94,36.104 94,71.697 94,63.983 94,54.712 94,46.112"];
+	   "Aln(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart=False\
+   , restart_from=None, options=(), pipe=False, target=data/sample1_2.sai, use_long_names=False, use_target_names=False, label=None\
+   , diff_label=None, add_label=None, exe_path=None, executable=bwa, bwaref=data/chr11.fa, num_threads=1, parent_task=('ratatosk.lib.align.bwa.InputFastqFile\
+   ',), suffix=.sai, read1_suffix=_1, read2_suffix=_2)"	 [fillcolor=forestgreen,
+		   fontcolor=white,
+		   fontname=Helvetica,
+		   fontsize=11,
+		   height="0.5",
+		   label=Aln,
+		   pos="50,234",
+		   shape=box,
+		   style=filled,
+		   width="0.75"];
+	   "Sampe(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart\
+   =False, restart_from=None, options=(), pipe=False, target=data/sample1.sam, use_long_names=False, use_target_names=False, label=\
+   None, diff_label=None, exe_path=None, executable=bwa, bwaref=data/chr11.fa, num_threads=1, add_label=('_1', '_2'), suffix=.sam, \
+   read_group=None, platform=Illumina, parent_task=('ratatosk.lib.align.bwa.Aln', 'ratatosk.lib.align.bwa.Aln'))"	 [fillcolor=forestgreen,
+		   fontcolor=white,
+		   fontname=Helvetica,
+		   fontsize=11,
+		   height="0.5",
+		   label=Sampe,
+		   pos="94,162",
+		   shape=box,
+		   style=filled,
+		   width="0.75"];
+	   "Aln(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart=False\
+   , restart_from=None, options=(), pipe=False, target=data/sample1_2.sai, use_long_names=False, use_target_names=False, label=None\
+   , diff_label=None, add_label=None, exe_path=None, executable=bwa, bwaref=data/chr11.fa, num_threads=1, parent_task=('ratatosk.lib.align.bwa.InputFastqFile\
+   ',), suffix=.sai, read1_suffix=_1, read2_suffix=_2)" -> "Sampe(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart\
+   =False, restart_from=None, options=(), pipe=False, target=data/sample1.sam, use_long_names=False, use_target_names=False, label=\
+   None, diff_label=None, exe_path=None, executable=bwa, bwaref=data/chr11.fa, num_threads=1, add_label=('_1', '_2'), suffix=.sam, \
+   read_group=None, platform=Illumina, parent_task=('ratatosk.lib.align.bwa.Aln', 'ratatosk.lib.align.bwa.Aln'))"	 [pos="e,83.249,180.1 60.876,215.7 65.992,207.56 72.195,197.69 77.845,188.7"];
+	   "Sampe(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart\
+   =False, restart_from=None, options=(), pipe=False, target=data/sample1.sam, use_long_names=False, use_target_names=False, label=\
+   None, diff_label=None, exe_path=None, executable=bwa, bwaref=data/chr11.fa, num_threads=1, add_label=('_1', '_2'), suffix=.sam, \
+   read_group=None, platform=Illumina, parent_task=('ratatosk.lib.align.bwa.Aln', 'ratatosk.lib.align.bwa.Aln'))" -> "SamToBam(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart\
+   =False, restart_from=None, num_threads=1, pipe=False, target=data/sample1.bam, use_long_names=False, use_target_names=False, label\
+   =None, diff_label=None, add_label=None, exe_path=None, executable=samtools, options=('-bSh',), parent_task=ratatosk.lib.align.bwa.Sampe\
+   , suffix=.bam)"	 [pos="e,94,108.1 94,143.7 94,135.98 94,126.71 94,118.11"];
+	   "InputFastqFile(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False\
+   , restart=False, restart_from=None, options=(), num_threads=1, pipe=False, target=data/sample1_2.fastq.gz, use_long_names=False,\
+    use_target_names=False, label=None, diff_label=None, add_label=None, exe_path=None, parent_task=ratatosk.lib.files.external.FastqFile\
+   , suffix=('.fastq.gz',))"	 [fillcolor=forestgreen,
+		   fontcolor=white,
+		   fontname=Helvetica,
+		   fontsize=11,
+		   height="0.5",
+		   label=InputFastqFile,
+		   pos="42,306",
+		   shape=box,
+		   style=filled,
+		   width="1.1785"];
+	   "InputFastqFile(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False\
+   , restart=False, restart_from=None, options=(), num_threads=1, pipe=False, target=data/sample1_2.fastq.gz, use_long_names=False,\
+    use_target_names=False, label=None, diff_label=None, add_label=None, exe_path=None, parent_task=ratatosk.lib.files.external.FastqFile\
+   , suffix=('.fastq.gz',))" -> "Aln(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart=False\
+   , restart_from=None, options=(), pipe=False, target=data/sample1_2.sai, use_long_names=False, use_target_names=False, label=None\
+   , diff_label=None, add_label=None, exe_path=None, executable=bwa, bwaref=data/chr11.fa, num_threads=1, parent_task=('ratatosk.lib.align.bwa.InputFastqFile\
+   ',), suffix=.sai, read1_suffix=_1, read2_suffix=_2)"	 [pos="e,48.045,252.1 43.978,287.7 44.859,279.98 45.919,270.71 46.901,262.11"];
+	   "Aln(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart=False\
+   , restart_from=None, options=(), pipe=False, target=data/sample1_1.sai, use_long_names=False, use_target_names=False, label=None\
+   , diff_label=None, add_label=None, exe_path=None, executable=bwa, bwaref=data/chr11.fa, num_threads=1, parent_task=('ratatosk.lib.align.bwa.InputFastqFile\
+   ',), suffix=.sai, read1_suffix=_1, read2_suffix=_2)"	 [fillcolor=forestgreen,
+		   fontcolor=white,
+		   fontname=Helvetica,
+		   fontsize=11,
+		   height="0.5",
+		   label=Aln,
+		   pos="138,234",
+		   shape=box,
+		   style=filled,
+		   width="0.75"];
+	   "Aln(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart=False\
+   , restart_from=None, options=(), pipe=False, target=data/sample1_1.sai, use_long_names=False, use_target_names=False, label=None\
+   , diff_label=None, add_label=None, exe_path=None, executable=bwa, bwaref=data/chr11.fa, num_threads=1, parent_task=('ratatosk.lib.align.bwa.InputFastqFile\
+   ',), suffix=.sai, read1_suffix=_1, read2_suffix=_2)" -> "Sampe(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart\
+   =False, restart_from=None, options=(), pipe=False, target=data/sample1.sam, use_long_names=False, use_target_names=False, label=\
+   None, diff_label=None, exe_path=None, executable=bwa, bwaref=data/chr11.fa, num_threads=1, add_label=('_1', '_2'), suffix=.sam, \
+   read_group=None, platform=Illumina, parent_task=('ratatosk.lib.align.bwa.Aln', 'ratatosk.lib.align.bwa.Aln'))"	 [pos="e,104.75,180.1 127.12,215.7 122.01,207.56 115.8,197.69 110.16,188.7"];
+	   "InputFastqFile(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False\
+   , restart=False, restart_from=None, options=(), num_threads=1, pipe=False, target=data/sample1_1.fastq.gz, use_long_names=False,\
+    use_target_names=False, label=None, diff_label=None, add_label=None, exe_path=None, parent_task=ratatosk.lib.files.external.FastqFile\
+   , suffix=('.fastq.gz',))"	 [fillcolor=forestgreen,
+		   fontcolor=white,
+		   fontname=Helvetica,
+		   fontsize=11,
+		   height="0.5",
+		   label=InputFastqFile,
+		   pos="146,306",
+		   shape=box,
+		   style=filled,
+		   width="1.1785"];
+	   "InputFastqFile(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False\
+   , restart=False, restart_from=None, options=(), num_threads=1, pipe=False, target=data/sample1_1.fastq.gz, use_long_names=False,\
+    use_target_names=False, label=None, diff_label=None, add_label=None, exe_path=None, parent_task=ratatosk.lib.files.external.FastqFile\
+   , suffix=('.fastq.gz',))" -> "Aln(config_file=/Users/peru/opt/ratatosk/ratatosk/../config/ratatosk.yaml, custom_config=pipeconf.yaml, dry_run=False, restart=False\
+   , restart_from=None, options=(), pipe=False, target=data/sample1_1.sai, use_long_names=False, use_target_names=False, label=None\
+   , diff_label=None, add_label=None, exe_path=None, executable=bwa, bwaref=data/chr11.fa, num_threads=1, parent_task=('ratatosk.lib.align.bwa.InputFastqFile\
+   ',), suffix=.sai, read1_suffix=_1, read2_suffix=_2)"	 [pos="e,139.95,252.1 144.02,287.7 143.14,279.98 142.08,270.71 141.1,262.11"];
+   }

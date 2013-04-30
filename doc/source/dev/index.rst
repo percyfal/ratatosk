@@ -5,8 +5,8 @@ Developer Documentation
    :maxdepth: 20 
 
    installation
-   introduction
    quickstart
+   introduction
    tasks
    configuration
    targets
