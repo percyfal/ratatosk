@@ -89,7 +89,7 @@ The tests depend on the following software to run:
 Running the tests
 -----------------
 
-Cd to the luigi test directory (``tests``) and run
+Cd to the test directory (``test``) and run
 
 .. code-block:: text
 
