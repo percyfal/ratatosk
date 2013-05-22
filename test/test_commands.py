@@ -169,7 +169,7 @@ class Task1(JobTask):
 
     def args(self):
         if self.pipe:
-            return self.input()[0]
+            return [self.input()[0]]
         else:
             return [self.input()[0], ">", self.output()]
 
@@ -191,7 +191,7 @@ class Task2(JobTask):
 
     def args(self):
         if self.pipe:
-            return self.input()[0]
+            return [self.input()[0]]
         else:
             return [self.input()[0], ">", self.output()]
 
