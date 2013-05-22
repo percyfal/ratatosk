@@ -171,7 +171,7 @@ def opt_to_dict(opts):
     if isinstance(opts, str):
         opts = opts.split(" ")
     args = list(itertools.chain.from_iterable([x.split("=") for x in opts]))
-    opt_d = {k: True if v.startswith('-') else v
+    opt_d = {k: True if v.startswith('-') else v 
              for k,v in zip(args, args[1:]+["--"]) if k.startswith('-')}
     return opt_d
 

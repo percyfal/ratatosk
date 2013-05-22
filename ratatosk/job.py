@@ -322,7 +322,10 @@ class BaseJobTask(luigi.Task):
     def sfx(self, index=0):
         """Get suffix"""
         if isinstance(self.suffix, tuple) or isinstance(self.suffix, list):
-            return self.suffix[index]
+            if len(self.suffix) > 0:
+                return self.suffix[index]
+            else:
+                return ""
         else:
             return self.suffix
 
@@ -465,8 +468,8 @@ class BaseJobTask(luigi.Task):
         :return: parent task target name (source)
         """
         src_label = parent_cls().label
-        tgt_suffix = self.suffix
-        src_suffix = parent_cls().suffix
+        tgt_suffix = self.sfx()
+        src_suffix = parent_cls().sfx()
         target = self.target
         if isinstance(self.target, tuple) or isinstance(self.target, list):
             target = self.target[self._target_iter]

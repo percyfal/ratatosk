@@ -1,15 +1,37 @@
 Installation
 ============
 
+.. _ratatosk_quick_installation:
+
+Quick installation instructions
+-------------------------------
+
+The following command sequence will generate a virtual environment
+``ratatosk`` and install all necessary modules and requirements.
+
+.. code-block:: text
+
+   INSTALL_PREFIX=~/opt/test
+   mkdir $INSTALL_PREFIX
+   mkvirtualenv --no-site-packages -p python2.7 ratatosk
+   git clone https://github.com/spotify/luigi.git $INSTALL_PREFIX/luigi
+   cd $INSTALL_PREFIX/luigi && python setup.py develop
+   pip install numpy
+   git clone https://github.com/percyfal/ratatosk.git $INSTALL_PREFIX/ratatosk
+   cd $INSTALL_PREFIX/ratatosk && python setup.py develop
+   cd $INSTALL_PREFIX/ratatosk/test && nosetests -v -s test_commands.py
+
+
 Pre-requisites
 --------------
 
 It is recommended that you first create a virtual environment in which
-to install the packages. Install
-`virtualenvwrapper <http://virtualenvwrapper.readthedocs.org/en/latest/>`_
-and use
-`mkvirtualenv <http://virtualenvwrapper.readthedocs.org/en/latest/command_ref.html>`_
-to create a virtual environment.
+to install the packages. Install `virtualenvwrapper
+<http://virtualenvwrapper.readthedocs.org/en/latest/>`_ and use
+`mkvirtualenv
+<http://virtualenvwrapper.readthedocs.org/en/latest/command_ref.html>`_
+to create a virtual environment. Note that you need to pass the
+``--no-site-packages`` flag.
 
 .. _installation:
 
@@ -28,8 +50,8 @@ do
 
 .. code-block:: text
 	
-	git clone https://github.com/percyfal/ratatosk
-	python setup.py develop
+   git clone https://github.com/percyfal/ratatosk
+   python setup.py develop
 
 Known installation issues
 -------------------------

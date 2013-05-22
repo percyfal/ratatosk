@@ -264,7 +264,7 @@ class TestGATKWrappers(unittest.TestCase):
 
     def test_unifiedgenotyper_alleles(self):
         task = ratatosk.lib.tools.gatk.UnifiedGenotyperAlleles(target=self.mergebam.replace(".bam", ".realign.recal.clip-genotype.vcf"))
-        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T UnifiedGenotyper', '-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_ALL_SITES -glm BOTH', '-nt 1', '--dbsnp', 'data/dbsnp132_chr11.vcf', '--genotyping_mode', 'GENOTYPE_GIVEN_ALLELES', '-I', 'data/sample.sort.merge.realign.recal.clip.bam', '-o', 'data/sample.sort.merge.realign.recal.clip-genotype.vcf', '--alleles', 'data/sample.sort.merge.realign.recal.clip.vcf', '-R', 'data/chr11.fa'],
+        self.assertEqual(['java', '-Xmx2g', '-jar', self.gatk, '-T UnifiedGenotyper', '-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_ALL_SITES -glm BOTH', '-nt 1', '--dbsnp', 'data/dbsnp132_chr11.vcf', '--genotyping_mode', 'GENOTYPE_GIVEN_ALLELES', '-I', 'data/sample.sort.merge.realign.recal.clip.bam', '-o', 'data/sample.sort.merge.realign.recal.clip-genotype.vcf',  '-R', 'data/chr11.fa','--alleles', 'data/sample.sort.merge.realign.recal.clip.vcf'],
                          _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
     def test_variantfiltration(self):

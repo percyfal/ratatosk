@@ -169,9 +169,9 @@ class Task1(JobTask):
 
     def args(self):
         if self.pipe:
-            return [self.input()]
+            return self.input()[0]
         else:
-            return [self.input(), ">", self.output()]
+            return [self.input()[0], ">", self.output()]
 
 class Task2(JobTask):
     """Task2 : reverse sort output from Task1"""
@@ -191,9 +191,9 @@ class Task2(JobTask):
 
     def args(self):
         if self.pipe:
-            return [self.input()]
+            return self.input()[0]
         else:
-            return [self.input(), ">", self.output()]
+            return [self.input()[0], ">", self.output()]
 
 class PipedJobRunner(DefaultShellJobRunner):
     def run_job(self, job):
@@ -241,4 +241,4 @@ class TestPipedCommand(unittest.TestCase):
         luigi.build([pt])
 
     def test_bampe(self):
-        luigi.run(['--target', "data/sample1.bam", '--config-file', localconf],main_task_cls=Bampe)
+        luigi.run(['--target', "data/sample1.bam", '--config-file', localconf], main_task_cls=Bampe)
