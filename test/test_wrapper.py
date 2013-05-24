@@ -441,3 +441,13 @@ class TestTabixWrappers(unittest.TestCase):
         task = ratatosk.lib.variation.tabix.Tabix(target=self.bam.replace(".bam", ".vcf.gz.tbi"))
         self.assertEqual(['tabix', 'data/sample.sort.vcf.gz'], _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
 
+class TestPopGenWrappers(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        import ratatosk.lib.popgen.angsd
+
+    def test_angsdbam(self):
+        task = ratatosk.lib.popgen.angsd.AngsdBamJobTask(target="results", options=["-GL", "2", "-doMaf", "2", "-doMajorMinor", "1"])
+        self.assertEqual(['angsd', '-GL', '2', '-doMaf', '2', '-doMajorMinor', '1', '-bam', 'bamlist.txt', '-out', 'results'],
+                         _prune_luigi_tmp(task.job_runner()._make_arglist(task)[0]))
+

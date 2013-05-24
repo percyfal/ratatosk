@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 """
-Provide wrappers for `angsd <>`_
+Provide wrappers for `angsd <http://popgen.dk/wiki/index.php/Main_Page>`_
 
 Classes
 -------
@@ -29,9 +29,27 @@ from ratatosk.log import get_logger
 
 logger = get_logger()
 
-class InputBamFile(ratatosk.lib.files.input.InputBamfile):
+class InputTxtFile(ratatosk.lib.files.input.InputTxtFile):
     pass
 
 class AngsdJobRunner(DefaultShellJobRunner):
     pass
 
+class AngsdJobTask(JobTask):
+    executable = luigi.Parameter(default="angsd")
+    parent_task = luigi.Parameter(default=("ratatosk.lib.popgen.angsd.InputTxtFile", ), is_list=True)
+    
+    def job_runner(self):
+        return AngsdJobRunner()
+
+class AngsdBamJobTask(AngsdJobTask):
+    """Use bam input"""
+    options = luigi.Parameter(default=())
+    bamlist = luigi.Parameter(default=("bamlist.txt",))
+
+    def source(self):
+        return self.bamlist
+
+    def args(self):
+        retval = ["-bam", self.input()[0], "-out", self.output()]
+        return retval
