@@ -26,7 +26,7 @@ import ratatosk.lib.files.input
 from ratatosk.utils import rreplace
 from ratatosk.config import get_config
 from ratatosk.job import JobWrapperTask, JobTask
-from ratatosk.jobrunner import DefaultShellJobRunner
+from ratatosk.jobrunner import JavaJobRunner
 from ratatosk.handler import RatatoskHandler, register_task_handler
 from ratatosk.log import get_logger
 
@@ -38,20 +38,8 @@ class InputBamFile(ratatosk.lib.files.input.InputBamFile):
 class InputFastaFile(ratatosk.lib.files.input.InputFastaFile):
     suffix = luigi.Parameter(default=".fa")
 
-class PicardJobRunner(DefaultShellJobRunner):
-    def _make_arglist(self, job):
-        if not job.jar() or not os.path.exists(os.path.join(job.path(),job.jar())):
-            logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),
-                                                                     os.path.abspath(job.jar())))
-            raise Exception("job jar does not exist")
-        arglist = [job.java()] + job.java_opt() + ['-jar', os.path.join(job.path(), job.jar())]
-        if job.main():
-            arglist.append(job.main())
-        if job.opts():
-            arglist += job.opts()
-        (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
-        arglist += job_args
-        return (arglist, tmp_files)
+class PicardJobRunner(JavaJobRunner):
+    pass
 
 class PicardJobTask(JobTask):
     java_exe = "java"

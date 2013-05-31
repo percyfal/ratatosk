@@ -25,7 +25,7 @@ import logging
 import ratatosk.lib.files.input
 from ratatosk.utils import rreplace, fullclassname
 from ratatosk.job import JobTask, JobWrapperTask
-from ratatosk.jobrunner import  DefaultShellJobRunner
+from ratatosk.jobrunner import  JavaJobRunner
 from ratatosk.log import get_logger
 import ratatosk.shell as shell
 
@@ -34,22 +34,7 @@ logger = get_logger()
 class InputVcfFile(ratatosk.lib.files.input.InputVcfFile):
     pass
 
-class snpEffJobRunner(DefaultShellJobRunner):
-    def _make_arglist(self, job):
-        if not job.jar() or not os.path.exists(os.path.join(job.path(),job.jar())):
-            logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),
-                                                                     os.path.abspath(job.jar())))
-            raise Exception("job jar does not exist")
-        arglist = [job.java()] + job.java_opt() + ['-jar', os.path.join(job.path(), job.jar())]
-        if job.main():
-            arglist.append(self._get_main(job))
-        if job.opts():
-            arglist += job.opts()
-        (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
-        if not job.pipe:
-            arglist += job_args
-        return (arglist , tmp_files)
-
+class snpEffJobRunner(JavaJobRunner):
     def run_job(self, job):
         (arglist, tmp_files) = self._make_arglist(job)
         cmd = ' '.join(arglist)        

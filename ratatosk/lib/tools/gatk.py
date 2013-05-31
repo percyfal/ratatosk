@@ -26,7 +26,7 @@ import ratatosk.lib.files.input
 import ratatosk.lib.tools.samtools
 from ratatosk.utils import rreplace, fullclassname
 from ratatosk.job import JobTask
-from ratatosk.jobrunner import DefaultShellJobRunner
+from ratatosk.jobrunner import JavaJobRunner
 from ratatosk.log import get_logger
 from ratatosk.handler import RatatoskHandler, register_task_handler
 import ratatosk.shell as shell
@@ -44,24 +44,11 @@ class InputBamFile(ratatosk.lib.files.input.InputBamFile):
 class InputVcfFile(ratatosk.lib.files.input.InputVcfFile):
     pass
 
-class GATKJobRunner(DefaultShellJobRunner):
+class GATKJobRunner(JavaJobRunner):
     @staticmethod
     def _get_main(job):
+        print "In GATKJobRUnner"
         return "-T {}".format(job.main())
-
-    def _make_arglist(self, job):
-        if not job.jar() or not os.path.exists(os.path.join(job.path(),job.jar())):
-            logger.error("Can't find jar: {0}, full path {1}".format(job.jar(),
-                                                                     os.path.abspath(job.jar())))
-            raise Exception("job jar does not exist")
-        arglist = [job.java()] + job.java_opt() + ['-jar', os.path.join(job.path(), job.jar())]
-        if job.main():
-            arglist.append(self._get_main(job))
-        if job.opts():
-            arglist += job.opts()
-        (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
-        arglist += job_args
-        return (arglist, tmp_files)
 
     def run_job(self, job):
         (arglist, tmp_files) = self._make_arglist(job)
