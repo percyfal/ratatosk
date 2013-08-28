@@ -1,3 +1,11 @@
+<%!
+import os
+import csv
+import cPickle as pickle
+from ratatosk.report.picard import PicardMetricsCollection
+from ratatosk.report.utils import collect_metrics, group_samples, array_to_texttable, indent_texttable_for_rst
+%>
+
 Project summary
 =============================
 
@@ -15,6 +23,70 @@ Samples
 
 QC Metrics
 ----------
+
+Summary statistics
+------------------
+
+<%
+samples = pickle.load(open(pickled_samples))
+grouped_samples = group_samples(samples)
+pmc = collect_metrics(grouped_samples, docroot, os.path.join(os.path.abspath(docroot), "source"), ".align_metrics", use_curdir=True)
+pmccsv = pmc.metrics(as_csv=True)
+
+# Get alignment metrics
+nseq = {'FIRST_OF_PAIR':[], 'SECOND_OF_PAIR':[], 'PAIR':[]}
+pct_aligned = {'FIRST_OF_PAIR':[], 'SECOND_OF_PAIR':[], 'PAIR':[]}
+for c in pmccsv:
+    df = [row for row in csv.DictReader(c)]
+    for row in df:
+        nseq[row["CATEGORY"]].append(int(row["TOTAL_READS"]))
+    pct_aligned[row["CATEGORY"]].append(100 * float(row["PCT_PF_READS_ALIGNED"]))
+    n = len(pmc.idlist())
+
+# Get duplication metrics
+pmc = collect_metrics(grouped_samples, docroot, os.path.join(os.path.abspath(docroot), "source"), ".dup_metrics", use_curdir=True)
+pmccsv = pmc.metrics(as_csv=True)
+dup = []
+for c in pmccsv:
+    df = [row for row in csv.DictReader(c)]
+    dup.append(100 * float(df[0]["PERCENT_DUPLICATION"]))
+
+if len(dup) == 0:
+    sdup = [100 for i in range(0, n)]
+else: 
+    sdup = [int(100 + 10 * x) for x in dup]
+
+# Get hybridization metrics
+pmc = collect_metrics(grouped_samples, docroot, os.path.join(docroot, "source"), ".hs_metrics", use_curdir=True)
+pmccsv = pmc.metrics(as_csv=True)
+hsmetrics = []
+headers = ["ZERO_CVG_TARGETS_PCT", "PCT_TARGET_BASES_2X", "PCT_TARGET_BASES_10X", "PCT_TARGET_BASES_20X", "PCT_TARGET_BASES_30X"]
+for c in pmccsv:
+    df = [row for row in csv.DictReader(c)]
+    print df
+    hsmetrics.append([100 * float(df[0][x]) for x in headers] + [float(df[0]["MEAN_TARGET_COVERAGE"]),100*float(int(df[0]["ON_TARGET_BASES"]))/float(int(df[0]["PF_UQ_BASES_ALIGNED"])),  float(float(df[0]["FOLD_ENRICHMENT"]) / (float(df[0]["GENOME_SIZE"]) / float(df[0]["TARGET_TERRITORY"]))) * 100])
+                                                             
+
+# Get insert size metrics
+pmc = collect_metrics(grouped_samples, docroot, os.path.join(docroot, "source"), ".insert_metrics", use_curdir=True)
+pmccsv = pmc.metrics(as_csv=True)
+insertmetrics = []
+for c in pmccsv:
+    df = [row for row in csv.DictReader(c)]
+    insertmetrics.append(df[0]['MEAN_INSERT_SIZE'])
+
+sampletab = []
+header = ["sample", "total", "aligned", "dup", "insert_size", "%ontarget", "meancov", "%10X cov", "0 cov"] # , "TOTAL VARIATIONS", "IN dbSNP", "TI/TV ALL", "TI/TV dbSNP", "TI/TV NOVEL"]
+sampletab.append(header)
+
+i = 0
+
+for s in grouped_samples.iterkeys():
+    sampletab.append([s, nseq['PAIR'][i] , pct_aligned['PAIR'][i], dup[i], insertmetrics[i], hsmetrics[i][6], hsmetrics[i][5], hsmetrics[i][2], hsmetrics[i][0] ])
+    i = i + 1
+%>
+
+${indent_texttable_for_rst(array_to_texttable(sampletab))}
 
 Sequence statistics
 ^^^^^^^^^^^^^^^^^^^
@@ -62,8 +134,6 @@ Sequence statistics
    plt.title("Sequence summary.\nPoint sizes correspond to duplication levels.", fontsize=14)
    plt.tight_layout()
    plt.show()
-
-
 
 Alignment metrics
 ^^^^^^^^^^^^^^^^^
