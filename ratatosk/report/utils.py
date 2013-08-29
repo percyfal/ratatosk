@@ -14,10 +14,13 @@
 
 import os
 import re
+import csv
 import glob
 import itertools
 from collections import OrderedDict
-from ratatosk.report.picard import PicardMetricsCollection
+import cPickle as pickle
+import ratatosk.report.picard as picard
+import ratatosk.report.gatk as gatk
 from texttable import Texttable
 
 def group_samples(samples, grouping="sample"):
@@ -37,30 +40,99 @@ def group_samples(samples, grouping="sample"):
             groups[k] = list(g)
     return groups
 
-def collect_metrics(grouped_samples, projroot, tgtdir, ext, grouping="sample", use_curdir=False):
-    """Collect metrics for a collection of samples.
+# This is too redundant
+EXTENSIONS={'.align_metrics':('align', 'alignment', picard.collect_metrics),
+            '.hs_metrics':('hs', 'hybrid selection', picard.collect_metrics),
+            '.dup_metrics':('dup', 'duplication metrics', picard.collect_metrics),
+            '.insert_metrics':('insert', 'insert size', picard.collect_metrics),
+            '.eval_metrics':('eval', 'snp evaluation', gatk.collect_metrics),
+            }
 
-    :param grouped_samples: samples grouped in some way
-    :param projroot: project root directory
-    :param tgtdir: documentation target directory 
-    :param ext: metrics extension to search for
-    :param grouping: what grouping to use
-    :param use_curdir: use curdir as relative path
+def collect_multi_metrics(pickled_samples, types=[".align_metrics", ".dup_metrics", ".insert_metrics", ".hs_metrics", ".eval_metrics"], use_curdir=True, **kw):
+    """Collect metrics for multiple metrics types. 
 
-    :returns: list of (item_id, metrics file name)
+    :param pickled_samples: pickled sample file
+    :param docroot: documentation root directory
+    :param types: metrics extension types to search for
+    :param use_curdir: use current directory to calculate paths
+    :param **kw: keyword arguments
+
+    :returns: dictionary with mapping extension_key:metricscollection
     """
-    metrics = []
-    for item_id, itemlist in grouped_samples.items():
-        item = itemlist[0]
-        # FIXME: tgtdir should be docroot!
-        pfx = os.path.relpath(itemlist[0].prefix(grouping), os.path.dirname(tgtdir))
-        if use_curdir:
-            relpath = os.path.relpath(os.curdir, tgtdir)
-            pfx = os.path.relpath(pfx, relpath)
-        mfile = glob.glob(pfx + ".*" + ext)
-        if mfile:
-            metrics.append((item_id, mfile[0]))
-    return PicardMetricsCollection(metrics)
+    data = {}
+    samples = pickle.load(open(pickled_samples))
+    grouped_samples = group_samples(samples)
+    data["grouped_samples"] = grouped_samples
+    for t in types:
+        f = EXTENSIONS[t][2]
+        metrics_collection = f(grouped_samples, os.path.dirname(pickled_samples), t, **kw)
+        metrics_csv = metrics_collection.metrics(as_csv=True)
+        data[t] = metrics_csv
+    return data
+
+def convert_metrics_to_best_practice(data):
+    """Select only the relevant data for best practice reports."""
+    bpmetrics = {}
+    types = data.keys()
+    # Get alignment metrics
+    if ".align_metrics" in types:
+        dataset = data[".align_metrics"]
+        nseq = {'FIRST_OF_PAIR':[], 'SECOND_OF_PAIR':[], 'PAIR':[]}
+        pct_aligned = {'FIRST_OF_PAIR':[], 'SECOND_OF_PAIR':[], 'PAIR':[]}
+        for c in dataset:
+            df = [row for row in csv.DictReader(c)]
+            for row in df:
+                nseq[row["CATEGORY"]].append(int(row["TOTAL_READS"]))
+                pct_aligned[row["CATEGORY"]].append(100 * float(row["PCT_PF_READS_ALIGNED"]))
+        bpmetrics[".align_metrics"] = {'pct_aligned':pct_aligned, 'nseq': nseq}
+
+    # Get duplication metrics
+    if ".dup_metrics" in types:
+        dup = []
+        dataset = data[".dup_metrics"]
+        for c in dataset:
+            df = [row for row in csv.DictReader(c)]
+            dup.append(100 * float(df[0]["PERCENT_DUPLICATION"]))
+        bpmetrics[".dup_metrics"] = dup
+
+    # Get hybridization metrics
+    if ".hs_metrics" in types:
+        dataset = data[".hs_metrics"]
+        hsmetrics = []
+        headers = ["ZERO_CVG_TARGETS_PCT", "PCT_TARGET_BASES_2X", "PCT_TARGET_BASES_10X", "PCT_TARGET_BASES_20X", "PCT_TARGET_BASES_30X"]
+        for c in dataset:
+            df = [row for row in csv.DictReader(c)]
+            hsmetrics.append([100 * float(df[0][x]) for x in headers] + [float(df[0]["MEAN_TARGET_COVERAGE"]),100*float(int(df[0]["ON_TARGET_BASES"]))/float(int(df[0]["PF_UQ_BASES_ALIGNED"])),  float(float(df[0]["FOLD_ENRICHMENT"]) / (float(df[0]["GENOME_SIZE"]) / float(df[0]["TARGET_TERRITORY"]))) * 100] )
+        bpmetrics[".hs_metrics"] = hsmetrics
+
+    # Insert size metrics
+    if ".insert_metrics" in types:
+        dataset = data[".insert_metrics"]
+        insertmetrics = []
+        for c in dataset:
+            df = [row for row in csv.DictReader(c)]
+            insertmetrics.append(df[0]['MEAN_INSERT_SIZE'])
+        bpmetrics[".insert_metrics"] = insertmetrics
+
+    # Evaluation metrics
+    evalmetrics = []
+    if ".eval_metrics" in types:
+        for em in data[".eval_metrics"]:
+            dataset = em["ValidationReport"]
+            df = [row for row in csv.DictReader(dataset)]
+            tmp = []
+            tmp.append(df[0]["nComp"])
+            tmp.append(df[0]["TP"])
+
+            dataset = em["TiTvVariantEvaluator"]
+            df = [row for row in csv.DictReader(dataset)]
+            tmp.append(df[0]["tiTvRatio"])
+            tmp.append(df[1]["tiTvRatio"])
+            tmp.append(df[2]["tiTvRatio"])
+            evalmetrics.append(tmp)
+        bpmetrics[".eval_metrics"] = evalmetrics
+    return bpmetrics
+
 
 def array_to_texttable(data, align=None, precision=2):
     """Convert array to texttable. Sets column widths to the

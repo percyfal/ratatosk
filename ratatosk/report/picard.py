@@ -14,6 +14,7 @@
 
 import os
 import re
+import glob
 
 METRICS_TYPES=['align', 'hs', 'dup', 'insert']
 
@@ -50,32 +51,12 @@ def _read_picard_metrics(f):
         hist = [[_convert_input(y) for y in x.rstrip("\n").split("\t")] for x in data[i_hist:len(data)] if not re.match("^[ #\n]", x)]
     return (metrics, hist)
 
-def _indent_texttable_for_rst(ttab, indent=4, add_spacing=True):
-    """Texttable needs to be indented for rst.
-
-    :param ttab: texttable object
-    :param indent: indentation (should be 4 *spaces* for rst documents)
-    :param add_spacing_row: add additional empty row below class directives
-
-    :returns: reformatted texttable object as string
-    """
-    output = ttab.draw()
-    new_output = []
-    for row in output.split("\n"):
-        new_output.append(" " * indent + row)
-        if re.search('.. class::', row):
-            new_row = [" " if x != "|" else x for x in row]
-            new_output.append(" " * indent + "".join(new_row))
-    return "\n".join(new_output)
-
-
 # For now: extension maps to tuple (label, description). Label should
 # be reused for analysis definitions
 EXTENSIONS={'.align_metrics':('align', 'alignment', _read_picard_metrics),
             '.hs_metrics':('hs', 'hybrid selection', _read_picard_metrics),
             '.dup_metrics':('dup', 'duplication metrics', _read_picard_metrics),
             '.insert_metrics':('insert', 'insert size', _read_picard_metrics),
-            '.eval_metrics':('eval', 'snp evaluation', _raw)
             }
 
 class PicardMetrics(object):
@@ -124,3 +105,27 @@ class PicardMetricsCollection(object):
 
     def idlist(self):
         return [pm.id() for pm in self._metrics]
+
+
+def collect_metrics(grouped_samples, picklepath, ext, grouping="sample", use_curdir=False):
+    """Collect metrics for a collection of samples.
+
+    :param grouped_samples: samples grouped in some way
+    :param picklepath: path to pickle file
+    :param ext: metrics extension to search for
+    :param grouping: what grouping to use
+    :param use_curdir: use curdir as relative path
+
+    :returns: list of (item_id, metrics file name)
+    """
+    metrics = []
+    for item_id, itemlist in grouped_samples.items():
+        relpath = os.path.relpath(os.curdir, picklepath)
+        pfx = os.path.relpath(itemlist[0].prefix(grouping), relpath)
+        # if use_curdir:
+        #     relpath = os.path.relpath(os.curdir, picklepath)
+        #     pfx = os.path.relpath(pfx, relpath)
+        mfile = glob.glob(pfx + ".*" + ext)
+        if mfile:
+            metrics.append((item_id, mfile[0]))
+    return PicardMetricsCollection(metrics)
