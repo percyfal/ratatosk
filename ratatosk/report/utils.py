@@ -66,8 +66,7 @@ def collect_multi_metrics(pickled_samples, types=[".align_metrics", ".dup_metric
     for t in types:
         f = EXTENSIONS[t][2]
         metrics_collection = f(grouped_samples, os.path.dirname(pickled_samples), t, **kw)
-        metrics_csv = metrics_collection.metrics(as_csv=True)
-        data[t] = metrics_csv
+        data[t] = metrics_collection
     return data
 
 def convert_metrics_to_best_practice(data):
@@ -76,7 +75,7 @@ def convert_metrics_to_best_practice(data):
     types = data.keys()
     # Get alignment metrics
     if ".align_metrics" in types:
-        dataset = data[".align_metrics"]
+        dataset = data[".align_metrics"].metrics(as_csv=True)
         nseq = {'FIRST_OF_PAIR':[], 'SECOND_OF_PAIR':[], 'PAIR':[]}
         pct_aligned = {'FIRST_OF_PAIR':[], 'SECOND_OF_PAIR':[], 'PAIR':[]}
         for c in dataset:
@@ -89,7 +88,7 @@ def convert_metrics_to_best_practice(data):
     # Get duplication metrics
     if ".dup_metrics" in types:
         dup = []
-        dataset = data[".dup_metrics"]
+        dataset = data[".dup_metrics"].metrics(as_csv=True)
         for c in dataset:
             df = [row for row in csv.DictReader(c)]
             dup.append(100 * float(df[0]["PERCENT_DUPLICATION"]))
@@ -97,7 +96,7 @@ def convert_metrics_to_best_practice(data):
 
     # Get hybridization metrics
     if ".hs_metrics" in types:
-        dataset = data[".hs_metrics"]
+        dataset = data[".hs_metrics"].metrics(as_csv=True)
         hsmetrics = []
         headers = ["ZERO_CVG_TARGETS_PCT", "PCT_TARGET_BASES_2X", "PCT_TARGET_BASES_10X", "PCT_TARGET_BASES_20X", "PCT_TARGET_BASES_30X"]
         for c in dataset:
@@ -107,7 +106,7 @@ def convert_metrics_to_best_practice(data):
 
     # Insert size metrics
     if ".insert_metrics" in types:
-        dataset = data[".insert_metrics"]
+        dataset = data[".insert_metrics"].metrics(as_csv=True)
         insertmetrics = []
         for c in dataset:
             df = [row for row in csv.DictReader(c)]
@@ -117,7 +116,7 @@ def convert_metrics_to_best_practice(data):
     # Evaluation metrics
     evalmetrics = []
     if ".eval_metrics" in types:
-        for em in data[".eval_metrics"]:
+        for em in data[".eval_metrics"].metrics(as_csv=True):
             dataset = em["ValidationReport"]
             df = [row for row in csv.DictReader(dataset)]
             tmp = []
