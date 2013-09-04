@@ -107,7 +107,7 @@ class MergeSamFiles(PicardJobTask):
             tgf = RatatoskHandler(label="target_generator_handler", mod=self.target_generator_handler)
             register_task_handler(self, tgf)
         if not "target_generator_handler" in self._handlers.keys():
-            logging.warn("MergeSamFiles requires a target generator handler; no defaults are as of yet implemented")
+            logger.warn("MergeSamFiles requires a target generator handler; no defaults are as of yet implemented")
             return []
         sources = list(set(self._handlers["target_generator_handler"](self)))
         return [cls(target=src) for src in sources]    

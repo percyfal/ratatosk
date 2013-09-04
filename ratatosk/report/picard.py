@@ -13,6 +13,7 @@
 # the License.
 
 import os
+import csv
 import re
 import glob
 
@@ -59,6 +60,10 @@ EXTENSIONS={'.align_metrics':('align', 'alignment', _read_picard_metrics),
             '.insert_metrics':('insert', 'insert size', _read_picard_metrics),
             }
 
+def pm2csv(pm):
+    """Convert picard metrics to csv list of lists"""
+    return [",".join([str(y) for y in x]) for x in pm.metrics()]  
+
 class PicardMetrics(object):
     """class for reading/storing metrics"""
     def __init__(self, pmid, f):
@@ -97,7 +102,9 @@ class PicardMetricsCollection(object):
             pm = PicardMetrics(sid, fn)
             self._metrics.append(pm)
             
-    def metrics(self, as_csv=False):
+    def metrics(self, as_csv=False, as_csv_dict=False):
+        if as_csv_dict:
+            return [pm.metrics(as_csv_dict=True) for pm in self._metrics]
         return [pm.metrics(as_csv=as_csv) for pm in self._metrics]
 
     def hist(self, as_csv=False):

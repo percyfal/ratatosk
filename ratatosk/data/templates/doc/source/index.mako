@@ -26,11 +26,12 @@ sampletab = []
 header = ["sample", "total", "%aligned", "dup", "insert_size", "%ontarget", "meancov", "%10X cov", "0 cov", "TOTAL VARIATIONS", "IN dbSNP", "TI/TV ALL", "TI/TV dbSNP", "TI/TV NOVEL"]
 sampletab.append(header)
 i = 0
+
+data["grouped_samples"].keys()
 for s in data["grouped_samples"].iterkeys():
    row = [s, bpmetrics[".align_metrics"]["nseq"]["PAIR"][i], bpmetrics[".align_metrics"]["pct_aligned"]["PAIR"][i], bpmetrics[".dup_metrics"][i], bpmetrics[".insert_metrics"][i], bpmetrics[".hs_metrics"][i][6], bpmetrics[".hs_metrics"][i][5], bpmetrics[".hs_metrics"][i][2], bpmetrics[".hs_metrics"][i][0]] +  bpmetrics[".eval_metrics"][i]
    sampletab.append(row)
    i = i + 1
-
 %>
 
 ${indent_texttable_for_rst(array_to_texttable(sampletab))}
@@ -75,24 +76,23 @@ Alignment metrics
 .. plot::
 
    import os
+   import csv
    from pylab import *
    import matplotlib.pyplot as plt
    from ratatosk.report.utils import collect_multi_metrics, convert_metrics_to_best_practice
 
-   types = [".align_metrics", ".dup_metrics", ".insert_metrics", ".hs_metrics", ".eval_metrics"]
+   types = [".align_metrics"]
    data = collect_multi_metrics("${pickled_samples}", types=types, use_curdir=True)
    bpmetrics = convert_metrics_to_best_practice(data)
 
    pmc = data[".align_metrics"]
    n = len(pmc.idlist())
+   df = [row for c in pmc.metrics(as_csv=True) for row in csv.DictReader(c)]
    xticks(range(0,n), [x for x in pmc.idlist()], rotation=45)
    xlim(-.1, (n-1)*1.1)
-   plt.plot(range(0,n), pct_aligned['PAIR'], "o")
+   plt.plot(range(0,n), [100 * float(x["PCT_PF_READS_ALIGNED"]) for x in df if x["CATEGORY"]=="PAIR"], "o")
    plt.tight_layout()
    plt.show()
-
-
-
 
 Duplication metrics
 ^^^^^^^^^^^^^^^^^^^^
@@ -101,25 +101,22 @@ Duplication metrics
 
    import os
    import csv
-   import cPickle as pickle
    from pylab import *
    import matplotlib.pyplot as plt
-   from ratatosk.report.picard import PicardMetricsCollection
-   from ratatosk.report.utils import collect_metrics, group_samples
-   
-   samples = pickle.load(open(os.path.relpath("${pickled_samples}", os.path.join("${docroot}", "source"))))
-   grouped_samples = group_samples(samples)
-   pmc = collect_metrics(grouped_samples, "${docroot}", os.path.join("${docroot}", "source"), ".dup_metrics")
-   pmccsv = pmc.metrics(as_csv=True)
-   dup = []
-   for c in pmccsv:
-       df = [row for row in csv.DictReader(c)]
-       dup.append(100 * float(df[0]["PERCENT_DUPLICATION"]))
+   from ratatosk.report.utils import collect_multi_metrics, convert_metrics_to_best_practice
 
+   types = [".dup_metrics"]
+   data = collect_multi_metrics("${pickled_samples}", types=types, use_curdir=True)
+   bpmetrics = convert_metrics_to_best_practice(data)
+   
+   pmc = data[".dup_metrics"]
    n = len(pmc.idlist())
+   df = [row for c in pmc.metrics(as_csv=True) for row in csv.DictReader(c)]
+   pmccsv = pmc.metrics(as_csv=True)
+
    xticks(range(0,n), [x for x in pmc.idlist()], rotation=45)
    xlim(-.1, (n-1)*1.1)
-   plt.plot(range(0,n), dup, "o")
+   plt.plot(range(0,n), [float(x["PERCENT_DUPLICATION"]) for x in df], "o")
    plt.tight_layout()
    plt.show()
 
@@ -130,25 +127,22 @@ Hybridization metrics
 
    import os
    import csv
-   import cPickle as pickle
-   import math
    from pylab import *
    import matplotlib.pyplot as plt
-   import numpy as np
-   from ratatosk.report.picard import PicardMetricsCollection
-   from ratatosk.report.utils import collect_metrics, group_samples
-   
-   samples = pickle.load(open(os.path.relpath("${pickled_samples}", os.path.join("${docroot}", "source"))))
-   grouped_samples = group_samples(samples)
-   pmc = collect_metrics(grouped_samples, "${docroot}", os.path.join("${docroot}", "source"), ".hs_metrics")
-   pmccsv = pmc.metrics(as_csv=True)
+   from ratatosk.report.utils import collect_multi_metrics, convert_metrics_to_best_practice
+
+   types = [".hs_metrics"]
+   data = collect_multi_metrics("${pickled_samples}", types=types, use_curdir=True)
+   bpmetrics = convert_metrics_to_best_practice(data)
+
+   pmc = data[".hs_metrics"]
+   df = [row for c in pmc.metrics(as_csv=True) for row in csv.DictReader(c)]
    hsmetrics = []
    headers = ["ZERO_CVG_TARGETS_PCT", "PCT_TARGET_BASES_2X", "PCT_TARGET_BASES_10X", "PCT_TARGET_BASES_20X", "PCT_TARGET_BASES_30X"]
    hticks = ["0X", "2X", "10X", "20X", "30X"]
    xticks(range(0,len(hticks)), [x for x in hticks])
-   for c in pmccsv:
-       df = [row for row in csv.DictReader(c)]
-       hsmetrics.append([100 * float(df[0][x]) for x in headers])
+   for row in df:
+       hsmetrics.append([100 * float(row[x]) for x in headers])
    plt.boxplot(np.array(hsmetrics))
    plt.show()
 
@@ -157,24 +151,21 @@ Hybridization metrics
 
    import os
    import csv
-   import cPickle as pickle
-   import math
    from pylab import *
    import matplotlib.pyplot as plt
-   import numpy as np
-   from ratatosk.report.picard import PicardMetricsCollection
-   from ratatosk.report.utils import collect_metrics, group_samples
-   
-   samples = pickle.load(open(os.path.relpath("${pickled_samples}", os.path.join("${docroot}", "source"))))
-   grouped_samples = group_samples(samples)
-   pmc = collect_metrics(grouped_samples, "${docroot}", os.path.join("${docroot}", "source"), ".hs_metrics")
-   pmccsv = pmc.metrics(as_csv=True)
+   from ratatosk.report.utils import collect_multi_metrics, convert_metrics_to_best_practice
+
+   types = [".hs_metrics"]
+   data = collect_multi_metrics("${pickled_samples}", types=types, use_curdir=True)
+   bpmetrics = convert_metrics_to_best_practice(data)
+
+   pmc = data[".hs_metrics"]
+   df = [row for c in pmc.metrics(as_csv=True) for row in csv.DictReader(c)]
    hsmetrics = []
    headers = ["ZERO_CVG_TARGETS_PCT", "PCT_TARGET_BASES_2X", "PCT_TARGET_BASES_10X", "PCT_TARGET_BASES_20X", "PCT_TARGET_BASES_30X"]
    hticks = ["0X", "2X", "10X", "20X", "30X"]
-   for c in pmccsv:
-       df = [row for row in csv.DictReader(c)]
-       hsmetrics.append([100 * float(df[0][x]) for x in headers])
+   for row in df:
+       hsmetrics.append([100 * float(row[x]) for x in headers])
    n = len(pmc.idlist())
    nsubplots = int(math.ceil(n/9))
    nrow = int(math.ceil(n/3))
