@@ -77,6 +77,7 @@ class HaloPlexUnifiedGenotyperAlleles(UnifiedGenotyperAlleles):
                                            "ratatosk.lib.tools.gatk.CombineVariants"), is_list=True)
     _config_section = "ratatosk.lib.tools.gatk"
     outdir = luigi.Parameter(description="Where analysis takes place", default=None)
+    options = luigi.Parameter(default=("-stand_call_conf 30.0 -stand_emit_conf 10.0  --downsample_to_coverage 30 --output_mode EMIT_VARIANTS_ONLY -glm BOTH",), is_list=True)
     def requires(self):
         """Task requirements. In many cases this is a single source
         whose name can be generated following the code below, and

@@ -71,7 +71,10 @@ class ISample(object):
 class Sample(ISample):
     """A class describing a sample. Provides placeholders for
     project_id, sample_id, project_prefix, sample_prefix, and
-    sample_run_prefix.
+    sample_run_prefix. 
+
+    The prefix strings consist of directory+stringprefix that is used
+    for regular expression searches.
 
     """
     _levels = {}

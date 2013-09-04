@@ -47,7 +47,6 @@ def _setup_directories(root):
                 os.makedirs(os.path.join(root, d))
 
 kw = {
-    'docroot':None,
     'sample_id':None,
     'project_id':None,
     'project_name':None,
@@ -78,7 +77,6 @@ class SphinxReport(JobTask):
     samples = []
     
     def _setup(self):
-        kw['docroot'] = self.outdir
         # List requirements for completion, consisting of classes above
         if self.indir is None:
             logger.error("Need input directory to run")
@@ -94,7 +92,7 @@ class SphinxReport(JobTask):
                     s._prefix[k] = os.path.relpath(s.prefix(k), self.outdir)
             pickled_samples.append(s)
             
-        kw['pickled_samples'] = os.path.join(self.outdir, "samples.pickle" )
+        kw['pickled_samples'] = os.path.abspath(os.path.join(self.outdir, "samples.pickle" ))
         with open(kw['pickled_samples'], "w") as fh:
             pickle.dump(pickled_samples, fh)
         for k,v in templates.items():
