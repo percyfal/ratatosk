@@ -195,7 +195,7 @@ def determine_read_type(fn, read1_suffix, read2_suffix=None, suffix="(.fastq.gz$
     :param read2_suffix: read2 suffix
     :param suffix: suffix to use for paired files
     """
-    parts = fn.split(".")
+    parts = os.path.basename(fn).split(".")
 
     if parts[0].endswith(read1_suffix):
         return 1
