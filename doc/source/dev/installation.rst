@@ -11,7 +11,7 @@ The following command sequence will generate a virtual environment
 
 .. code-block:: text
 
-   INSTALL_PREFIX=~/opt/test
+   INSTALL_PREFIX=~/opt
    mkdir $INSTALL_PREFIX
    mkvirtualenv --no-site-packages -p python2.7 ratatosk
    git clone https://github.com/spotify/luigi.git $INSTALL_PREFIX/luigi
@@ -31,7 +31,19 @@ to install the packages. Install `virtualenvwrapper
 `mkvirtualenv
 <http://virtualenvwrapper.readthedocs.org/en/latest/command_ref.html>`_
 to create a virtual environment. Note that you need to pass the
-``--no-site-packages`` flag.
+``--no-site-packages -p python2.7`` options. Finally, add the
+following to your ``.bashrc``:
+
+.. code-block:: text
+
+   source path/to/bin/virtualenvwrapper.sh
+   export WORKON_HOME=~/.virtualenvs
+
+(if you've used `virtualenv-burrito
+<https://github.com/brainsik/virtualenv-burrito>_` to install
+``virtualenvwrapper``, ``virtualenvwrapper.sh`` is located in
+``~/.venvburrito``).
+
 
 .. _installation:
 
@@ -110,6 +122,14 @@ The tests depend on the following software to run:
 
 Running the tests
 -----------------
+
+Make sure that an instance of the daemon ``ratatoskd`` is running in
+the background. It may be convenient to run it in a ``screen``
+session.
+
+.. code-block:: text
+
+   ratatoskd &
 
 Cd to the test directory (``test``) and run
 
